@@ -1609,6 +1609,8 @@ function GuitarHero({ song, bars, easy, bpm, setBpm, playing, onStart, onStop, a
   const [phase, setPhase] = useState('setup'); // setup | play | done
   const [mode, setModeS] = useState(() => ghLoad('ng-gh-mode', 'tap'));
   const [view, setViewS] = useState(() => ghLoad('ng-gh-view', 'grip'));
+  const [orient, setOrientS] = useState(() => ghLoad('ng-gh-orient', 'v'));
+  const setOrient = (v) => { setOrientS(v); ghSave('ng-gh-orient', v); };
   const setView = (v) => { setViewS(v); ghSave('ng-gh-view', v); };
   const [calib, setCalibS] = useState(() => ghLoad('ng-gh-calib', { tap: 0, mic: 60 }));
   const [hud, setHud] = useState({ score: 0, combo: 0, mult: 1, cur: bars[0].chord, next: null, inBeats: 0, count: null, meter: 0.5 });
@@ -1616,7 +1618,7 @@ function GuitarHero({ song, bars, easy, bpm, setBpm, playing, onStart, onStop, a
   const [err, setErr] = useState('');
   const cv = useRef(null), wrap = useRef(null), lvl = useRef(null);
   const G = useRef(null), P = useRef({}), micR = useRef(null), prevAuto = useRef(autoGuitar), wake = useRef(null);
-  P.current = { song, bars, easy, mode, calib, playing, onStop, onResult, best };
+  P.current = { song, bars, easy, mode, calib, playing, onStop, onResult, best, orient };
   const setMode = (m) => { setModeS(m); ghSave('ng-gh-mode', m); };
   const setCalib = (v) => { const n = { ...calib, [mode === 'mic' ? 'mic' : 'tap']: v }; setCalibS(n); ghSave('ng-gh-calib', n); };
 
@@ -1742,6 +1744,110 @@ function GuitarHero({ song, bars, easy, bpm, setBpm, playing, onStart, onStop, a
         setHud({ score: g.score, combo: g.combo, mult: mult(g.combo), cur: g.marks[ci].chord, next: nm ? nm.chord : null, inBeats: nm ? Math.max(0, Math.ceil((nm.pos - now) / 2)) : 0,
           count: phase === 'play' && now < 0 ? Math.min(4, Math.max(1, Math.ceil(-now / 2))) : null, meter: g.meter });
       }
+      // ---- vågrät bana med studsande boll
+      if (p.orient === 'h') {
+        x.clearRect(0, 0, W, H);
+        const hitX = Math.max(58, W * 0.2), LOOKH = Math.max(7, Math.min(12, Math.floor((W - hitX - 8) / 36))), pps = (W - hitX - 8) / LOOKH;
+        const laneH = Math.min(H * 0.46, 270), top = Math.max(150, (H - laneH) / 2 + 60), bot = top + laneH;
+        const LY = (i) => top + i * (laneH / 5), XP = (pos) => hitX + (pos - now) * pps;
+        const rr = (X0, Y0, w0, h0, r0) => { x.beginPath(); if (x.roundRect) x.roundRect(X0, Y0, w0, h0, r0); else x.rect(X0, Y0, w0, h0); };
+        // underlag
+        const grd = x.createLinearGradient(0, top - 30, 0, bot + 30);
+        grd.addColorStop(0, 'rgba(30,24,60,0.55)'); grd.addColorStop(1, 'rgba(14,10,30,0.95)');
+        x.fillStyle = grd; rr(6, top - 30, W - 12, laneH + 60, 18); x.fill();
+        x.strokeStyle = 'rgba(255,255,255,0.08)'; x.lineWidth = 1; x.stroke();
+        // slag och taktstreck
+        for (let b = Math.floor((now - hitX / pps) / 2) * 2; b < now + LOOKH + 2; b += 2) {
+          const bx = XP(b); if (bx < 8 || bx > W - 8) continue; const bar = b % 8 === 0;
+          x.strokeStyle = bar ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.08)'; x.lineWidth = bar ? 2 : 1;
+          x.beginPath(); x.moveTo(bx, top - 26); x.lineTo(bx, bot + 26); x.stroke();
+        }
+        // strängar
+        for (let i = 0; i < 6; i++) { x.strokeStyle = GH_LANE[i]; x.globalAlpha = 0.4; x.lineWidth = 1 + (5 - i) * 0.4; x.beginPath(); x.moveTo(8, LY(i)); x.lineTo(W - 8, LY(i)); x.stroke(); }
+        x.globalAlpha = 1;
+        x.font = `700 11px ${font}`; x.textAlign = 'left'; x.textBaseline = 'middle'; x.fillStyle = '#aba4d4';
+        ['E', 'A', 'D', 'G', 'B', 'e'].forEach((n, i) => x.fillText(n, 14, LY(i)));
+        // ackordbyten
+        for (const mk of g.marks) {
+          const mx = XP(mk.pos), a = (mx - hitX) / pps; if (a < -1 || mx > W + 80) continue;
+          const fade = Math.max(0, Math.min(1, (a - 0.3) / 1.5)); if (fade <= 0) continue;
+          x.globalAlpha = fade; x.strokeStyle = accent; x.lineWidth = 3; x.shadowBlur = 12; x.shadowColor = accent;
+          x.beginPath(); x.moveTo(mx, top - 26); x.lineTo(mx, bot + 26); x.stroke(); x.shadowBlur = 0;
+          const label = CHORD_DB[mk.chord].name; x.font = `800 22px ${font}`;
+          const tw = x.measureText(label).width, pw = tw + 20, ph = 30, py = bot + 34;
+          x.fillStyle = '#ffffff'; rr(mx - pw / 2, py, pw, ph, ph / 2); x.fill();
+          x.fillStyle = '#140f2a'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(label, mx, py + ph / 2 + 1);
+          if (mk.part) { x.font = `700 11px ${font}`; x.fillStyle = accent; x.fillText(mk.part.toUpperCase(), mx, py + ph + 14); }
+          x.globalAlpha = 1;
+        }
+        // träfflinje och ringar
+        x.strokeStyle = accent; x.lineWidth = 3; x.shadowBlur = 16; x.shadowColor = accent;
+        x.beginPath(); x.moveTo(hitX, top - 28); x.lineTo(hitX, bot + 28); x.stroke(); x.shadowBlur = 0;
+        const r = Math.min(15, (laneH / 5) * 0.4, pps * 0.42);
+        for (let i = 0; i < 6; i++) {
+          const f = Math.max(0, 1 - (tNow - g.flash[i]) / 220);
+          x.beginPath(); x.arc(hitX, LY(i), r + 3, 0, Math.PI * 2);
+          x.fillStyle = f > 0 ? GH_LANE[i] : 'rgba(10,8,22,0.9)'; x.globalAlpha = f > 0 ? 0.35 + 0.65 * f : 1; x.fill(); x.globalAlpha = 1;
+          x.lineWidth = 2.5; x.strokeStyle = GH_LANE[i]; x.shadowBlur = f > 0 ? 20 * f : 4; x.shadowColor = GH_LANE[i]; x.stroke(); x.shadowBlur = 0;
+        }
+        // noter
+        for (let n = g.evs.length - 1; n >= 0; n--) {
+          const ev = g.evs[n], ex = XP(ev.pos);
+          if (ex < hitX - 50 || ex > W + 30 || ev.res === 'p' || ev.res === 'g' || ev.res === 'w') continue;
+          const miss = ev.res === 'm', l0 = Math.min(...ev.lanes), l1 = Math.max(...ev.lanes), up = ev.dir === 'U';
+          x.globalAlpha = miss ? 0.25 : 1;
+          if (ev.lanes.length > 1) { x.fillStyle = 'rgba(255,255,255,0.16)'; rr(ex - r * 0.35, LY(l0), r * 0.7, LY(l1) - LY(l0), r * 0.35); x.fill(); }
+          for (const l of ev.lanes) {
+            x.beginPath(); x.arc(ex, LY(l), r, 0, Math.PI * 2);
+            if (up) { x.fillStyle = 'rgba(10,8,22,0.92)'; x.fill(); x.lineWidth = Math.max(2, r * 0.28); x.strokeStyle = miss ? '#666' : GH_LANE[l]; x.stroke(); }
+            else { x.fillStyle = miss ? '#555' : GH_LANE[l]; x.fill(); x.beginPath(); x.ellipse(ex, LY(l) - r * 0.45, r * 0.5, r * 0.18, 0, 0, Math.PI * 2); x.fillStyle = 'rgba(255,255,255,0.45)'; x.fill(); }
+            x.font = `800 ${Math.round(r * 0.95)}px ${font}`; x.textAlign = 'center'; x.textBaseline = 'middle';
+            x.fillStyle = up ? '#ffffff' : '#140f2a'; x.fillText(String(ev.frets[l]), ex, LY(l) + r * 0.06);
+          }
+          // riktningspil under noten
+          const ay = LY(l1) + r + 9, as = 6; x.fillStyle = '#ffffff'; x.beginPath();
+          if (up) { x.moveTo(ex, ay - as); x.lineTo(ex - as, ay + as * 0.6); x.lineTo(ex + as, ay + as * 0.6); }
+          else { x.moveTo(ex, ay + as); x.lineTo(ex - as, ay - as * 0.6); x.lineTo(ex + as, ay - as * 0.6); }
+          x.closePath(); x.fill(); x.globalAlpha = 1;
+        }
+        // bågar och boll: bollen hoppar från slag till slag och landar när du ska slå
+        const landY = top - 30;
+        let pi = -1; for (let i = 0; i < g.evs.length; i++) { if (g.evs[i].pos <= now) pi = i; else break; }
+        const start = { pos: -8, chord: null };
+        const hop = (a, b) => Math.min(landY - 14, (34 + (b.pos - a.pos) * 12) * (a.chord && a.chord !== b.chord ? 1.45 : 1));
+        for (let k = pi; k < pi + 4 && k + 1 < g.evs.length; k++) {
+          const a = k >= 0 ? g.evs[k] : start, b = g.evs[k + 1], h = hop(a, b), chg = !a.chord || a.chord !== b.chord;
+          x.globalAlpha = k === pi ? 0.9 : 0.5 - (k - pi) * 0.1; x.setLineDash([3, 6]); x.lineWidth = 2.5;
+          x.strokeStyle = chg ? accent : 'rgba(255,255,255,0.55)'; x.beginPath();
+          for (let t = 0; t <= 1.0001; t += 0.05) { const px = XP(a.pos + (b.pos - a.pos) * t), py = landY - h * 4 * t * (1 - t); if (t === 0) x.moveTo(px, py); else x.lineTo(px, py); }
+          x.stroke(); x.setLineDash([]);
+          // landningsplatta på nästa slag
+          x.globalAlpha = Math.max(0.15, x.globalAlpha); x.fillStyle = chg ? accent : 'rgba(255,255,255,0.6)';
+          x.beginPath(); x.ellipse(XP(b.pos), landY + 6, 9, 3, 0, 0, Math.PI * 2); x.fill();
+        }
+        x.globalAlpha = 1;
+        const nb = g.evs[pi + 1];
+        if (nb) {
+          const a = pi >= 0 ? g.evs[pi] : start, q = Math.max(0, Math.min(1, (now - a.pos) / (nb.pos - a.pos))), h = hop(a, nb), by = landY - h * 4 * q * (1 - q);
+          const squash = q < 0.06 ? 1 - q / 0.06 : 0;
+          const bg = x.createRadialGradient(hitX - 4, by - 4, 1, hitX, by, 13);
+          bg.addColorStop(0, '#ffffff'); bg.addColorStop(0.45, accent2); bg.addColorStop(1, accent);
+          x.shadowBlur = 22; x.shadowColor = accent; x.fillStyle = bg;
+          x.beginPath(); x.ellipse(hitX, by, 12 * (1 + 0.25 * squash), 12 * (1 - 0.25 * squash), 0, 0, Math.PI * 2); x.fill(); x.shadowBlur = 0;
+        }
+        // gnistor och träfftexter
+        g.parts = g.parts.filter((pt) => pt.life > 0);
+        for (const pt of g.parts) {
+          pt.x += pt.vx * dt; pt.y += pt.vy * dt; pt.vy += 0.25 * dt; pt.life -= 0.035 * dt;
+          x.globalAlpha = Math.max(0, pt.life); x.fillStyle = GH_LANE[pt.l];
+          x.beginPath(); x.arc(hitX + Math.abs(pt.x) * 3 + pt.y * -0.5, LY(pt.l) + pt.x * 2, 3 + 2 * pt.life, 0, Math.PI * 2); x.fill();
+        }
+        x.globalAlpha = 1;
+        g.pops = g.pops.filter((pp) => tNow - pp.t < 700);
+        const pp = g.pops[g.pops.length - 1];
+        if (pp) { const a = (tNow - pp.t) / 700; x.globalAlpha = 1 - a; x.font = `800 ${Math.round(Math.min(30, W * 0.075))}px ${font}`; x.textAlign = 'left'; x.fillStyle = pp.c; x.shadowBlur = 16; x.shadowColor = pp.c; x.fillText(pp.txt, hitX + 24, top - 70 - a * 24); x.shadowBlur = 0; x.globalAlpha = 1; }
+        return;
+      }
       // ---- rita banan
       x.clearRect(0, 0, W, H);
       const top = H * 0.05, hitY = H * 0.84, cx = W / 2, wB = Math.min(W * 0.96, 560), wT = wB * 0.26, sFar = 0.25;
@@ -1849,6 +1955,7 @@ function GuitarHero({ song, bars, easy, bpm, setBpm, playing, onStart, onStop, a
     <div className="gh-top">
       <button className="gh-x" onClick=${close} aria-label="Stäng">×</button>
       <div className="gh-title"><b>${song.title}</b><span>${song.artist}</span></div>
+      <button className="gh-view" onClick=${() => setOrient(orient === 'v' ? 'h' : 'v')} aria-label="Byt mellan lodrät och vågrät bana" title="Byt bana">${orient === 'v' ? '↕' : '↔'}</button>
       <button className="gh-view" onClick=${() => setView(view === 'grip' ? 'name' : 'grip')} aria-label="Växla mellan grepp och bara ackordnamn">${view === 'grip' ? 'Grepp' : 'Namn'}</button>
       <div className="gh-score"><b className="mono">${hud.score.toLocaleString('sv-SE')}</b>
         <span className=${'gh-mult m' + hud.mult}>x${hud.mult}</span></div>
@@ -1879,6 +1986,11 @@ function GuitarHero({ song, bars, easy, bpm, setBpm, playing, onStart, onStop, a
           ${[['tap', 'Tryck på skärmen', 'Tryck på den stora knappen eller mellanslag i takt.'], ['mic', 'Mikrofon', 'Appen hör när du slår på gitarren. Använd hörlurar.'], ['watch', 'Bara titta', 'Spela med på gitarren utan poäng.']].map(([id, t, d]) =>
             html`<button key=${id} className="gh-mode" aria-pressed=${mode === id} onClick=${() => setMode(id)}><b>${t}</b><span>${d}</span></button>`)}
         </div>
+        <div className="row between"><span className="label">Bana</span>
+          <div className="seg" role="group" aria-label="Bana">
+            <button aria-pressed=${orient === 'v'} onClick=${() => setOrient('v')}>Lodrät</button>
+            <button aria-pressed=${orient === 'h'} onClick=${() => setOrient('h')}>Vågrät med boll</button>
+          </div></div>
         <div className="row between"><span className="label">Visning</span>
           <div className="seg" role="group" aria-label="Visning">
             <button aria-pressed=${view === 'grip'} onClick=${() => setView('grip')}>Grepp och namn</button>
