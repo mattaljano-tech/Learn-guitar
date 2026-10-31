@@ -8,7 +8,7 @@ Appen är en installerbar webbapp (PWA). Den fungerar offline efter första bes�
 
 ## Installera på telefonen (Android, Chrome)
 
-1. Öppna appens adress i Chrome, till exempel `https://mattaljano-tech.github.io/learn-guitar/`.
+1. Öppna appens adress i Chrome, till exempel `https://mattaljano-tech.github.io/Learn-guitar/`.
 2. Tryck på menyn (tre prickar) och välj **Installera app** eller **Lägg till på startskärmen**.
 3. Appen får en egen ikon och öppnas i helskärm.
 
