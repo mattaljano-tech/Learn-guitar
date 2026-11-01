@@ -3003,6 +3003,9 @@ function App() {
   const allBars = useMemo(() => song.form.flatMap((p) => p.bars.map((c) => mkBar(c, p.part))), [song]);
   const [loop, setLoop] = useState(null); // { pi, from, to, part } – loopa en del av låten
   const [orig, setOrig] = useState(true);
+  const [origMusic, setOrigMusic] = useState(true);   // höra inspelningen
+  const [origGuitar, setOrigGuitar] = useState(false); // appens gitarr spelar ackorden i takt med inspelningen
+  useEffect(() => { if (AUDIO_SYNC && AUDIO_SYNC.g) AUDIO_SYNC.g.gain.setTargetAtTime(origMusic ? 0.55 : 0, engine.ctx.currentTime, 0.03); }, [origMusic]);
   const [origLoad, setOrigLoad] = useState(false);
   const aud = useMemo(() => (song.audio ? audioBars(song.audio) : null), [song]);
   const origOn = !!(aud && orig);
@@ -3079,7 +3082,7 @@ function App() {
   const narrowM = useNarrow('(max-width: 760px)');
 
   const S = useRef({});
-  S.current = { easy, song, bars, startBar, bpm, style, countIn, autoGuitar, swing, skLevel, skChord, skBpm, skBand, skGuitar, from, to, btBpm, btStyle };
+  S.current = { origMusic, origGuitar, easy, song, bars, startBar, bpm, style, countIn, autoGuitar, swing, skLevel, skChord, skBpm, skBand, skGuitar, from, to, btBpm, btStyle };
 
   useEffect(() => {
     engine.onVisual = (ev) => {
@@ -3167,10 +3170,31 @@ function App() {
     const first = a.beats[aud.starts[fromBar]], lead = 4 * aud.ibi, now = c.currentTime + 0.12;
     const base = now - (first - lead), off = first - lead;
     const src = c.createBufferSource(), g = c.createGain();
-    src.buffer = buf; g.gain.value = 0.55; src.connect(g); g.connect(engine.master);
+    src.buffer = buf; g.gain.value = S.current.origMusic ? 0.55 : 0; src.connect(g); g.connect(engine.master);
     if (off >= 0) src.start(now, off); else src.start(now - off, 0);
     for (let i = 0; i < 4; i++) engine.click(base + first - (4 - i) * aud.ibi, i === 0);
-    AUDIO_SYNC = { src, base, beats: a.beats, starts: aud.starts, ibi: aud.ibi, from: fromBar };
+    // ackord per slag och plats i takten, så att appens gitarr kan följa inspelningen
+    const B = a.beats, chOf = [], posOf = [];
+    for (let i = 0, ci = 0, bi = 0; i < B.length; i++) {
+      while (ci + 1 < a.chords.length && a.chords[ci + 1][0] <= i) ci++;
+      while (bi + 1 < aud.starts.length && aud.starts[bi + 1] <= i) bi++;
+      chOf.push(a.chords[ci][1]); posOf.push(Math.min(3, i - aud.starts[bi]));
+    }
+    let nextBeat = aud.starts[fromBar];
+    const sched = setInterval(() => {
+      const A = AUDIO_SYNC; if (!A || A.src !== src) return clearInterval(sched);
+      const horizon = c.currentTime + 0.15, cur = S.current;
+      while (nextBeat < B.length && base + B[nextBeat] < horizon) {
+        const j = nextBeat++, t0 = base + B[j], nx = j + 1 < B.length ? B[j + 1] - B[j] : aud.ibi;
+        if (!cur.origGuitar || t0 < c.currentTime - 0.02) continue;
+        const v = voicing(chOf[j], cur.easy), pat = cur.song.pattern, st = posOf[j] * 2;
+        [[st, t0], [st + 1, t0 + nx / 2]].forEach(([k, t]) => {
+          const dir = pat[k]; if (!dir || dir === '-') return;
+          engine.strum(v.frets, t, dir, { vel: cur.song.accents.includes(k) ? 1 : 0.62 });
+        });
+      }
+    }, 25);
+    AUDIO_SYNC = { src, g, base, beats: a.beats, starts: aud.starts, ibi: aud.ibi, from: fromBar };
     src.onended = () => {
       if (!AUDIO_SYNC || AUDIO_SYNC.src !== src) return;
       award(40, 'Låt genomspelad: ' + song.title, (n) => { if (!n.songs.includes(song.id)) n.songs.push(song.id); addTag(n, 'song:' + song.id); });
@@ -3319,7 +3343,11 @@ function App() {
           </div>`}
         </div>
         ${aud ? html`<div className="row" style=${{ gap: 8 }}>
-          <button className=${'chip' + (orig ? ' on' : '')} onClick=${() => { if (playing) stopAll(); setOrig(!orig); setStartBar(0); }}>🎧 Din inspelning ${orig ? 'på' : 'av'}</button>
+          <button className=${'chip' + (orig ? ' on' : '')} onClick=${() => { if (playing) stopAll(); setOrig(!orig); setStartBar(0); }}>🎧 Följ din inspelning ${orig ? 'på' : 'av'}</button>
+          ${origOn ? html`<div className="seg" role="group" aria-label="Vad du hör">
+            ${[['both', 'Musik + ackord', true, true], ['music', 'Bara musik', true, false], ['chords', 'Bara ackord', false, true]].map(([id, l, m, gt]) =>
+              html`<button key=${id} aria-pressed=${origMusic === m && origGuitar === gt} onClick=${() => { setOrigMusic(m); setOrigGuitar(gt); }}>${l}</button>`)}
+          </div>` : null}
           ${origLoad ? html`<span className="muted" style=${{ fontSize: 12 }}>Laddar inspelningen …</span>`
             : origOn ? html`<span className="muted" style=${{ fontSize: 12 }}>Ackorden följer din låt. Stoppa när du vill, du fortsätter där du var.</span>` : null}
           ${origOn && startBar > 0 && !playing ? html`<button className="chip" onClick=${() => setStartBar(0)}>Från början</button>` : null}
