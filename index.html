@@ -411,6 +411,24 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
   .sk-hands .panel .cap{font-size:11px}
   .sk-mute{font-size:58px}
 }
+
+/* Tjack-skolan */
+.sk-mode{justify-self:start}
+.sk-mode button{padding:9px 16px;font-size:14px}
+.tj-scene svg{width:100%;height:auto;display:block;border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.sk-cue.tjk.hit b{background:linear-gradient(135deg,var(--leaf),var(--leaf-2));-webkit-background-clip:text;background-clip:text;color:transparent;animation:tjack .25s ease-out}
+.sk-cue.tjk.x b{color:#ff9a4a;animation:tjack .25s ease-out}
+.sk-cue.tjk.x span{color:#ff9a4a}
+.sk-cue.tjk.air b{color:var(--faint);font-size:40px}
+.tj-flash{box-shadow:inset 0 0 0 3px #ff9a4a,inset 0 0 60px rgba(255,154,74,.35)}
+.tj-row span.x{background:rgba(255,154,74,.14);color:#ffb37a}
+.tj-row span.air{opacity:.55}
+.tj-row span.on.x{background:linear-gradient(160deg,#ff9a4a,#ffb35c);color:#2a1205;animation:tjack .25s ease-out}
+.tj-row span.on.du{background:linear-gradient(160deg,var(--leaf),var(--leaf-2));color:var(--leaf-ink)}
+.tj-row span.on.air{background:var(--surface-3);color:var(--text);opacity:1}
+.tj-left{margin:0;font-size:13px;color:var(--muted);text-align:center}
+.tj-how{display:grid;gap:10px;margin-top:12px}
+.tj-how p{margin:0;font-size:14px;line-height:1.45}
 /* Teman */
 .skins{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .skin{text-align:left;border-radius:14px;padding:12px;border:2px solid transparent;display:grid;gap:8px;color:#fff}
@@ -1176,6 +1194,12 @@ class Engine {
     this.noiseHit(t, { freq: 1700, q: 1.1, vel: 0.32, decay: 0.018, dest: this.bus.g });
     this.noiseHit(t + 0.008, { freq: 3400, q: 1.5, vel: 0.12, decay: 0.012, dest: this.bus.g });
     this.queue.push({ t, type: 'pluck', strings: [3, 4, 5] });
+  }
+  chuck(frets, t) { // dämpat slag: handkanten landar direkt på strängarna
+    this.strum(frets, t, 'D', { vel: 0.5, stagger: 0.005, dur: 0.035 });
+    this.noiseHit(t, { freq: 900, q: 0.8, vel: 0.38, decay: 0.026, dest: this.bus.g });
+    this.noiseHit(t + 0.004, { freq: 2800, q: 1.2, vel: 0.13, decay: 0.015, dest: this.bus.g });
+    this.queue.push({ t, type: 'pluck', strings: [0, 1, 2, 3, 4, 5] });
   }
   thumb(frets, t) {
     for (let i = 0; i < 3; i++) if (frets[i] >= 0) {
@@ -2611,6 +2635,146 @@ function SkankAnim({ playing, chordKey, muted, easy, children }) {
     ${children}
   </section>`;
 }
+/* ---------------------------------------------------------------- tjack-skolan: animerad högerhand */
+const TJ_PAT = ['D', '-', 'X', 'U', 'D', '-', 'X', 'U'];
+const TJ_WORD = { D: ['NER', 'Slå ner över alla strängar'], '-': ['luft', 'Handen fortsätter, nuddar inte'], X: ['TJACK!', 'Handkanten landar på strängarna'], U: ['upp', 'Lätt uppåt över de tunna strängarna'] };
+const TJ_SVG = (() => {
+  const W = 400, H = 300, STR = [150, 165, 180, 195, 210, 225], HX = 262, strTh = [3.4, 2.8, 2.3, 1.6, 1.25, 1.0];
+  return `
+<svg viewBox="0 0 ${W} ${H}">
+<defs>
+ <linearGradient id="tj-wood" x1="0" y1="0" x2="1" y2="0.3"><stop offset="0" stop-color="#e7b874"/><stop offset=".5" stop-color="#d9a35c"/><stop offset="1" stop-color="#c88d45"/></linearGradient>
+ <pattern id="tj-grain" width="400" height="9" patternUnits="userSpaceOnUse"><rect width="400" height="9" fill="none"/><path d="M0 4 Q100 2 200 5 T400 4" stroke="#b77b36" stroke-opacity=".22" fill="none" stroke-width="1.2"/></pattern>
+ <radialGradient id="tj-hole" cx=".5" cy=".5" r=".5"><stop offset=".7" stop-color="#120a05"/><stop offset="1" stop-color="#2a170b"/></radialGradient>
+ <linearGradient id="tj-wound" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff6dc"/><stop offset=".45" stop-color="#cdb98f"/><stop offset="1" stop-color="#6f5a37"/></linearGradient>
+ <linearGradient id="tj-nylon" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".5" stop-color="#e9eef2"/><stop offset="1" stop-color="#8d969c"/></linearGradient>
+ <pattern id="tj-wrap" width="2.2" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(70)"><rect width="1.1" height="6" fill="#000" fill-opacity=".22"/></pattern>
+ <linearGradient id="tj-skin" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f4c9a6"/><stop offset=".55" stop-color="#e3a77f"/><stop offset="1" stop-color="#c98560"/></linearGradient>
+ <linearGradient id="tj-skinD" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#e8b08a"/><stop offset="1" stop-color="#b8714f"/></linearGradient>
+ <linearGradient id="tj-sleeve" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3a3f6b"/><stop offset=".5" stop-color="#2c3157"/><stop offset="1" stop-color="#1d2140"/></linearGradient>
+ <radialGradient id="tj-nail" cx=".4" cy=".3" r=".8"><stop offset="0" stop-color="#fff3ec"/><stop offset="1" stop-color="#e9b9a4"/></radialGradient>
+ <filter id="tj-blur6"><feGaussianBlur stdDeviation="6"/></filter>
+ <filter id="tj-hshadow" x="-50%" y="-50%" width="200%" height="200%"><feFlood flood-color="#2a1205"/><feComposite in2="SourceAlpha" operator="in"/><feGaussianBlur stdDeviation="7"/></filter>
+ <filter id="tj-blur2"><feGaussianBlur stdDeviation="2"/></filter>
+ <filter id="tj-glow"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+ <clipPath id="tj-top"><rect x="0" y="0" width="${W}" height="${H}" rx="18"/></clipPath>
+ <symbol id="tj-hand" overflow="visible">
+   <!-- underarm/ärm uppifrån höger -->
+   <path d="M30 -150 C 40 -190, 70 -240, 120 -300 L 210 -300 C 160 -230, 120 -170, 96 -128 Z" fill="url(#tj-sleeve)"/>
+   <path d="M30 -150 C 40 -170, 60 -172, 96 -128" fill="none" stroke="#14172e" stroke-width="3" opacity=".6"/>
+   <!-- handrygg -->
+   <path d="M-34 -78 C -40 -112, -14 -150, 30 -152 C 70 -154, 98 -130, 96 -100 C 94 -74, 70 -52, 36 -46 C 6 -42, -28 -52, -34 -78 Z" fill="url(#tj-skin)" stroke="#a9654a" stroke-opacity=".55" stroke-width="1.2"/>
+   <!-- knogar -->
+   <path d="M-30 -66 C -14 -58, 22 -52, 58 -60" fill="none" stroke="#b9704c" stroke-opacity=".35" stroke-width="2.5" stroke-linecap="round"/>
+   <!-- inrullade fingrar: lång, ring, lill -->
+   <path d="M6 -52 C 2 -30, 14 -18, 30 -20 C 46 -22, 50 -40, 44 -56 Z" fill="url(#tj-skinD)" stroke="#9c5a40" stroke-opacity=".6" stroke-width="1.2"/>
+   <path d="M34 -56 C 34 -36, 46 -26, 60 -30 C 74 -34, 74 -52, 64 -64 Z" fill="url(#tj-skinD)" stroke="#9c5a40" stroke-opacity=".6" stroke-width="1.2"/>
+   <path d="M60 -66 C 62 -48, 72 -42, 82 -46 C 92 -52, 90 -66, 84 -76 Z" fill="url(#tj-skinD)" stroke="#9c5a40" stroke-opacity=".6" stroke-width="1.2"/>
+   <!-- pekfinger som pekar ner mot strängarna -->
+   <path d="M-30 -64 C -26 -44, -18 -26, -12 -10 C -8 0, 6 2, 9 -8 C 12 -22, 8 -42, 4 -58 Z" fill="url(#tj-skin)" stroke="#a9654a" stroke-opacity=".55" stroke-width="1.2"/>
+   <path d="M-26 -40 C -20 -38, -12 -38, -6 -40" stroke="#b9704c" stroke-opacity=".35" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+   <!-- nagel -->
+   <path d="M-11 -12 C -10 -3, 4 -1, 6 -9 C 3 -14, -6 -16, -11 -12 Z" fill="url(#tj-nail)" stroke="#c98a72" stroke-width=".8"/>
+   <!-- tumme -->
+   <path d="M-34 -80 C -52 -86, -66 -74, -64 -60 C -62 -48, -50 -44, -40 -50 C -34 -56, -30 -64, -30 -70 Z" fill="url(#tj-skin)" stroke="#a9654a" stroke-opacity=".55" stroke-width="1.2"/>
+   <path d="M-62 -66 C -60 -58, -54 -54, -48 -55" stroke="#fff" stroke-opacity=".35" stroke-width="2" fill="none" stroke-linecap="round"/>
+   <!-- högdager -->
+   <path d="M-8 -132 C 14 -144, 50 -144, 70 -130" stroke="#fff" stroke-opacity=".28" stroke-width="5" fill="none" stroke-linecap="round"/>
+   <!-- handkant (lillfingersidan) som dämpar -->
+   <path class="edge" d="M60 -40 C 78 -36, 92 -50, 97 -70 C 100 -86, 99 -100, 96 -108" fill="none" stroke="#ffb35c" stroke-width="5" stroke-linecap="round" opacity="0" filter="url(#tj-glow)"/>
+   
+ </symbol>
+</defs>
+<g clip-path="url(#tj-top)">
+ <rect width="${W}" height="${H}" fill="url(#tj-wood)"/><rect width="${W}" height="${H}" fill="url(#tj-grain)"/>
+ <circle cx="34" cy="188" r="104" fill="none" stroke="#5a3418" stroke-width="10" stroke-dasharray="2 3" opacity=".8"/>
+ <circle cx="34" cy="188" r="96" fill="none" stroke="#8a5a2b" stroke-width="5"/>
+ <circle cx="34" cy="188" r="90" fill="url(#tj-hole)"/>
+ <g class="sshadow" opacity=".35" filter="url(#tj-blur2)">${STR.map((y,i)=>`<rect x="0" y="${y+3}" width="${W}" height="${strTh[i]+1}" fill="#3b1f0b"/>`).join('')}</g>
+ <g class="strings">${STR.map((y,i)=>`<g class="str"><rect x="0" y="${y-strTh[i]/2}" width="${W}" height="${strTh[i]}" fill="url(#${i<3?'wound':'nylon'})"/>${i<3?`<rect x="0" y="${y-strTh[i]/2}" width="${W}" height="${strTh[i]}" fill="url(#tj-wrap)"/>`:''}</g>`).join('')}</g>
+ <g class="vibs">${STR.map((y,i)=>`<path class="vib" data-i="${i}" d="" fill="${i<3?'#f3e6c4':'#ffffff'}" opacity="0"/>`).join('')}</g>
+ <g class="hits">${STR.map((y,i)=>`<rect class="hit" x="0" y="${y-strTh[i]/2-1}" width="${W}" height="${strTh[i]+2}" fill="#2ee6b8" opacity="0" filter="url(#tj-glow)"/>`).join('')}</g>
+ <g class="shadow" opacity=".42" filter="url(#tj-hshadow)"><use href="#tj-hand"/></g>
+ <g class="trail" opacity="0"><use href="#tj-hand" x="${HX}" y="0" opacity=".12"/><use href="#tj-hand" x="${HX}" y="0" opacity=".2"/></g>
+ <g class="handg"><use href="#tj-hand" class="h" x="0" y="0"/></g>
+ <g class="imp" opacity="0"><ellipse cx="0" cy="0" rx="46" ry="12" fill="none" stroke="#ffb35c" stroke-width="3"/><ellipse cx="0" cy="0" rx="70" ry="20" fill="none" stroke="#ffb35c" stroke-width="1.5" opacity=".6"/></g>
+</g>
+</svg>`;
+})();
+function tjackDrawer(svg) {
+  const W = 400, STR = [150, 165, 180, 195, 210, 225], HX = 262, MID = (STR[0] + STR[5]) / 2, A = 62;
+  const q = (c) => svg.querySelector(c), hand = q('.h'), sh = q('.shadow'), tr = q('.trail'), imp = q('.imp'), edge = q('.edge');
+  const vibs = [...svg.querySelectorAll('.vib')], hits = [...svg.querySelectorAll('.hit')], trUse = [...tr.querySelectorAll('use')];
+  const bump = (c, w) => { let r = 0; for (let k = 0; k < 8; k++) if (TJ_PAT[k] === 'X') for (const kk of [k, k + 8, k - 8]) { const d = c - kk; r += Math.exp(-(d * d) / (2 * w * w)); } return r; };
+  const yAt = (c) => MID + A * Math.sin(Math.PI * c) + 56 * bump(c, 0.16);
+  const rotAt = (c) => 9 * bump(c, 0.2);
+  const xAt = (c) => HX + 7 * Math.cos(Math.PI * c);
+  const tf = (c) => `translate(${xAt(c)},${yAt(c)}) rotate(${rotAt(c)},40,-120) scale(.92)`;
+  return (c, age, step, hitOn) => {
+    const y = yAt(c), x = xAt(c), near = bump(c, 0.2), lift = Math.max(0, 1 - near);
+    hand.setAttribute('transform', tf(c));
+    sh.setAttribute('transform', `translate(${x - 6 - 12 * lift},${y + 8 + 16 * lift}) rotate(${rotAt(c)},40,-120) scale(.92)`);
+    sh.setAttribute('opacity', (0.5 - 0.18 * lift).toFixed(2));
+    tr.setAttribute('opacity', Math.min(1, Math.abs(y - yAt(c - 0.06)) / 40).toFixed(2));
+    trUse.forEach((u, i) => u.setAttribute('transform', tf(c - 0.05 * (i + 1))));
+    edge.setAttribute('opacity', Math.min(1, near * 1.4).toFixed(2));
+    const kind = hitOn ? TJ_PAT[step] : '-';
+    const set = kind === 'D' || kind === 'X' ? [0, 1, 2, 3, 4, 5] : kind === 'U' ? [2, 3, 4, 5] : [];
+    vibs.forEach((pth, i) => {
+      if (set.includes(i) && kind !== 'X') {
+        const amp = (1.8 + (5 - i) * 0.3) * Math.exp(-age * 5), yy = STR[i];
+        pth.setAttribute('d', `M0 ${yy} Q ${W / 2} ${yy - amp * 2.2} ${W} ${yy} Q ${W / 2} ${yy + amp * 2.2} 0 ${yy} Z`);
+        pth.setAttribute('opacity', (0.55 * Math.exp(-age * 4)).toFixed(2));
+      } else pth.setAttribute('opacity', 0);
+    });
+    hits.forEach((h, i) => { h.setAttribute('fill', kind === 'X' ? '#ff9a4a' : '#2ee6b8'); h.setAttribute('opacity', set.includes(i) ? (0.9 * Math.exp(-age * (kind === 'X' ? 9 : 6))).toFixed(2) : 0); });
+    if (kind === 'X') { imp.setAttribute('opacity', Math.exp(-age * 7).toFixed(2)); imp.setAttribute('transform', `translate(${x + 58},${MID}) scale(${1 + age * 3})`); }
+    else imp.setAttribute('opacity', 0);
+  };
+}
+function TjackAnim({ playing, muted, chordKey, easy, children }) {
+  const box = useRef(null), R = useRef({ st: -2, cnt: null });
+  const [st, setSt] = useState(-1), [cnt, setCnt] = useState(null);
+  useEffect(() => {
+    const svg = box.current && box.current.querySelector('svg'); if (!svg) return;
+    const draw = tjackDrawer(svg); let raf; const t0 = performance.now();
+    R.current = { st: -2, cnt: null }; if (!playing) { setSt(-1); setCnt(null); }
+    const loop = () => {
+      raf = requestAnimationFrame(loop);
+      if (!playing) { // tyst slowmotion så att man ser rörelsen
+        const sd = 60 / 34 / 2, c = ((performance.now() - t0) / 1000 / sd) % 8, k = Math.floor(c);
+        draw(c, (c - k) * sd, k, true); return;
+      }
+      const k = clockNow(), Rr = R.current; if (!k) return;
+      const sd = engine.log.length ? engine.log[engine.log.length - 1].sd : 0.4;
+      if (k.bar < 0) {
+        const n = 4 - Math.floor(k.step / 2); if (n !== Rr.cnt) { Rr.cnt = n; setCnt(n); }
+        draw(k.step + k.frac, k.frac * sd, k.step, false); return;
+      }
+      if (Rr.cnt !== null) { Rr.cnt = null; setCnt(null); }
+      if (k.step !== Rr.st) { Rr.st = k.step; setSt(k.step); }
+      draw(k.step + k.frac, k.frac * sd, k.step, true);
+    };
+    loop();
+    return () => cancelAnimationFrame(raf);
+  }, [playing]);
+  const tickRef = useRef(0), lastRef = useRef(-1);
+  if (st !== lastRef.current) { tickRef.current++; lastRef.current = st; }
+  const tick = tickRef.current, on = playing && cnt === null && st >= 0, kind = on ? TJ_PAT[st] : null;
+  const name = CHORD_DB[chordKey] ? CHORD_DB[chordKey].name : chordKey;
+  const cue = !playing ? html`<div className="sk-cue idle"><b>Titta på handen</b><span>Den rör sig hela tiden: ner, upp, ner, upp. Tryck Starta för ljud.</span></div>`
+    : cnt !== null ? html`<div className="sk-cue count"><b key=${'c' + cnt}>${cnt}</b><span>Gör dig redo …</span></div>`
+    : html`<div className=${'sk-cue tjk ' + (kind === 'X' ? 'x' : kind === '-' ? 'air' : 'hit')}><b key=${'t' + tick}>${TJ_WORD[kind][0]}</b><span>${TJ_WORD[kind][1]}</span></div>`;
+  return html`<section className=${'card sk-main tj-main'} aria-label="Tjack-tränare">
+    ${kind === 'X' ? html`<div key=${'f' + tick} className="sk-flash tj-flash" aria-hidden="true"></div>` : null}
+    ${cue}
+    <div className="tj-scene" ref=${box} aria-hidden="true" dangerouslySetInnerHTML=${{ __html: TJ_SVG }}></div>
+    <div className="sk-row tj-row" aria-hidden="true">${BEATS.map((b, i) => html`<span key=${i + (on && i === st ? 'on' + tick : '')}
+      className=${(on && i === st ? 'on ' : '') + (TJ_PAT[i] === 'X' ? 'x' : TJ_PAT[i] === '-' ? 'air' : 'du')}><b>${b}</b><small>${TJ_PAT[i] === 'D' ? 'ner' : TJ_PAT[i] === 'U' ? 'upp' : TJ_PAT[i] === 'X' ? 'TJACK' : '–'}</small></span>`)}</div>
+    <p className="tj-left">${muted ? 'Vänster hand: lägg fingrarna löst över strängarna, så blir allt dämpat. Fokusera på högerhanden.' : 'Vänster hand: håll ' + name + '. Höger hand gör allt arbete.'}</p>
+    ${children}
+  </section>`;
+}
 function SkankStrip({ chordKey, easy }) {
   return html`<section>
     <div className="section-head"><h3>Så gör du, steg för steg</h3><p>Samma rörelse åtta gånger per takt</p></div>
@@ -3026,6 +3190,10 @@ function App() {
   const [skLevel, setSkLevel] = useState(2);
   const [skChord, setSkChord] = useState('Am');
   const [skBpm, setSkBpm] = useState(65);
+  const [skMode, setSkMode] = useState('skank'); // 'skank' | 'tjack'
+  const [tjChord, setTjChord] = useState('Em');
+  const [tjBpm, setTjBpm] = useState(60);
+  const [tjDrums, setTjDrums] = useState(true);
   const [skBand, setSkBand] = useState(true);
   const [skGuitar, setSkGuitar] = useState(true);
 
@@ -3082,7 +3250,7 @@ function App() {
   const narrowM = useNarrow('(max-width: 760px)');
 
   const S = useRef({});
-  S.current = { origMusic, origGuitar, easy, song, bars, startBar, bpm, style, countIn, autoGuitar, swing, skLevel, skChord, skBpm, skBand, skGuitar, from, to, btBpm, btStyle };
+  S.current = { tjChord, tjBpm, tjDrums, origMusic, origGuitar, easy, song, bars, startBar, bpm, style, countIn, autoGuitar, swing, skLevel, skChord, skBpm, skBand, skGuitar, from, to, btBpm, btStyle };
 
   useEffect(() => {
     engine.onVisual = (ev) => {
@@ -3125,6 +3293,7 @@ function App() {
       award(solo ? 60 : 40, 'Låt genomspelad: ' + song.title, (n) => { if (!n.songs.includes(song.id)) n.songs.push(song.id); if (solo) { n.solo = true; addTag(n, 'solo'); } addTag(n, 'song:' + song.id); });
     }
     if (playing === 'skank' && pos.bar === 8 && !doneRef.current[key]) { doneRef.current[key] = 1; award(30, '8 takter skank', (n) => { n.skank8 = true; addTag(n, 'skank'); }); }
+    if (playing === 'tjack' && pos.bar === 8 && !doneRef.current[key]) { doneRef.current[key] = 1; award(30, '8 takter tjack', (n) => { addTag(n, 'tjack'); }); }
     if (playing === 'byten' && pos.bar === 8 && !doneRef.current[key]) { doneRef.current[key] = 1; award(20, '8 takter ackordbyten'); }
   }, [pos.bar]);
   useEffect(() => { doneRef.current = {}; }, [playing]);
@@ -3238,6 +3407,22 @@ function App() {
     setPlaying('skank');
   };
 
+  const TJ_LOOP = ['Em', 'C', 'G', 'D'];
+  const startTjack = () => {
+    engine.start({
+      bpm: () => S.current.tjBpm, swing: () => 0, countIn: () => true,
+      onStep: (step, bar, t, sd) => {
+        const s = S.current, key = s.tjChord === 'loop' ? TJ_LOOP[bar % 4] : s.tjChord === 'mute' ? 'Em' : s.tjChord, v = voicing(key, s.easy), d = TJ_PAT[step];
+        if (s.tjDrums) { if (step === 0 || step === 4) engine.kick(t, 0.8); if (step === 2 || step === 6) engine.rim(t, 0.5); if (step % 2 === 0) engine.hat(t, 0.25); }
+        if (s.tjChord === 'mute') { if (d === 'X') engine.scratch(t); else if (d !== '-') engine.noiseHit(t, { freq: 1500, q: 1, vel: 0.12, decay: 0.012, dest: engine.bus.g }); return; }
+        if (d === 'D') engine.strum(v.frets, t, 'D', { vel: 0.9 });
+        else if (d === 'U') engine.strum(v.frets, t, 'U', { vel: 0.55, strings: [2, 3, 4, 5] });
+        else if (d === 'X') engine.chuck(v.frets, t);
+      },
+    });
+    setPlaying('tjack');
+  };
+
   const startByten = () => {
     engine.start({
       bpm: () => S.current.btBpm, swing: () => 0, countIn: () => true,
@@ -3253,7 +3438,7 @@ function App() {
 
   const toggle = () => {
     if (playing) return stopAll();
-    if (tab === 'spela') startSong(); else if (tab === 'skank') startSkank(); else if (tab === 'byten') startByten();
+    if (tab === 'spela') startSong(); else if (tab === 'skank') (skMode === 'tjack' ? startTjack() : startSkank()); else if (tab === 'byten') startByten();
   };
 
   useEffect(() => {
@@ -3461,7 +3646,45 @@ function App() {
   const SK_OPTS = [['mute', 'Dämpat'], ['Am', 'Am'], ['Em', 'Em'], ['G', 'G'], ['C', 'C'], ['D', 'D'], ['Dm', 'Dm'], ['Gm', 'Gm'], ['AmEm', 'Am ↔ Em']];
   const skSel = skLevel === 1 ? 'mute' : skLevel === 3 ? 'AmEm' : skChord;
   const pickSk = (v) => { if (v === 'mute') setSkLevel(1); else if (v === 'AmEm') setSkLevel(3); else { setSkLevel(2); setSkChord(v); } };
-  const SkankTab = html`<div style=${{ display: 'grid', gap: 16 }}>
+  const TJ_OPTS = [['mute', 'Dämpat'], ['Em', 'Em'], ['C', 'C'], ['G', 'G'], ['D', 'D'], ['loop', 'Em C G D']];
+  const modeSwitch = html`<div className="seg sk-mode" role="group" aria-label="Övning">
+    ${[['skank', 'Reggae-skank'], ['tjack', 'Tjack (pop)']].map(([id, l]) => html`<button key=${id} aria-pressed=${skMode === id} onClick=${() => { if (playing) stopAll(); setSkMode(id); }}>${l}</button>`)}
+  </div>`;
+  const TjackTab = html`<div style=${{ display: 'grid', gap: 16 }}>
+    ${modeSwitch}
+    <section className="card sk-intro">
+      <div className="label" style=${{ color: 'var(--ember)' }}>Tjack-skolan</div>
+      <h2 className="page" style=${{ marginTop: 4 }}>Ner · TJACK · upp</h2>
+      <p className="lead" style=${{ marginTop: 6 }}>Handen går hela tiden ner och upp. På <b>2</b> och <b>4</b> landar handkanten på strängarna så att det blir ett kort, dovt <b>tjack</b> i stället för ett ackord. Det är ljudet i Ça reste là.</p>
+    </section>
+    <${TjackAnim} playing=${playing === 'tjack'} muted=${tjChord === 'mute'} chordKey=${tjChord === 'loop' ? 'Em' : tjChord === 'mute' ? 'Em' : tjChord} easy=${easy}>
+      <div className="sk-ctl">
+        ${playBtn('Starta')}
+        <div className="sk-opt"><span className="sk-lab">Tempo</span>
+          <div className="seg" role="group" aria-label="Tempo">
+            ${[[50, 'Långsamt'], [65, 'Lagom'], [80, 'Som låten']].map(([v, l]) => html`<button key=${v} aria-pressed=${tjBpm === v} onClick=${() => setTjBpm(v)}>${l}</button>`)}
+          </div></div>
+        <div className="sk-opt"><span className="sk-lab">Grepp</span>
+          <div className="seg sk-grip" role="group" aria-label="Grepp">
+            ${TJ_OPTS.map(([v, l]) => html`<button key=${v} aria-pressed=${tjChord === v} onClick=${() => setTjChord(v)}>${l}</button>`)}
+          </div></div>
+        <p className="muted sk-tip">${tjChord === 'mute' ? 'Börja här: allt dämpat, så lär du dig rörelsen utan att tänka på greppet.' : tjChord === 'loop' ? 'Samma ackord som i Ça reste là, ett per takt.' : 'Sitter det? Ta Em C G D, sedan Ça reste là under Låtar.'}</p>
+        <button className=${'chip' + (tjDrums ? ' on' : '')} style=${{ justifySelf: 'start' }} onClick=${() => setTjDrums(!tjDrums)}>Trummor ${tjDrums ? 'på' : 'av'}</button>
+      </div>
+    <//>
+    <details className="card more sk-more"><summary>Så gör du tjacket</summary>
+      <div className="tj-how">
+        <p><b>1. Bara tjacket.</b> Lägg vänsterhanden löst över strängarna. Slå ner och låt handkanten, lillfingersidan, landa på strängarna nära stallet. Det ska låta kort och torrt.</p>
+        <p><b>2. Med ackord.</b> Håll Em. Slå ner på 1 så att det klingar, och låt handkanten landa på 2. Upp på &.</p>
+        <p><b>3. Handen stannar aldrig.</b> Den går ner på varje siffra och upp på varje &, även när den inte nuddar strängarna.</p>
+        <p><b>4. Byt ackord.</b> Em, C, G, D, ett per takt. Byt på sista uppslaget så att du hinner.</p>
+        <div className="row"><button className="btn" onClick=${() => { engine.init(); engine.chuck(voicing('Em', easy).frets, engine.now()); }}>Hör ett tjack</button>
+          <button className="btn" onClick=${() => { engine.init(); engine.strum(voicing('Em', easy).frets, engine.now(), 'D'); }}>Hör ett vanligt slag</button></div>
+      </div>
+    </details>
+  </div>`;
+  const SkankTab = skMode === 'tjack' ? TjackTab : html`<div style=${{ display: 'grid', gap: 16 }}>
+    ${modeSwitch}
     <section className="card sk-intro">
       <div className="label" style=${{ color: 'var(--leaf)' }}>Skank-skolan</div>
       <h2 className="page" style=${{ marginTop: 4 }}>Slå bara på &</h2>
@@ -3701,8 +3924,8 @@ function App() {
       ${['spela', 'skank', 'byten'].includes(tab) ? html`<p className="muted desk-only" style=${{ fontSize: 12 }}>Tryck <span className="kbd">mellanslag</span> för att starta och stoppa.</p>` : null}
     </main>
     ${['spela', 'skank', 'byten'].includes(tab) ? html`<div className="mbar">
-      <button className=${'play' + (playing ? ' stop' : '')} onClick=${toggle}>${playing ? I.stop : I.play}${playing ? 'Stoppa' : tab === 'spela' ? 'Spela låten' : tab === 'skank' ? 'Starta skank' : 'Öva bytet'}</button>
-      ${tab === 'spela' ? (origOn ? null : html`<${Bpm} value=${bpm} set=${setBpm} />`) : tab === 'skank' ? html`<${Bpm} value=${skBpm} set=${setSkBpm} min=${40} max=${110} />` : html`<${Bpm} value=${btBpm} set=${setBtBpm} min=${40} max=${120} />`}
+      <button className=${'play' + (playing ? ' stop' : '')} onClick=${toggle}>${playing ? I.stop : I.play}${playing ? 'Stoppa' : tab === 'spela' ? 'Spela låten' : tab === 'skank' ? (skMode === 'tjack' ? 'Starta tjack' : 'Starta skank') : 'Öva bytet'}</button>
+      ${tab === 'spela' ? (origOn ? null : html`<${Bpm} value=${bpm} set=${setBpm} />`) : tab === 'skank' ? (skMode === 'tjack' ? html`<${Bpm} value=${tjBpm} set=${setTjBpm} min=${40} max=${110} />` : html`<${Bpm} value=${skBpm} set=${setSkBpm} min=${40} max=${110} />`) : html`<${Bpm} value=${btBpm} set=${setBtBpm} min=${40} max=${120} />`}
     </div>` : null}
     <nav className="bottomnav" aria-label="Meny">
       ${TABS.map(([id, , s]) => html`<button key=${id} aria-current=${tab === id ? 'page' : null} onClick=${() => { goTab(id); window.scrollTo({ top: 0 }); }}>
