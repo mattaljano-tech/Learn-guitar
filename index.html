@@ -452,6 +452,29 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 .gh-next small{font-size:11px;color:#aba4d4}
 @media (max-width:420px){.gh-pill{font-size:32px;padding:2px 14px}.gh-dg{max-width:170px}.gh-bar{gap:8px}}
 
+
+/* Kolla grepp */
+.cc{display:grid;gap:12px}
+.cc-lvl{max-width:320px}
+.cc-res{display:grid;gap:12px;padding:14px;border-radius:14px;border:1px solid var(--line);background:var(--surface-2)}
+.cc-res.ok{border-color:color-mix(in oklab,var(--leaf) 60%,transparent);background:color-mix(in oklab,var(--leaf) 10%,var(--surface-2))}
+.cc-res.bad{border-color:color-mix(in oklab,var(--brass) 50%,transparent)}
+.cc-head{display:flex;gap:12px;align-items:center}
+.cc-head b{display:block;font-size:16px}
+.cc-head small{color:var(--muted);font-size:12px}
+.cc-icon{width:40px;height:40px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-family:var(--f-display);font-weight:800;font-size:22px;flex:none}
+.cc-res.ok .cc-icon{background:var(--leaf);color:var(--leaf-ink)}
+.cc-res.bad .cc-icon{background:linear-gradient(135deg,var(--brass),var(--brass-2));color:var(--brass-ink)}
+.cc-strings{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+.cc-s{display:grid;justify-items:center;gap:2px;padding:6px 2px;border-radius:10px;background:var(--surface-3)}
+.cc-s b{font-family:var(--f-mono);font-size:13px}
+.cc-s i{font-style:normal;font-size:11px;font-weight:700;color:var(--muted)}
+.cc-s.ok{background:color-mix(in oklab,var(--leaf) 22%,var(--surface-3))}.cc-s.ok i{color:var(--leaf)}
+.cc-s.weak{background:color-mix(in oklab,var(--brass) 22%,var(--surface-3))}.cc-s.weak i{color:var(--brass)}
+.cc-s.extra{background:color-mix(in oklab,var(--ember) 25%,var(--surface-3))}.cc-s.extra i{color:var(--ember)}
+.cc-s.x{opacity:.55}
+.cc-tips{margin:0;padding-left:18px;display:grid;gap:6px;font-size:14px}
+
 /* Gamification */
 .lvl{display:flex;align-items:center;gap:8px;padding:5px 10px 5px 6px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-size:12px;font-weight:700}
 .lvl .num{width:24px;height:24px;border-radius:50%;background:var(--brass);color:var(--brass-ink);display:inline-flex;align-items:center;justify-content:center;font-family:var(--f-display);font-weight:800;font-size:13px}
@@ -1341,7 +1364,7 @@ function saveProg(p) { try { localStorage.setItem('ng-progress', JSON.stringify(
 
 const MISSIONS = [
   { id: 'tune', title: 'Stäm gitarren', desc: 'Lyssna på alla sex strängarna i Stämning.', xp: 40, auto: (p) => p.tuned.length >= 6, go: { tab: 'stam' } },
-  { id: 'em', title: 'Ditt första ackord: Em', desc: 'Två fingrar, alla sex strängar. Klarmarkera när det klingar rent.', xp: 50, go: { tab: 'ackord', chord: 'Em' } },
+  { id: 'em', title: 'Ditt första ackord: Em', desc: 'Två fingrar, alla sex strängar. Låt appen lyssna under Gör jag rätt?, eller klarmarkera själv.', xp: 50, go: { tab: 'ackord', chord: 'Em' } },
   { id: 'am', title: 'Lär dig Am', desc: 'Samma form som Em fast en sträng ner och ett finger till.', xp: 50, go: { tab: 'ackord', chord: 'Am' } },
   { id: 'ch-am-em', title: '1-minutsbyte Am ↔ Em', desc: 'Klara minst 12 byten på en minut.', xp: 80, auto: (p) => bestPair(p, 'Am', 'Em') >= 12, go: { tab: 'spel', game: 'chal', pair: ['Am', 'Em'] } },
   { id: 'quiz5', title: 'Ackordquiz: 5 rätt i rad', desc: 'Känn igen greppen på bild eller ljud.', xp: 60, auto: (p) => p.quizCombo >= 5, go: { tab: 'spel', game: 'quiz' } },
@@ -1691,10 +1714,12 @@ function GuitarHero({ song, bars, easy, bpm, setBpm, playing, onStart, onStop, a
     prevAuto.current = autoGuitar;
     if (mode === 'mic') {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
-        const c = engine.ctx, src = c.createMediaStreamSource(stream), hp = c.createBiquadFilter(), an = c.createAnalyser();
+        // ekosläckning på: telefonen tar bort appens egna trummor och klick ur mikrofonljudet
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: false } });
+        const c = engine.ctx, src = c.createMediaStreamSource(stream), hp = c.createBiquadFilter(), an = c.createAnalyser(), an2 = c.createAnalyser();
         hp.type = 'highpass'; hp.frequency.value = 1100; an.fftSize = 512; src.connect(hp); hp.connect(an);
-        micR.current = { stream, src, an, buf: new Float32Array(512), avg: 0.01, prev: 0, last: 0 };
+        an2.fftSize = 4096; an2.smoothingTimeConstant = 0; src.connect(an2);
+        micR.current = { stream, src, an, an2, fbuf: new Float32Array(an2.frequencyBinCount), buf: new Float32Array(512), avg: 0.01, prev: 0, last: 0, floor: 0, pend: [] };
         setAutoGuitar(false);
       } catch (e) { setErr('Mikrofonen gick inte att starta här. Inne i Claude är mikrofonen blockerad. Välj Tryck på skärmen eller Bara titta, eller öppna appen som egen webbsida i Chrome.'); return; }
     }
@@ -1739,8 +1764,23 @@ function GuitarHero({ song, bars, easy, bpm, setBpm, playing, onStart, onStop, a
         if (m) {
           m.an.getFloatTimeDomainData(m.buf); let r = 0; for (let i = 0; i < m.buf.length; i++) r += m.buf[i] * m.buf[i]; r = Math.sqrt(r / m.buf.length);
           if (lvl.current) lvl.current.style.width = Math.min(100, r * 900) + '%';
-          if (r > 0.012 && r > m.avg * 2.4 && r > m.prev * 1.25 && tNow - m.last > 110) { m.last = tNow; hit(engine.ctx.currentTime - m.buf.length / engine.ctx.sampleRate / 2); }
+          // under inräkningen mäter vi hur högt det är i rummet utan att du spelar
+          if (now < 0) { m.fn = (m.fn || 0) + 1; m.floor += (r - m.floor) / m.fn; } // medelnivån i rummet
+          if (now >= -0.5 && r > Math.max(0.015, m.floor * 2.2) && r > m.avg * 2.4 && r > m.prev * 1.25 && tNow - m.last > 110) {
+            m.last = tNow; m.pend.push({ t0: engine.ctx.currentTime - m.buf.length / engine.ctx.sampleRate / 2, at: tNow + 90 });
+          }
           m.avg = m.avg * 0.94 + r * 0.06; m.prev = r;
+          // räkna bara anslag som låter som rätt ackord (inte trumslag, prat eller knackningar)
+          while (m.pend.length && m.pend[0].at <= tNow) {
+            const pd = m.pend.shift(), ppos = ghPosAt(pd.t0 - (p.calib.mic || 0) / 1000); if (ppos == null) continue;
+            let near = null, bd = 1e9; for (const ev of g.evs) { if (ev.res) continue; const d = Math.abs(ev.pos - ppos); if (d < bd) { bd = d; near = ev; } if (ev.pos > ppos + 3) break; }
+            if (!near) continue;
+            const { ch, tot } = chromaFrom(m.an2, m.fbuf); if (tot <= 0) continue;
+            const want = chordPcs(near.chord, p.easy); let inC = 0; ch.forEach((v, pc) => { if (want.has(pc)) inC += v; });
+            const match = inC / tot, need = 0.25 + want.size * 0.075; // rätt toner ska dominera
+            if (match >= need) hit(pd.t0);
+            else if (bd * sd * 1000 < p.win.g && Math.max(...ch) / (tot / 12) > 2.5) g.pops.push({ t: tNow, txt: 'Fel ackord?', c: '#ff9a5c' }); // bara om det lät som toner, inte knackningar
+          }
         }
       }
       // HUD (bara när något ändrats)
@@ -2162,7 +2202,7 @@ function GuitarHero({ song, bars, easy, bpm, setBpm, playing, onStart, onStop, a
         <h2>Guitar Hero-läge</h2>
         <p className="muted">Ackordslagen rullar ner längs strängarna. Slå när de når de lysande ringarna längst ner. Fyllda noter är nedslag, ihåliga är uppslag.</p>
         <div className="gh-modes">
-          ${[['tap', 'Tryck på skärmen', 'Tryck på den stora knappen eller mellanslag i takt.'], ['mic', 'Mikrofon', 'Appen hör när du slår på gitarren. Använd hörlurar.'], ['watch', 'Bara titta', 'Spela med på gitarren utan poäng.']].map(([id, t, d]) =>
+          ${[['tap', 'Tryck på skärmen', 'Tryck på den stora knappen eller mellanslag i takt.'], ['mic', 'Mikrofon', 'Appen hör när du slår an och kollar att det är rätt ackord. Var tyst under inräkningen.'], ['watch', 'Bara titta', 'Spela med på gitarren utan poäng.']].map(([id, t, d]) =>
             html`<button key=${id} className="gh-mode" aria-pressed=${mode === id} onClick=${() => setMode(id)}><b>${t}</b><span>${d}</span></button>`)}
         </div>
         <div className="row between"><span className="label">Bana</span>
@@ -2340,44 +2380,97 @@ function SkankStrip({ chordKey, easy }) {
 /* ---------------------------------------------------------------- mikrofon: tonhöjd och ackordkoll */
 const OPEN_MIDI = [40, 45, 50, 55, 59, 64];
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+// McLeod-metoden: normaliserad autokorrelation, väljer första starka toppen (undviker oktavfel)
 function detectPitch(buf, sr) {
-  const SIZE = buf.length; let rms = 0;
-  for (let i = 0; i < SIZE; i++) rms += buf[i] * buf[i];
-  if (Math.sqrt(rms / SIZE) < 0.012) return -1;
-  let r1 = 0, r2 = SIZE - 1; const th = 0.2;
-  for (let i = 0; i < SIZE / 2; i++) if (Math.abs(buf[i]) < th) { r1 = i; break; }
-  for (let i = 1; i < SIZE / 2; i++) if (Math.abs(buf[SIZE - i]) < th) { r2 = SIZE - i; break; }
-  const b = buf.slice(r1, r2), n = b.length, c = new Float32Array(n);
-  for (let i = 0; i < n; i++) { let s = 0; for (let j = 0; j < n - i; j++) s += b[j] * b[j + i]; c[i] = s; }
-  let d = 0; while (d < n - 1 && c[d] > c[d + 1]) d++;
-  let mv = -1, mp = -1; for (let i = d; i < n; i++) if (c[i] > mv) { mv = c[i]; mp = i; }
-  if (mp <= 0 || mp >= n - 1) return -1;
-  const x1 = c[mp - 1], x2 = c[mp], x3 = c[mp + 1], a = (x1 + x3 - 2 * x2) / 2, bb = (x3 - x1) / 2;
-  const T0 = a ? mp - bb / (2 * a) : mp; return sr / T0;
+  const N = buf.length; let e = 0;
+  for (let i = 0; i < N; i++) e += buf[i] * buf[i];
+  const rms = Math.sqrt(e / N);
+  if (rms < 0.004) return { hz: -1, clarity: 0, rms };
+  const minLag = Math.floor(sr / 1100), maxLag = Math.min(Math.floor(sr / 65), Math.floor(N / 2));
+  const nsdf = new Float32Array(maxLag + 2);
+  for (let tau = minLag; tau <= maxLag + 1; tau++) {
+    let acf = 0, m = 0;
+    for (let j = 0; j < N - tau; j++) { const a = buf[j], b = buf[j + tau]; acf += a * b; m += a * a + b * b; }
+    nsdf[tau] = m > 0 ? (2 * acf) / m : 0;
+  }
+  // nyckeltoppar: max i varje positivt område
+  const peaks = []; let pos = false, best = -1, bi = -1;
+  for (let tau = minLag + 1; tau <= maxLag; tau++) {
+    const v = nsdf[tau];
+    if (v > 0 && nsdf[tau - 1] <= 0) { pos = true; best = -1; }
+    if (pos && v > best) { best = v; bi = tau; }
+    if (pos && v <= 0 && nsdf[tau - 1] > 0) { pos = false; if (bi > 0) peaks.push(bi); }
+  }
+  if (pos && bi > 0) peaks.push(bi);
+  if (!peaks.length) return { hz: -1, clarity: 0, rms };
+  const top = Math.max(...peaks.map((t) => nsdf[t]));
+  const t0 = peaks.find((t) => nsdf[t] >= 0.9 * top);
+  const a = nsdf[t0 - 1], b = nsdf[t0], c = nsdf[t0 + 1], den = a - 2 * b + c;
+  const tau = den ? t0 + (a - c) / (2 * den) : t0;
+  return { hz: sr / tau, clarity: b, rms };
 }
 class Mic {
-  async start() {
+  async start(opts = {}) {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('nosupport');
-    this.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+    this.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: !!opts.aec, noiseSuppression: false, autoGainControl: false } });
     engine.init(); const c = engine.ctx;
-    this.src = c.createMediaStreamSource(this.stream); this.an = c.createAnalyser(); this.an.fftSize = 4096; this.an.smoothingTimeConstant = 0.6;
-    this.src.connect(this.an); this.time = new Float32Array(2048); this.freq = new Float32Array(this.an.frequencyBinCount);
+    this.src = c.createMediaStreamSource(this.stream); this.an = c.createAnalyser(); this.an.fftSize = 8192; this.an.smoothingTimeConstant = 0;
+    this.src.connect(this.an); this.time = new Float32Array(8192); this.freq = new Float32Array(this.an.frequencyBinCount);
   }
-  pitch() { this.an.getFloatTimeDomainData(this.time); return detectPitch(this.time, engine.ctx.sampleRate); }
-  chroma() {
+  read() { this.an.getFloatTimeDomainData(this.time); }
+  rms() { const t = this.time; let e = 0; for (let i = t.length - 1024; i < t.length; i++) e += t[i] * t[i]; return Math.sqrt(e / 1024); }
+  pitch() { return detectPitch(this.time.subarray(this.time.length - 2048), engine.ctx.sampleRate); }
+  chroma() { return chromaFrom(this.an, this.freq); }
+  // vilka toner som klingar: verkliga toppar i spektrumet, var och en kopplad till närmaste ton (MIDI), adderas till acc
+  notes(acc) {
     this.an.getFloatFrequencyData(this.freq);
-    const sr = engine.ctx.sampleRate, binHz = sr / this.an.fftSize, ch = new Array(12).fill(0); let tot = 0;
-    for (let i = 1; i < this.freq.length; i++) {
-      const f = i * binHz; if (f < 75 || f > 1200) continue;
-      const m = Math.pow(10, this.freq[i] / 20), e = m * m, pc = ((Math.round(12 * Math.log2(f / 440)) + 69) % 12 + 12) % 12;
-      ch[pc] += e; tot += e;
+    const fr = this.freq, binHz = engine.ctx.sampleRate / this.an.fftSize, lo = Math.ceil(70 / binHz), hi = Math.floor(1000 / binHz);
+    let fm = -1e9; for (let i = lo; i < hi; i++) if (fr[i] > fm) fm = fr[i];
+    const floor = fm - 30; // topper minst 3 % av den starkaste
+    for (let k = lo; k < hi; k++) {
+      const b = fr[k]; if (b <= floor || b <= fr[k - 1] || b < fr[k + 1]) continue;
+      const la = fr[k - 1] / 8.686, lb = b / 8.686, lc = fr[k + 1] / 8.686, den = la - 2 * lb + lc;
+      const f = (k + (den ? (0.5 * (la - lc)) / den : 0)) * binHz, md = 69 + 12 * Math.log2(f / 440), m = Math.round(md);
+      if (Math.abs(md - m) < 0.4 && m >= 0 && m < 128) acc[m] += Math.pow(10, b / 20);
     }
-    return { ch, tot };
   }
   stop() { if (this.stream) this.stream.getTracks().forEach((t) => t.stop()); if (this.src) this.src.disconnect(); this.stream = null; }
 }
+// Tonklasser 0–11 (C … B) ur ett spektrum, 70–1000 Hz, amplitudviktat
+function chromaFrom(an, freq) {
+  an.getFloatFrequencyData(freq);
+  const sr = engine.ctx.sampleRate, binHz = sr / an.fftSize, ch = new Array(12).fill(0); let tot = 0;
+  for (let i = Math.ceil(70 / binHz); i < freq.length && i * binHz <= 1000; i++) {
+    const m = Math.pow(10, freq[i] / 20), pc = ((Math.round(12 * Math.log2((i * binHz) / 440)) + 69) % 12 + 12) % 12;
+    ch[pc] += m; tot += m;
+  }
+  return { ch, tot };
+}
 const chordPcs = (k, easy) => new Set(voicing(k, easy).frets.map((f, i) => (f < 0 ? null : (OPEN_MIDI[i] + f) % 12)).filter((x) => x !== null));
-
+const STR_NAME = ['E', 'A', 'D', 'G', 'B', 'e'];
+// Bedöm ett anslag utifrån varje tons grundfrekvens. Toner som bara är övertoner av ackordets egna toner räknas inte som fel.
+function judgeChord(k, easy, acc) {
+  const v = voicing(k, easy), strings = [], tips = [];
+  const want = new Set(), harm = new Set();
+  v.frets.forEach((f, i) => { if (f >= 0) want.add(OPEN_MIDI[i] + f); });
+  want.forEach((m) => [12, 19, 24, 28, 31, 34, 36].forEach((d) => harm.add(m + d)));
+  const E = (m) => acc[m] || 0, Ef = (m) => (m < 50 ? Math.max(E(m), E(m + 12) * 0.6) : E(m)); // låga toner tar mobilmikrofonen dåligt
+  const ref = Math.max(...[...want].map(Ef)) || 1e-9;
+  for (let i = 0; i < 6; i++) {
+    const f = v.frets[i];
+    if (f < 0) { strings.push({ i, st: 'x' }); continue; }
+    const m = OPEN_MIDI[i] + f;
+    strings.push({ i, st: Ef(m) >= 0.1 * ref ? 'ok' : 'weak', f, fi: v.fingers[i], m });
+  }
+  const odd = (m, th) => !want.has(m) && E(m) > (harm.has(m) ? 0.9 : th) * ref;
+  strings.forEach((s) => {
+    if (s.st === 'x') { if (odd(OPEN_MIDI[s.i], 0.25)) { s.st = 'extra'; tips.push(`Slå inte an ${STR_NAME[s.i]}-strängen i ${CHORD_DB[k].name}.`); } return; }
+    if (s.f > 0 && odd(OPEN_MIDI[s.i], 0.2)) { s.st = 'weak'; tips.push(`${STR_NAME[s.i]}-strängen låter öppen. Tryck ner ${s.fi}:an ordentligt på band ${s.f}.`); return; }
+    if (s.f > 0 && (odd(s.m + 1, 0.45) || odd(s.m - 1, 0.45))) { s.st = 'weak'; tips.push(`${STR_NAME[s.i]}-strängen låter som fel band. Kolla att ${s.fi}:an ligger på band ${s.f}.`); return; }
+    if (s.st === 'weak') tips.push(s.f > 0 ? `${STR_NAME[s.i]}-strängen hörs dåligt. Tryck ner ${s.fi}:an på band ${s.f} hårdare, nära bandstaven.` : `Den öppna ${STR_NAME[s.i]}-strängen hörs inte. Se till att inget finger nuddar den.`);
+  });
+  return { ok: tips.length === 0, strings, tips: [...new Set(tips)].slice(0, 3) };
+}
 function Needle({ value, label, sub, good, range = 50, unitL = 'låg', unitR = 'hög' }) {
   // value i -range..range, null = ingen signal
   const v = value == null ? 0 : Math.max(-range, Math.min(range, value)), ang = (v / range) * 60;
@@ -2399,85 +2492,146 @@ function Needle({ value, label, sub, good, range = 50, unitL = 'låg', unitR = '
   </div>`;
 }
 
+const MIC_BLOCKED = html`<div className="coach" style=${{ background: 'color-mix(in oklab,var(--ember) 10%,var(--surface-2))' }}>
+  <div className="big" style=${{ color: 'var(--ember)', fontSize: 26 }}>Mic</div>
+  <div style=${{ display: 'grid', gap: 6 }}><b>Mikrofonen gick inte att starta</b>
+    <p className="muted" style=${{ fontSize: 13 }}>Inne i Claude är mikrofonen blockerad. Öppna appen från din startskärm (eller adressen på GitHub Pages) i Chrome och tillåt mikrofonen när Chrome frågar.</p></div></div>`;
+
 function MicTools({ easy, onTuned, onChordOk }) {
   const [mode, setMode] = useState('tune');
-  const [state, setState] = useState('off'); // off | on | blocked
-  const [read, setRead] = useState({ cents: null, str: null, hz: null });
+  const [state, setState] = useState('off');
+  const [read, setRead] = useState({ cents: null, str: null, hz: null, live: false });
   const [target, setTarget] = useState('auto');
   const [hold, setHold] = useState(0);
   const [chord, setChord] = useState('Em');
-  const [match, setMatch] = useState(null);
-  const [done, setDone] = useState(false);
-  const mic = useRef(null), raf = useRef(0), holdT = useRef(0), sm = useRef(0), S = useRef({});
-  S.current = { mode, target, chord, easy };
+  const mic = useRef(null), raf = useRef(0), S = useRef({});
+  S.current = { target };
   const stop = () => { cancelAnimationFrame(raf.current); if (mic.current) mic.current.stop(); mic.current = null; setState('off'); };
   useEffect(() => stop, []);
   const start = async () => {
     try {
-      const m = new Mic(); await m.start(); mic.current = m; setState('on');
-      let last = 0, lastT = performance.now();
+      const m = new Mic(); await m.start({ aec: false }); mic.current = m; setState('on');
+      const T = { hist: [], lock: null, lockT: 0, lastValid: 0, env: 0.01, ema: null, holdT: 0, far: 0, last: 0 };
       const loop = (t) => {
         raf.current = requestAnimationFrame(loop);
-        if (t - last < 70) return; const dt = t - lastT; last = t; lastT = t;
-        const s = S.current;
-        if (s.mode === 'tune') {
-          const hz = m.pitch();
-          if (hz < 60 || hz > 1000) { setRead((r) => ({ ...r, cents: null })); holdT.current = 0; setHold(0); return; }
-          let idx = s.target === 'auto' ? 0 : s.target;
-          if (s.target === 'auto') { let bd = 1e9; STRINGS.forEach((x, i) => { const d = Math.abs(1200 * Math.log2(hz / x.freq)); if (d < bd) { bd = d; idx = i; } }); }
-          const cents = 1200 * Math.log2(hz / STRINGS[idx].freq);
-          setRead({ cents, str: idx, hz });
-          if (Math.abs(cents) < 6) { holdT.current += dt; if (holdT.current > 1000) { holdT.current = -1e9; onTuned(idx); } }
-          else if (holdT.current > 0) holdT.current = 0;
-          setHold(Math.max(0, Math.min(1, holdT.current / 1000)));
-        } else {
-          const { ch, tot } = m.chroma();
-          if (tot < 1e-7) { sm.current *= 0.85; setMatch(sm.current > 0.05 ? sm.current : null); return; }
-          const pcs = chordPcs(s.chord, s.easy); let inC = 0; ch.forEach((e, pc) => { if (pcs.has(pc)) inC += e; });
-          const share = inC / tot, score = Math.max(0, Math.min(1, (share - 0.35) / 0.5));
-          sm.current = sm.current * 0.7 + score * 0.3; setMatch(sm.current);
-          if (sm.current > 0.8) { holdT.current += dt; if (holdT.current > 1500) { holdT.current = -1e9; setDone(true); onChordOk(s.chord); } }
-          else if (holdT.current > 0) holdT.current = 0;
+        if (t - T.last < 45) return; const dt = t - T.last; T.last = t;
+        m.read(); const r = m.rms(), pr = m.pitch(), tgt = S.current.target;
+        const onset = r > 0.02 && r > T.env * 2.2; T.env = T.env * 0.85 + r * 0.15;
+        if (onset) { T.hist = []; T.ema = null; if (tgt === 'auto') T.lock = null; }
+        const valid = pr.hz > 60 && pr.hz < 1000 && pr.clarity > 0.88 && r > 0.005;
+        if (valid) {
+          T.hist.push(pr.hz); if (T.hist.length > 5) T.hist.shift();
+          let med = [...T.hist].sort((a, b) => a - b)[Math.floor(T.hist.length / 2)];
+          const nearest = (hz) => { let bd = 1e9, bi = 0; STRINGS.forEach((x, i) => { const d = Math.abs(1200 * Math.log2(hz / x.freq)); if (d < bd) { bd = d; bi = i; } }); return bi; };
+          let idx;
+          if (tgt !== 'auto') idx = tgt;
+          else {
+            if (T.lock == null || t - T.lastValid > 900) T.lock = nearest(med);
+            // byt sträng bara om en annan sträng hörs tydligt flera gånger i rad
+            const cand = nearest(med), dist = Math.abs(1200 * Math.log2(med / STRINGS[T.lock].freq));
+            T.far = cand !== T.lock && dist > 300 ? T.far + 1 : 0;
+            if (T.far >= 4) { T.lock = cand; T.far = 0; T.ema = null; }
+            idx = T.lock;
+          }
+          const ref = STRINGS[idx].freq;
+          while (med > ref * 1.42) med /= 2; while (med < ref / 1.42) med *= 2; // oktavfel
+          const cents = 1200 * Math.log2(med / ref);
+          T.ema = T.ema == null ? cents : T.ema * 0.6 + cents * 0.4; T.lastValid = t;
+          setRead({ cents: T.ema, str: idx, hz: med, live: true });
+          if (Math.abs(T.ema) < 6) { T.holdT += dt; if (T.holdT > 1000) { T.holdT = -1e9; onTuned(idx); } } else if (T.holdT > 0) T.holdT = 0;
+          setHold(Math.max(0, Math.min(1, T.holdT / 1000)));
+        } else if (t - T.lastValid > 1200) { setRead((x) => (x.live ? { ...x, live: false } : x)); if (T.holdT > 0) T.holdT = 0; setHold(0); }
+      };
+      raf.current = requestAnimationFrame(loop);
+    } catch (e) { setState('blocked'); }
+  };
+  const live = read.live, cents = live ? read.cents : null, good = cents != null && Math.abs(cents) < 6;
+  return html`<section className="card" style=${{ display: 'grid', gap: 16 }}>
+    <div className="row between">
+      <div className="seg" role="group" aria-label="Mikrofonläge">
+        <button aria-pressed=${mode === 'tune'} onClick=${() => setMode('tune')}>Stämmare</button>
+        <button aria-pressed=${mode === 'chord'} onClick=${() => { stop(); setMode('chord'); }}>Kolla grepp</button>
+      </div>
+      ${state === 'on' && mode === 'tune' ? html`<button className="chip warn" onClick=${stop}>Stäng av mikrofonen</button>` : null}
+    </div>
+    ${mode === 'tune' ? html`
+      ${state === 'off' ? html`<div style=${{ display: 'grid', gap: 12, justifyItems: 'start' }}>
+        <p className="lead">Knäpp en sträng i taget och låt den klinga. Nålen visar om strängen är för låg eller för hög. Grönt i mitten betyder stämd.</p>
+        <button className="play" onClick=${start}>${I.play}Starta mikrofonen</button></div>` : null}
+      ${state === 'blocked' ? MIC_BLOCKED : null}
+      ${state === 'on' ? html`<div style=${{ display: 'grid', gap: 14 }}>
+        <div className="seg" role="group" aria-label="Sträng" style=${{ justifySelf: 'center' }}>
+          <button aria-pressed=${target === 'auto'} onClick=${() => setTarget('auto')}>Auto</button>
+          ${STRINGS.map((s, i) => html`<button key=${i} aria-pressed=${target === i} onClick=${() => setTarget(i)}>${s.note}</button>`)}
+        </div>
+        <${Needle} value=${cents} good=${good} label=${read.str == null ? '–' : STRINGS[read.str].note + (good ? ' ✓' : '')}
+          sub=${!live ? (read.str == null ? 'Knäpp en sträng' : 'Knäpp ' + STRINGS[read.str].note + '-strängen igen, eller en annan sträng') : (cents > 0 ? '+' : '') + cents.toFixed(0) + ' cent' + (good ? ' · stämd' : cents < 0 ? ' · vrid upp' : ' · vrid ner')} />
+        <div className="xpbar" style=${{ maxWidth: 300, justifySelf: 'center', width: '100%' }}><i style=${{ width: hold * 100 + '%', background: 'var(--leaf)' }}></i></div>
+        <p className="muted" style=${{ fontSize: 12, textAlign: 'center' }}>Auto låser fast vid strängen du knäppte, även när tonen klingar av. Krånglar det: välj strängen själv ovan.</p>
+      </div>` : null}` : html`<div style=${{ display: 'grid', gap: 12 }}>
+        <div className="seg" role="group" aria-label="Ackord" style=${{ justifySelf: 'start', maxWidth: '100%' }}>
+          ${['Em', 'Am', 'C', 'G', 'D', 'E', 'A', 'Dm', 'F'].map((k) => html`<button key=${k} aria-pressed=${chord === k} onClick=${() => setChord(k)}>${k}</button>`)}
+        </div>
+        <${ChordCheck} k=${chord} easy=${easy} onOk=${onChordOk} />
+      </div>`}
+  </section>`;
+}
+
+function ChordCheck({ k, easy, onOk }) {
+  const [state, setState] = useState('off'); // off | on | blocked
+  const [phase, setPhase] = useState('wait'); // wait | listen | result
+  const [res, setRes] = useState(null);
+  const [streak, setStreak] = useState(0);
+  const mic = useRef(null), raf = useRef(0), lvl = useRef(null), K = useRef({});
+  K.current = { k, easy, onOk };
+  const stop = () => { cancelAnimationFrame(raf.current); if (mic.current) mic.current.stop(); mic.current = null; setState('off'); setPhase('wait'); };
+  useEffect(() => stop, []);
+  useEffect(() => { setRes(null); setPhase('wait'); setStreak(0); }, [k, easy]);
+  const start = async () => {
+    try {
+      const m = new Mic(); await m.start({ aec: false }); mic.current = m; setState('on'); setPhase('wait');
+      const C = { env: 0.01, last: -1e9, onset: null, acc: null };
+      const loop = (t) => {
+        raf.current = requestAnimationFrame(loop);
+        m.read(); const r = m.rms();
+        if (lvl.current) lvl.current.style.width = Math.min(100, r * 600) + '%';
+        if (!C.onset && r > 0.02 && r > C.env * 2.5 && t - C.last > 700) { C.onset = t; C.acc = new Array(128).fill(0); setPhase('listen'); }
+        C.env = C.env * 0.9 + r * 0.1;
+        if (C.onset) {
+          const age = t - C.onset;
+          if (age > 120 && age < 900) m.notes(C.acc);
+          if (age >= 900) {
+            const s = K.current, out = judgeChord(s.k, s.easy, C.acc);
+            setRes(out); setPhase('result'); C.last = t; C.onset = null;
+            setStreak((n) => (out.ok ? n + 1 : 0));
+            if (out.ok && s.onOk) s.onOk(s.k);
+          }
         }
       };
       raf.current = requestAnimationFrame(loop);
     } catch (e) { setState('blocked'); }
   };
-  const cents = read.cents, good = cents != null && Math.abs(cents) < 6;
-  return html`<section className="card" style=${{ display: 'grid', gap: 16 }}>
-    <div className="row between">
-      <div className="seg" role="group" aria-label="Mikrofonläge">
-        <button aria-pressed=${mode === 'tune'} onClick=${() => { setMode('tune'); holdT.current = 0; }}>Stämmare</button>
-        <button aria-pressed=${mode === 'chord'} onClick=${() => { setMode('chord'); holdT.current = 0; setDone(false); }}>Ackordkoll</button>
+  const name = CHORD_DB[k].name;
+  return html`<div className="cc">
+    ${state === 'off' ? html`<div className="row between" style=${{ alignItems: 'center' }}>
+      <p className="lead" style=${{ flex: '1 1 220px' }}>Ta greppet ${name}, tryck på knappen och slå an en gång. Appen lyssnar och säger vilka strängar som låter rätt.</p>
+      <button className="play" onClick=${start}>${I.play}Kolla mitt ${name}</button></div>` : null}
+    ${state === 'blocked' ? MIC_BLOCKED : null}
+    ${state === 'on' ? html`<div style=${{ display: 'grid', gap: 12 }}>
+      <div className="row between">
+        <b style=${{ fontSize: 15 }}>${phase === 'listen' ? 'Lyssnar…' : phase === 'result' ? 'Slå an igen för att prova en gång till' : 'Slå an ' + name + ' en gång och låt det klinga'}</b>
+        <button className="chip warn" onClick=${stop}>Stäng av</button>
       </div>
-      ${state === 'on' ? html`<button className="chip warn" onClick=${stop}>Stäng av mikrofonen</button>` : null}
-    </div>
-    ${state === 'off' ? html`<div style=${{ display: 'grid', gap: 12, justifyItems: 'start' }}>
-        <p className="lead">${mode === 'tune' ? 'Knäpp en sträng så visar nålen om den är för låg eller för hög. Grön mitt = stämd.' : 'Ta ett grepp och slå an. Mätaren visar hur rent ackordet låter, så att du hör om någon sträng surrar eller dämpas.'}</p>
-        <button className="play" onClick=${start}>${I.play}Starta mikrofonen</button></div>` : null}
-    ${state === 'blocked' ? html`<div className="coach" style=${{ background: 'color-mix(in oklab,var(--ember) 10%,var(--surface-2))' }}>
-        <div className="big" style=${{ color: 'var(--ember)', fontSize: 26 }}>Mic</div>
-        <div style=${{ display: 'grid', gap: 6 }}><b>Mikrofonen är blockerad i den här vyn</b>
-          <p className="muted" style=${{ fontSize: 13 }}>Inne i Claude får sidan inte använda mikrofonen. Lägg appen som en egen webbsida, till exempel gratis via GitHub Pages eller Netlify Drop, och öppna den i Chrome på mobilen eller datorn. Då frågar Chrome om lov och stämmaren fungerar. Referenstonerna nedan fungerar redan nu.</p></div></div>` : null}
-    ${state === 'on' && mode === 'tune' ? html`<div style=${{ display: 'grid', gap: 14 }}>
-        <div className="seg" role="group" aria-label="Sträng" style=${{ justifySelf: 'center' }}>
-          <button aria-pressed=${target === 'auto'} onClick=${() => setTarget('auto')}>Auto</button>
-          ${STRINGS.map((s, i) => html`<button key=${i} aria-pressed=${target === i} onClick=${() => setTarget(i)}>${s.note}</button>`)}
-        </div>
-        <${Needle} value=${cents} good=${good} label=${read.str == null ? '–' : STRINGS[read.str].note + (cents == null ? '' : good ? ' ✓' : '')}
-          sub=${cents == null ? 'Knäpp en sträng' : (cents > 0 ? '+' : '') + cents.toFixed(0) + ' cent · ' + read.hz.toFixed(1) + ' Hz' + (good ? '' : cents < 0 ? ' · vrid upp' : ' · vrid ner')} />
-        <div className="xpbar" style=${{ maxWidth: 300, justifySelf: 'center', width: '100%' }}><i style=${{ width: hold * 100 + '%', background: 'var(--leaf)' }}></i></div>
+      <div className="gh-lvl cc-lvl"><i ref=${lvl}></i></div>
+      ${res ? html`<div className=${'cc-res ' + (res.ok ? 'ok' : 'bad')}>
+        <div className="cc-head"><span className="cc-icon">${res.ok ? '✓' : '!'}</span>
+          <div><b>${res.ok ? 'Rätt! ' + name + ' klingar rent' : 'Nästan! Det här kan bli bättre:'}</b>
+          ${res.ok && streak > 1 ? html`<small>${streak} rätt i rad</small>` : null}</div></div>
+        <div className="cc-strings">${res.strings.map((s) => html`<span key=${s.i} className=${'cc-s ' + s.st}><b>${STR_NAME[s.i]}</b><i>${s.st === 'ok' ? '✓' : s.st === 'x' ? '×' : s.st === 'extra' ? 'slå inte' : 'svag'}</i></span>`)}</div>
+        ${res.tips.length ? html`<ul className="cc-tips">${res.tips.map((x, i) => html`<li key=${i}>${x}</li>`)}</ul>` : null}
       </div>` : null}
-    ${state === 'on' && mode === 'chord' ? html`<div style=${{ display: 'grid', gap: 14 }}>
-        <div className="seg" role="group" aria-label="Ackord" style=${{ justifySelf: 'center' }}>
-          ${['Em', 'Am', 'C', 'G', 'D', 'E', 'A', 'Dm'].map((k) => html`<button key=${k} aria-pressed=${chord === k} onClick=${() => { setChord(k); setDone(false); holdT.current = 0; }}>${k}</button>`)}
-        </div>
-        <${Needle} value=${match == null ? null : (match - 0.5) * 100} good=${match > 0.8} range=${50} unitL="surrigt" unitR="rent"
-          label=${match == null ? CHORD_DB[chord].name : done ? 'Rent! ✓' : Math.round(match * 100) + '%'}
-          sub=${match == null ? 'Slå an ' + CHORD_DB[chord].name + ' och låt det klinga' : match > 0.8 ? 'Håll kvar…' : 'Tryck fingertopparna nära bandet'} />
-        <div style=${{ maxWidth: 200, justifySelf: 'center', width: '100%' }}><${Diagram} k=${chord} easy=${easy} onClick=${() => engine.playChord(voicing(chord, easy).frets)} /></div>
-      </div>` : null}
-  </section>`;
+    </div>` : null}
+  </div>`;
 }
 
 /* Rytmmätaren: knacka på varje & och se om du ligger före eller efter */
@@ -2808,6 +2962,15 @@ function App() {
     </div>
   </div>`;
 
+  // ett rent ackord via mikrofonen: full XP första gången, sedan lite per rätt försök
+  const chordOk = (k) => {
+    const first = !(P.current.chordsOk || []).includes(k);
+    award(first ? 25 : 3, first ? CHORD_DB[k].name + ' rätt för första gången!' : '', (n) => {
+      const map = { Em: 'em', Am: 'am' }; if (map[k] && !n.missions.includes(map[k])) { n.missions.push(map[k]); n.xp += 50; }
+      n.chordsOk = [...new Set([...(n.chordsOk || []), k])];
+      if (n.chordsOk.includes('C') && n.chordsOk.includes('G') && !n.missions.includes('cg')) { n.missions.push('cg'); n.xp += 60; }
+    }, !first);
+  };
   const AckordTab = html`<div style=${{ display: 'grid', gap: 22 }}>
     <div className="row between">
       <div><h2 className="page">Ackordtabell</h2><p className="lead">29 grepp, varav 6 barréackord och 5 rockgrepp. Klicka på ett ackord för att höra det och se det stort.</p></div>
@@ -2816,6 +2979,10 @@ function App() {
       </div>
     </div>
     <${Fretboard} k=${tableChord} easy=${easy} />
+    <section className="card" style=${{ display: 'grid', gap: 10 }}>
+      <div className="section-head" style=${{ margin: 0 }}><h3>Gör jag rätt?</h3><p>Appen lyssnar på ditt ${CHORD_DB[tableChord].name} och säger vilka strängar som låter rätt</p></div>
+      <${ChordCheck} k=${tableChord} easy=${easy} onOk=${chordOk} />
+    </section>
     ${TABLE.filter((s) => filter === 'all' || (filter === 'barre') === (s.id === 'barre')).map((s) => html`<section key=${s.id}>
       <div className="section-head"><h3>${s.title}</h3><p>${s.sub}</p></div>
       <div className="diagrams">${s.chords.map((k) => html`<${Diagram} key=${k} k=${k} easy=${easy} selected=${tableChord === k} onClick=${() => { setTableChord(k); hear(k); }} />`)}</div>
@@ -2931,10 +3098,7 @@ function App() {
     <div><h2 className="page">Stämning och lyssna</h2><p className="lead">Stämmaren och ackordkollen lyssnar på din gitarr genom mikrofonen. Referenstonerna längre ner fungerar alltid.</p></div>
     <${MicTools} easy=${easy}
       onTuned=${(i) => award(10, 'Sträng ' + STRINGS[i].n + ' stämd', (n) => { if (!n.tuned.includes(i)) n.tuned.push(i); })}
-      onChordOk=${(k) => award(25, CHORD_DB[k].name + ' lät rent!', (n) => {
-        const map = { Em: 'em', Am: 'am' }; if (map[k] && !n.missions.includes(map[k])) { n.missions.push(map[k]); n.xp += 50; }
-        n.chordsOk = [...new Set([...(n.chordsOk || []), k])];
-        if (n.chordsOk.includes('C') && n.chordsOk.includes('G') && !n.missions.includes('cg')) { n.missions.push('cg'); n.xp += 60; } })} />
+      onChordOk=${chordOk} />
     <div className="row between">
       <div><h3 style=${{ fontSize: 18 }}>Referenstoner</h3><p className="muted" style=${{ fontSize: 14 }}>Klicka på en sträng och vrid stämskruven tills din sträng låter likadant.</p></div>
       <div className="checks"><label><input type="checkbox" id="tloop" checked=${tLoop} onChange=${(e) => setTLoop(e.target.checked)} />Upprepa vald sträng (händerna fria)</label></div>
