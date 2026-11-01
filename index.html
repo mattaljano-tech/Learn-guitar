@@ -175,6 +175,7 @@ input[type=range]{width:100%;accent-color:var(--brass);height:20px}
 .beat .t{font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--faint);text-transform:uppercase}
 .beat.rest .a{color:var(--faint)}
 .beat.hit{background:color-mix(in oklab,var(--brass) 14%,var(--surface-2));border-color:color-mix(in oklab,var(--brass) 35%,transparent)}
+.beat.edit{cursor:pointer;border:1px dashed var(--brass)}
 .beat.cur{background:linear-gradient(160deg,var(--brass),var(--brass-2));transform:scale(1.04)}
 .beat.cur *{color:var(--brass-ink)!important}
 .count{font-family:var(--f-display);font-weight:800;color:var(--brass);font-size:15px}
@@ -195,6 +196,9 @@ input[type=range]{width:100%;accent-color:var(--brass);height:20px}
 /* Chart */
 .chart{display:grid;gap:14px}
 .part{display:grid;gap:8px}
+.part.dim{opacity:.45}
+.part-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.loopchip{padding:4px 10px;font-size:12px}
 .bars{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px}
 .bar{position:relative;padding:12px 6px 8px;border-radius:10px;background:var(--surface-2);text-align:center;border:1px solid transparent}
 .bar:hover{border-color:var(--line)}
@@ -277,7 +281,7 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 .tstr .wire{height:6px;border-radius:4px}
 
 /* Modal */
-.scrim{position:fixed;inset:0;z-index:50;background:color-mix(in oklab,var(--bg) 70%,transparent);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:16px}
+.scrim{position:fixed;inset:0;z-index:57;background:color-mix(in oklab,var(--bg) 70%,transparent);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:16px}
 .modal{width:100%;max-width:460px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px;display:grid;gap:14px;max-height:100%;overflow:auto}
 .modal input[type=text]{width:100%;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
 .slots{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
@@ -475,6 +479,43 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 .cc-s.x{opacity:.55}
 .cc-tips{margin:0;padding-left:18px;display:grid;gap:6px;font-size:14px}
 
+/* Lägg till låt */
+.modal.ns{max-width:560px}
+.ns-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.ns-f{display:grid;gap:4px}
+.modal textarea{width:100%;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-family:var(--f-mono);font-size:14px;resize:vertical;min-height:120px;color:var(--text)}
+.ns-prev{display:grid;gap:8px;padding:12px;border-radius:12px;background:var(--surface-2);max-height:240px;overflow:auto}
+.ns-part{display:grid;gap:4px}
+.ns-bars{display:flex;flex-wrap:wrap;gap:4px}
+.ns-bars span{font-family:var(--f-display);font-weight:800;font-size:14px;padding:3px 8px;border-radius:8px;background:var(--surface-3)}
+@media (max-width:480px){.ns-row{grid-template-columns:1fr}}
+/* Tvåveckorsplan och F-vägen */
+.plan{display:grid;gap:12px;border-color:color-mix(in oklab,var(--brass) 45%,transparent)}
+.plan-dots{display:grid;grid-template-columns:repeat(14,minmax(0,1fr));gap:4px}
+.plan-dots i{height:8px;border-radius:4px;background:var(--surface-3)}
+.plan-dots i.done{background:linear-gradient(90deg,var(--leaf),var(--leaf-2))}
+.plan-dots i.cur{background:linear-gradient(90deg,var(--brass),var(--brass-2));animation:pulse 2s ease-in-out infinite}
+.plan-steps{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.plan-steps li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:var(--surface-2)}
+.plan-steps li.done{opacity:.6}
+.plan-steps li.done .tx{text-decoration:line-through}
+.plan-steps .ck,.fstep .ck{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;background:var(--surface-3);color:var(--muted)}
+.plan-steps li.done .ck,.fstep.ok .ck{background:var(--leaf);color:var(--leaf-ink)}
+.plan-steps .tx{font-size:14px;font-weight:600}
+.fpath{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.fstep{text-align:left;display:grid;gap:4px;align-content:start;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2)}
+.fstep b{font-size:14px}.fstep span:last-child{font-size:12px;color:var(--muted)}
+.fstep.sel{border-color:var(--brass)}
+@media (max-width:560px){.fpath{grid-template-columns:1fr}}
+/* Inställningar och vänsterhänt */
+.modal.settings{max-width:520px}
+.set-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding-top:12px;border-top:1px solid var(--line)}
+.set-row b,.set-sec b{display:block;font-size:15px}
+.set-row small,.set-sec small{display:block;font-size:12px;color:var(--muted)}
+.set-sec{display:grid;gap:8px;padding-top:12px;border-top:1px solid var(--line)}
+.set-sec textarea{width:100%;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-family:var(--f-mono);font-size:12px;color:var(--text);word-break:break-all}
+.lefty .board svg,.lefty .dg svg{transform:scaleX(-1)}
+.lefty .board svg text,.lefty .dg svg text{transform-box:fill-box;transform-origin:center;transform:scaleX(-1)}
 /* Gamification */
 .lvl{display:flex;align-items:center;gap:8px;padding:5px 10px 5px 6px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-size:12px;font-weight:700}
 .lvl .num{width:24px;height:24px;border-radius:50%;background:var(--brass);color:var(--brass-ink);display:inline-flex;align-items:center;justify-content:center;font-family:var(--f-display);font-weight:800;font-size:13px}
@@ -541,6 +582,8 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 .chal .pair span{padding:6px 18px;border-radius:14px;color:var(--faint);transition:all .1s}
 .chal .pair span.on{color:var(--brass-ink);background:var(--brass)}
 .chal .count{font-family:var(--f-display);font-weight:800;font-size:88px;line-height:1}
+.chal-mic{display:grid;gap:8px;justify-items:center;width:min(360px,100%)}
+.chal-mic b{font-family:var(--f-display);font-size:20px}
 .tapbtn{width:min(320px,100%);height:110px;border-radius:24px;background:var(--leaf);color:var(--leaf-ink);font-family:var(--f-display);font-weight:800;font-size:28px;box-shadow:0 10px 30px -12px var(--leaf)}
 .tapbtn:active{transform:scale(.97)}
 .timer{width:min(420px,100%)}
@@ -830,15 +873,45 @@ Object.assign(CHORD_DB, {
     standard: { frets: [-1, 3, 2, 0, 3, 3], fingers: [0, 2, 1, 0, 3, 4] },
     easy: { frets: [-1, 3, 2, 0, 3, 3], fingers: [0, 2, 1, 0, 3, 4], note: 'Inget lättare grepp, men ankaret hjälper' } },
 });
-for (const k of Object.keys(CHORD_DB)) CHORD_DB[k].root =41.2 * Math.pow(2, ROOT_SEMI[k[0]] / 12);
+// Fler grepp som ofta finns i riktiga låtar
+Object.assign(CHORD_DB, {
+  Am7: { name: 'Am7', fullName: 'A-moll 7', description: 'Am utan ringfingret. Mjukt och lite jazzigt.',
+    standard: { frets: [-1, 0, 2, 0, 1, 0], fingers: [0, 0, 2, 0, 1, 0] }, easy: { frets: [-1, 0, 2, 0, 1, 0], fingers: [0, 0, 2, 0, 1, 0], note: 'Redan två fingrar' } },
+  Dm7: { name: 'Dm7', fullName: 'D-moll 7', description: 'Pekfingret ligger platt över de två tunnaste strängarna på band 1.',
+    standard: { frets: [-1, -1, 0, 2, 1, 1], fingers: [0, 0, 0, 2, 1, 1], barre: { fret: 1, from: 4, to: 5, finger: 1 } }, easy: { frets: [-1, -1, 0, 2, 1, 1], fingers: [0, 0, 0, 2, 1, 1], barre: { fret: 1, from: 4, to: 5, finger: 1 }, note: 'Litet barré, två strängar' } },
+  Gmaj7: { name: 'Gmaj7', fullName: 'G-maj7', description: 'Som G men med pekfingret på band 2 på tunnaste strängen. Drömsk klang.',
+    standard: { frets: [3, 2, 0, 0, 0, 2], fingers: [3, 2, 0, 0, 0, 1] }, easy: { frets: [-1, -1, 0, 0, 0, 2], fingers: [0, 0, 0, 0, 0, 1], note: 'Ett finger' } },
+  Asus2: { name: 'Asus2', fullName: 'A-sus2', description: 'A-dur utan tersen: två fingrar på band 2 och öppen B-sträng.',
+    standard: { frets: [-1, 0, 2, 2, 0, 0], fingers: [0, 0, 1, 2, 0, 0] }, easy: { frets: [-1, 0, 2, 2, 0, 0], fingers: [0, 0, 1, 2, 0, 0], note: 'Redan två fingrar' } },
+  Asus4: { name: 'Asus4', fullName: 'A-sus4', description: 'A-dur med ringfingret på band 3 på B-strängen. Löses ofta upp till A.',
+    standard: { frets: [-1, 0, 2, 2, 3, 0], fingers: [0, 0, 1, 2, 3, 0] }, easy: { frets: [-1, 0, 2, 2, 3, 0], fingers: [0, 0, 1, 2, 3, 0], note: 'Tre fingrar' } },
+  Dsus2: { name: 'Dsus2', fullName: 'D-sus2', description: 'D-dur med öppen tunnaste sträng. Luftigt och lätt.',
+    standard: { frets: [-1, -1, 0, 2, 3, 0], fingers: [0, 0, 0, 1, 3, 0] }, easy: { frets: [-1, -1, 0, 2, 3, 0], fingers: [0, 0, 0, 1, 3, 0], note: 'Två fingrar' } },
+  Esus4: { name: 'Esus4', fullName: 'E-sus4', description: 'E-dur där lillfingret läggs till på G-strängen band 2.',
+    standard: { frets: [0, 2, 2, 2, 0, 0], fingers: [0, 2, 3, 4, 0, 0] }, easy: { frets: [0, 2, 2, 0, 0, 0], fingers: [0, 2, 3, 0, 0, 0], note: 'Som Em, två fingrar' } },
+  Bm7: { name: 'Bm7', fullName: 'B-moll 7', description: 'Ett Bm utan barré. Bra ersättning när Bm känns svårt.',
+    standard: { frets: [-1, 2, 0, 2, 0, 2], fingers: [0, 1, 0, 2, 0, 3] }, easy: { frets: [-1, 2, 0, 2, 0, 2], fingers: [0, 1, 0, 2, 0, 3], note: 'Utan barré' } },
+  'F#m': { name: 'F#m', fullName: 'F#-moll (barré, band 2)', description: 'Samma grepp som Fm, flyttat ett band upp.',
+    standard: { frets: [2, 4, 4, 2, 2, 2], fingers: [1, 3, 4, 1, 1, 1], barre: { fret: 2, from: 0, to: 5, finger: 1 } }, easy: { frets: [-1, -1, 4, 2, 2, 2], fingers: [0, 0, 3, 1, 1, 1], barre: { fret: 2, from: 3, to: 5, finger: 1 }, note: 'Minibarré, 3 strängar' } },
+  'C#m': { name: 'C#m', fullName: 'C#-moll (barré, band 4)', description: 'Am-formen flyttad till band 4 med pekfingret som barré.',
+    standard: { frets: [-1, 4, 6, 6, 5, 4], fingers: [0, 1, 3, 4, 2, 1], barre: { fret: 4, from: 1, to: 5, finger: 1 } }, easy: { frets: [-1, -1, 6, 6, 5, 4], fingers: [0, 0, 3, 4, 2, 1], note: 'Utan barré, 4 strängar' } },
+  Bb: { name: 'Bb', fullName: 'Bb-dur (barré, band 1)', description: 'A-formen flyttad till band 1 med pekfingret som barré.',
+    standard: { frets: [-1, 1, 3, 3, 3, 1], fingers: [0, 1, 2, 3, 4, 1], barre: { fret: 1, from: 1, to: 5, finger: 1 } }, easy: { frets: [-1, -1, 3, 3, 3, 1], fingers: [0, 0, 2, 3, 4, 1], note: '4 strängar' } },
+});
+// grundton för basen tas från ackordets namn (klarar # och b)
+const NOTE_SEMI = { C: 8, 'C#': 9, Db: 9, D: 10, 'D#': 11, Eb: 11, E: 0, F: 1, 'F#': 2, Gb: 2, G: 3, 'G#': 4, Ab: 4, A: 5, 'A#': 6, Bb: 6, B: 7 };
+for (const k of Object.keys(CHORD_DB)) { const r = /^[A-G](#|b)?/.exec(CHORD_DB[k].name)[0]; CHORD_DB[k].root = 41.2 * Math.pow(2, NOTE_SEMI[r] / 12); }
 const voicing = (k, easy) => (easy ? CHORD_DB[k].easy : CHORD_DB[k].standard);
 const CHORD_KEYS = Object.keys(CHORD_DB);
+const BARRE_N = CHORD_KEYS.filter((k) => CHORD_DB[k].standard.barre && CHORD_DB[k].standard.barre.to - CHORD_DB[k].standard.barre.from >= 2).length;
 
 const TABLE = [
   { id: 'dur', title: 'Durackord', sub: 'De sex klassiska grundackorden', chords: ['C', 'D', 'E', 'F', 'G', 'A'] },
   { id: 'moll', title: 'Moll och maj7', sub: 'Varma mollackord och drömska maj7-ackord', chords: ['Dm', 'Em', 'Am', 'Cmaj7', 'Dmaj7', 'Fmaj7'] },
   { id: 'sept', title: 'Septimackord', sub: 'Bluesig spänning som leder vidare till nästa ackord', chords: ['C7', 'D7', 'E7', 'G7', 'A7', 'B7'] },
   { id: 'barre', title: 'Barréackord', sub: 'Flyttbara grepp där pekfingret trycker ner flera strängar', chords: ['F_barre', 'Fm', 'Bm', 'B_barre', 'Gm', 'Cm'] },
+  { id: 'mer', title: 'Fler öppna ackord', sub: 'Vanliga i låtar: sus-, 7- och maj7-ackord utan barré', chords: ['Am7', 'Dm7', 'Gmaj7', 'Asus2', 'Asus4', 'Dsus2', 'Esus4', 'Bm7'] },
+  { id: 'barre2', title: 'Fler barréackord', sub: 'Samma former som ovan, flyttade till andra band', chords: ['F#m', 'C#m', 'Bb'] },
   { id: 'rock', title: 'Rockgrepp', sub: 'Ring- och lillfinger ligger kvar på band 3 i alla fem. Används i Wonderwall och Wish You Were Here.', chords: ['Em7', 'G_rock', 'Dsus4', 'A7sus4', 'Cadd9'] },
 ];
 
@@ -1009,6 +1082,7 @@ class Engine {
     this.cache.set(key, res); return res;
   }
   note(freq, t, { vel = 1, dur = null, wound = false, pan = 0 } = {}) {
+    if (this.transpose) freq *= Math.pow(2, this.transpose / 12);
     const c = this.ctx, k = this.ks(freq, wound), src = c.createBufferSource();
     src.buffer = k.buf; src.playbackRate.value = k.rate;
     const g = c.createGain(); g.gain.setValueAtTime(0.45 * vel, t);
@@ -1056,6 +1130,7 @@ class Engine {
     }
   }
   bass(freq, t, len, vel = 1) {
+    if (this.transpose) freq *= Math.pow(2, this.transpose / 12);
     const c = this.ctx, o = c.createOscillator(), o2 = c.createOscillator(), g2 = c.createGain(), lp = c.createBiquadFilter(), g = c.createGain();
     o.type = 'sine'; o2.type = 'triangle'; o.frequency.value = freq; o2.frequency.value = freq; g2.gain.value = 0.45;
     lp.type = 'lowpass'; lp.Q.value = 0.9; lp.frequency.setValueAtTime(1100, t); lp.frequency.setTargetAtTime(230, t + 0.01, 0.06);
@@ -1308,9 +1383,11 @@ function Fretboard({ k, ghost = null, easy, title, extra }) {
   </section>`;
 }
 
-function BeatStrip({ pattern, accents = [], cur, count }) {
+const vib = (pat) => { try { if (localStorage.getItem('ng-vibe') !== '0' && navigator.vibrate) navigator.vibrate(pat); } catch (e) {} };
+const DIR_NEXT = { '-': 'D', D: 'U', U: '-' };
+function BeatStrip({ pattern, accents = [], cur, count, onEdit }) {
   return html`<div className="beats" aria-label="Slagmönster">
-    ${pattern.map((dir, i) => html`<div key=${i} className=${'beat' + (dir === '-' ? ' rest' : ' hit') + (cur === i ? ' cur' : '')}>
+    ${pattern.map((dir, i) => html`<div key=${i} className=${'beat' + (dir === '-' ? ' rest' : ' hit') + (cur === i ? ' cur' : '') + (onEdit ? ' edit' : '')} onClick=${onEdit ? () => onEdit(i) : null} role=${onEdit ? 'button' : null}>
       <div className="n">${count != null && i % 2 === 0 ? html`<span className="count">${4 - i / 2}</span>` : BEATS[i]}</div>
       <div className="a">${dir === 'D' ? I.down : dir === 'U' ? I.up : '·'}</div>
       <div className="t">${dir === 'D' ? (accents.includes(i) ? 'Ner!' : 'Ner') : dir === 'U' ? 'Upp' : 'Paus'}</div>
@@ -1351,6 +1428,36 @@ const levelOf = (xp) => { let l = 1; while (xp >= 30 * l * (l + 1)) l++; return 
 const lvlFloor = (l) => 30 * (l - 1) * l;
 const today = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
 const DAILY_GOAL = 60;
+// Dagens övningar loggas som taggar per dag (stämt, ackord rätt, byten, skank, låt)
+const addTag = (n, t) => { n.daily = n.daily || {}; const d = today(); n.daily[d] = [...new Set([...(n.daily[d] || []), t])]; };
+// Tvåveckorsplanen: från första ackordet till hela låtar. Varje dag 3–4 steg.
+const PLAN = [
+  { t: 'Första ackorden', steps: [{ k: 'tune' }, { k: 'chord', c: 'Em' }, { k: 'chord', c: 'Am' }, { k: 'chal', p: ['Am', 'Em'], n: 8 }] },
+  { t: 'C-dur och första låten', steps: [{ k: 'tune' }, { k: 'chord', c: 'C' }, { k: 'chal', p: ['Am', 'C'], n: 8 }, { k: 'song', s: 'get-up-stand-up' }] },
+  { t: 'G-dur och reggae-skank', steps: [{ k: 'chord', c: 'G' }, { k: 'chal', p: ['C', 'G'], n: 8 }, { k: 'skank' }] },
+  { t: 'D-dur och Dylan', steps: [{ k: 'chord', c: 'D' }, { k: 'chal', p: ['G', 'D'], n: 10 }, { k: 'song', s: 'knockin' }] },
+  { t: 'Fyra ackord i följd', steps: [{ k: 'tune' }, { k: 'chal', p: ['Em', 'G'], n: 12 }, { k: 'song', s: 'zombie' }] },
+  { t: 'F utan barré', steps: [{ k: 'chord', c: 'Fmaj7' }, { k: 'chal', p: ['C', 'Fmaj7'], n: 8 }, { k: 'song', s: 'no-woman-no-cry' }] },
+  { t: 'Lugnt akustiskt', steps: [{ k: 'chal', p: ['Am', 'C'], n: 15 }, { k: 'song', s: 'july' }, { k: 'skank' }] },
+  { t: 'A och E', steps: [{ k: 'tune' }, { k: 'chord', c: 'A' }, { k: 'chord', c: 'E' }, { k: 'song', s: 'three-little-birds' }] },
+  { t: 'Snabbare byten', steps: [{ k: 'chal', p: ['D', 'A'], n: 12 }, { k: 'chal', p: ['Am', 'E'], n: 10 }, { k: 'song', s: 'stand-by-me' }] },
+  { t: 'Rockgreppen', steps: [{ k: 'chord', c: 'Em7' }, { k: 'chal', p: ['Em7', 'Cadd9'], n: 15 }, { k: 'song', s: 'wonderwall' }] },
+  { t: 'Byten mitt i takten', steps: [{ k: 'tune' }, { k: 'chal', p: ['G', 'D'], n: 15 }, { k: 'song', s: 'redemption-song' }] },
+  { t: 'Litet barré', steps: [{ k: 'chord', c: 'F' }, { k: 'chal', p: ['F', 'C'], n: 8 }, { k: 'song', s: 'red-red-wine' }] },
+  { t: 'Wonderwall på riktigt', steps: [{ k: 'chal', p: ['C', 'G'], n: 20 }, { k: 'stars', s: 'wonderwall', n: 3 }] },
+  { t: 'Spela själv', steps: [{ k: 'tune' }, { k: 'solo' }, { k: 'stars', s: 'any', n: 3 }] },
+];
+function stepDone(n, st) {
+  const tags = (n.daily || {})[today()] || [];
+  if (st.k === 'tune') return tags.includes('tune');
+  if (st.k === 'chord') return tags.includes('chord:' + st.c);
+  if (st.k === 'chal') { const k1 = st.p.join('-'), k2 = [...st.p].reverse().join('-'); return tags.some((t) => { const m = /^chal:(.+):(\d+)$/.exec(t); return m && (m[1] === k1 || m[1] === k2) && +m[2] >= st.n; }); }
+  if (st.k === 'skank') return tags.includes('skank');
+  if (st.k === 'song') return tags.includes('song:' + st.s);
+  if (st.k === 'solo') return tags.includes('solo');
+  if (st.k === 'stars') return tags.some((t) => { const m = /^stars:(.+):(\d)$/.exec(t); return m && (st.s === 'any' || m[1] === st.s) && +m[2] >= st.n; });
+  return false;
+}
 const streakOf = (days) => {
   const set = new Set(days); let n = 0; const d = new Date();
   if (!set.has(today())) d.setDate(d.getDate() - 1);
@@ -1389,6 +1496,8 @@ const BADGES = [
   { id: 'song1', ch: '♪', title: 'Första låten', desc: 'Spela en låt hela vägen', got: (p) => p.songs.length >= 1 },
   { id: 'song3', ch: '♫', title: 'Låtsamlare', desc: 'Spela tre olika låtar', got: (p) => p.songs.length >= 3 },
   { id: 'reggae5', ch: 'JA', title: 'Reggaeresenär', desc: 'Spela tre reggaelåtar som inte är Bob Marley', got: (p) => ['tide-is-high', 'red-red-wine', 'what-i-got', 'many-rivers', 'i-can-see-clearly', 'rivers-of-babylon'].filter((x) => p.songs.includes(x)).length >= 3 },
+  { id: 'plan1', ch: 'D1', title: 'Igång!', desc: 'Klara dag 1 i tvåveckorsplanen', got: (p) => (p.planDay || 0) >= 1 },
+  { id: 'plan14', ch: '14', title: 'Två veckor', desc: 'Klara hela tvåveckorsplanen', got: (p) => (p.planDay || 0) >= 14 },
   { id: 'gh5', ch: '★5', title: 'Rockstjärna', desc: 'Få 5 stjärnor i Guitar Hero-läget', got: (p) => Object.values(p.ghStars || {}).some((v) => v >= 5) },
   { id: 'rock', ch: 'W', title: 'Ankarmästare', desc: 'Spela Wonderwall hela vägen', got: (p) => p.songs.includes('wonderwall') },
   { id: 'all', ch: 'Alla', title: 'Hela repertoaren', desc: 'Spela alla färdiga låtar i appen', got: (p) => INITIAL_SONGS.every((x) => p.songs.includes(x.id)) },
@@ -1454,21 +1563,48 @@ function Challenge({ easy, pair, setPair, best, onFinish }) {
   const [count, setCount] = useState(0);
   const [result, setResult] = useState(null);
   const cRef = useRef(0);
+  const [input, setInputS] = useState(() => { try { return localStorage.getItem('ng-chal-input') || 'tap'; } catch (e) { return 'tap'; } });
+  const setInput = (v) => { setInputS(v); try { localStorage.setItem('ng-chal-input', v); } catch (e) {} };
+  const [micErr, setMicErr] = useState(false);
+  const micR = useRef(null), rafR = useRef(0), lvl = useRef(null), heard = useRef(null);
+  const stopMic = () => { cancelAnimationFrame(rafR.current); if (micR.current) micR.current.stop(); micR.current = null; };
+  useEffect(() => stopMic, []);
+  // mikrofonläge: räkna ett byte varje gång appen hör nästa ackord i paret
+  const listen = async () => {
+    const m = new Mic(); await m.start({ aec: false }); micR.current = m;
+    const cal = micCal(); let last = 0, chk = 0, streak = 0;
+    const loop = (t) => {
+      rafR.current = requestAnimationFrame(loop); m.read(); const r = m.rms();
+      if (lvl.current) lvl.current.style.width = Math.min(100, r * 600) + '%';
+      if (t - chk < 70) return; chk = t;
+      if (r < cal.gate * 2) { streak = 0; return; }
+      const { ch, tot } = m.chroma(); if (tot <= 0) return;
+      const want = pair[(cRef.current + 1) % 2], other = pair[cRef.current % 2];
+      const share = (k) => { const ps = chordPcs(k, easy); let v = 0; ch.forEach((x, pc) => { if (ps.has(pc)) v += x; }); return v / tot; };
+      const a = share(want), b = share(other), need = 0.25 + chordPcs(want, easy).size * 0.07;
+      // nästa ackord måste dominera två mätningar i rad
+      streak = a >= need && a > b + 0.05 ? streak + 1 : 0;
+      if (streak >= 2 && t - last > 300) { streak = 0; last = t; cRef.current++; setCount(cRef.current); }
+    };
+    rafR.current = requestAnimationFrame(loop);
+  };
   const prevBest = best[pair[0] + '-' + pair[1]] || best[pair[1] + '-' + pair[0]] || 0;
-  const start = () => {
+  const start = async () => {
+    setMicErr(false);
+    if (input === 'mic') { try { await listen(); } catch (e) { setMicErr(true); return; } }
     engine.now(); setCount(0); cRef.current = 0; setResult(null); setPhase('count'); setCd(3); engine.click(engine.now(), true);
     let c = 3; const iv = setInterval(() => {
       c--; if (c > 0) { setCd(c); engine.click(engine.now(), true); return; }
-      clearInterval(iv); setPhase('run'); engine.playChord(voicing(pair[0], easy).frets);
+      clearInterval(iv); setPhase('run'); if (input !== 'mic') engine.playChord(voicing(pair[0], easy).frets);
       const end = performance.now() + 60000;
       const t = setInterval(() => {
         const l = Math.max(0, (end - performance.now()) / 1000); setLeft(l);
-        if (l <= 0) { clearInterval(t); setPhase('done'); const n = cRef.current; setResult({ n, rec: n > prevBest, prev: prevBest }); onFinish(n, pair); engine.click(engine.now(), true); }
+        if (l <= 0) { clearInterval(t); stopMic(); setPhase('done'); const n = cRef.current; setResult({ n, rec: n > prevBest, prev: prevBest }); onFinish(n, pair); engine.click(engine.now(), true); }
       }, 100);
     }, 1000);
   };
   const tap = () => {
-    if (phase !== 'run') return;
+    if (phase !== 'run' || input === 'mic') return;
     cRef.current++; setCount(cRef.current);
     engine.strum(voicing(pair[cRef.current % 2], easy).frets, engine.now(), 'D', { vel: 0.75, stagger: 0.012 });
   };
@@ -1481,6 +1617,12 @@ function Challenge({ easy, pair, setPair, best, onFinish }) {
     ${phase === 'idle' || phase === 'done' ? html`<div className="row" style=${{ gap: 6 }}>
       ${PAIRS.map((p) => html`<button key=${p.join()} className=${'chip' + (p[0] === pair[0] && p[1] === pair[1] ? ' on' : '')} onClick=${() => setPair(p)}>${p[0]} ↔ ${p[1]}</button>`)}
     </div>` : null}
+    ${phase === 'idle' || phase === 'done' ? html`<div className="row between"><span className="label">Räkna bytena</span>
+      <div className="seg" role="group" aria-label="Räkna bytena">
+        <button aria-pressed=${input === 'tap'} onClick=${() => setInput('tap')}>Jag trycker</button>
+        <button aria-pressed=${input === 'mic'} onClick=${() => setInput('mic')}>Mikrofonen lyssnar</button>
+      </div></div>` : null}
+    ${micErr ? MIC_BLOCKED : null}
     <div className="chal">
       <div className="pair"><span className=${phase === 'run' && curIdx === 0 ? 'on' : ''}>${CHORD_DB[pair[0]].name}</span><span style=${{ padding: 0 }}>↔</span><span className=${phase === 'run' && curIdx === 1 ? 'on' : ''}>${CHORD_DB[pair[1]].name}</span></div>
       ${phase === 'idle' ? html`<p className="lead">Byt fram och tillbaka mellan greppen i en minut. Slå an ackordet och tryck på knappen (eller mellanslag) varje gång du har bytt. Ditt rekord: <strong>${prevBest}</strong> byten.</p>
@@ -1488,7 +1630,8 @@ function Challenge({ easy, pair, setPair, best, onFinish }) {
       ${phase === 'count' ? html`<div className="count" style=${{ color: 'var(--brass)' }}>${cd}</div><p className="muted">Lägg fingrarna på ${CHORD_DB[pair[0]].name}</p>` : null}
       ${phase === 'run' ? html`<div className="timer"><div className="xpbar"><i style=${{ width: (left / 60 * 100) + '%' }}></i></div><p className="mono muted" style=${{ marginTop: 6 }}>${Math.ceil(left)} s kvar</p></div>
         <div className="count">${count}</div>
-        <button className="tapbtn" onClick=${tap}>Bytt! → ${CHORD_DB[pair[(count + 1) % 2]].name}</button>` : null}
+        ${input === 'mic' ? html`<div className="chal-mic"><b>Byt till ${CHORD_DB[pair[(count + 1) % 2]].name} och slå an</b><div className="gh-lvl cc-lvl" style=${{ width: '100%' }}><i ref=${lvl}></i></div><small className="muted">Appen räknar bytet när den hör rätt ackord</small></div>`
+          : html`<button className="tapbtn" onClick=${tap}>Bytt! → ${CHORD_DB[pair[(count + 1) % 2]].name}</button>`}` : null}
       ${phase === 'done' && result ? html`<div className="count">${result.n}</div>
         <p className="lead">${result.rec ? 'Nytt rekord! Förra bästa var ' + result.prev + '.' : 'Ditt rekord är ' + result.prev + '. Fortsätt nöta, så kommer det.'} Gör utmaningen en gång om dagen för samma par och se siffran växa.</p>
         <button className="play" onClick=${start}>${I.play}En gång till</button>` : null}
@@ -1574,7 +1717,7 @@ function PlayAlong({ bars, startBar, playing, easy }) {
       if (S.count !== null) { S.count = null; setCount(null); }
       const len = bars.length, abs = ((startBar + c.bar) % len + pBar) * 2, k = segAt(Math.floor(abs)), seg = segs[k];
       const prog = Math.min(1, (abs - seg.start) / seg.len);
-      if (S.si !== k) { S.si = k; setSi(k); }
+      if (S.si !== k) { S.si = k; setSi(k); vib(18); }
       const b = Math.floor((abs - seg.start) * 2); if (S.beat !== b) { S.beat = b; setBeat(b); }
       draw(k + glide(prog), prog, seg.len);
     };
@@ -1631,7 +1774,9 @@ function ghPosAt(time) {
 function ghEventTime(pos) { for (const e of engine.log) if (e.bar * 8 + e.step === pos) return e.t; return null; }
 const ghStars = (acc) => (acc >= 0.95 ? 5 : acc >= 0.85 ? 4 : acc >= 0.7 ? 3 : acc >= 0.5 ? 2 : 1);
 
-function GuitarHero({ song, bars, easy, bpm, setBpm, playing, onStart, onStop, autoGuitar, setAutoGuitar, onClose, onResult, best }) {
+function GuitarHero({ song, bars, easy, bpm, setBpm, playing, onStart, onStop, autoGuitar, setAutoGuitar, onClose, onResult, best, ladderPct = 60 }) {
+  const [ladder, setLadderS] = useState(() => ghLoad('ng-gh-ladder', true));
+  const setLadder = (v) => { setLadderS(v); ghSave('ng-gh-ladder', v); if (v) setBpm(Math.round((song.bpm * ladderPct) / 100)); else setBpm(song.bpm); };
   const [phase, setPhase] = useState('setup'); // setup | play | done
   const [mode, setModeS] = useState(() => ghLoad('ng-gh-mode', 'tap'));
   const [view, setViewS] = useState(() => ghLoad('ng-gh-view', 'grip'));
@@ -1646,7 +1791,7 @@ function GuitarHero({ song, bars, easy, bpm, setBpm, playing, onStart, onStop, a
   const [err, setErr] = useState('');
   const cv = useRef(null), wrap = useRef(null), lvl = useRef(null);
   const G = useRef(null), P = useRef({}), micR = useRef(null), prevAuto = useRef(autoGuitar), wake = useRef(null);
-  P.current = { song, bars, easy, mode, calib, playing, onStop, onResult, best, orient, win: GH_WIN[margin] || GH_WIN.stor };
+  P.current = { song, bars, easy, mode, calib, playing, onStop, onResult, best, orient, win: GH_WIN[margin] || GH_WIN.stor, ladder, ladderPct };
   const setMode = (m) => { setModeS(m); ghSave('ng-gh-mode', m); };
   const setCalib = (v) => { const n = { ...calib, [mode === 'mic' ? 'mic' : 'tap']: v }; setCalibS(n); ghSave('ng-gh-calib', n); };
 
@@ -1663,6 +1808,7 @@ function GuitarHero({ song, bars, easy, bpm, setBpm, playing, onStart, onStop, a
   const judge = (ev, ms) => {
     const g = G.current, a = Math.abs(ms), now = performance.now();
     if (a <= P.current.win.p) { ev.res = 'p'; g.perfect++; } else { ev.res = 'g'; g.good++; }
+    vib(g.combo > 0 && (g.combo + 1) % 8 === 0 ? [30, 40, 30] : ev.res === 'p' ? 25 : 12);
     g.combo++; g.maxCombo = Math.max(g.maxCombo, g.combo);
     g.score += (ev.res === 'p' ? 100 : 50) * mult(g.combo);
     g.meter = Math.min(1, g.meter + (ev.res === 'p' ? 0.04 : 0.02));
@@ -1705,9 +1851,9 @@ function GuitarHero({ song, bars, easy, bpm, setBpm, playing, onStart, onStop, a
     try { wake.current && wake.current.release(); } catch (e) {}
     if (aborted) return;
     const total = g.evs.length, acc = total ? (g.perfect + g.good * 0.5) / total : 0;
-    const res = { score: g.score, acc, stars: ghStars(acc), perfect: g.perfect, good: g.good, miss: g.miss, maxCombo: g.maxCombo, total, watch: P.current.mode === 'watch', prevBest: P.current.best || 0 };
+    const res = { score: g.score, acc, stars: ghStars(acc), perfect: g.perfect, good: g.good, miss: g.miss, maxCombo: g.maxCombo, total, watch: P.current.mode === 'watch', prevBest: P.current.best || 0, ladder: P.current.ladder, pct: P.current.ladderPct };
     setResult(res); setPhase('done');
-    if (!res.watch) P.current.onResult(res);
+    P.current.onResult(res);
   };
   const start = async () => {
     setErr(''); fresh(); engine.init();
@@ -1719,11 +1865,12 @@ function GuitarHero({ song, bars, easy, bpm, setBpm, playing, onStart, onStop, a
         const c = engine.ctx, src = c.createMediaStreamSource(stream), hp = c.createBiquadFilter(), an = c.createAnalyser(), an2 = c.createAnalyser();
         hp.type = 'highpass'; hp.frequency.value = 1100; an.fftSize = 512; src.connect(hp); hp.connect(an);
         an2.fftSize = 4096; an2.smoothingTimeConstant = 0; src.connect(an2);
-        micR.current = { stream, src, an, an2, fbuf: new Float32Array(an2.frequencyBinCount), buf: new Float32Array(512), avg: 0.01, prev: 0, last: 0, floor: 0, pend: [] };
+        micR.current = { stream, src, an, an2, fbuf: new Float32Array(an2.frequencyBinCount), tbuf: new Float32Array(an2.fftSize), buf: new Float32Array(512), avg: 0.01, prev: 0, last: 0, floor: 0, pend: [], cal: micCal() };
         setAutoGuitar(false);
       } catch (e) { setErr('Mikrofonen gick inte att starta här. Inne i Claude är mikrofonen blockerad. Välj Tryck på skärmen eller Bara titta, eller öppna appen som egen webbsida i Chrome.'); return; }
     }
     try { if (navigator.wakeLock) wake.current = await navigator.wakeLock.request('screen'); } catch (e) {}
+    if (ladder) setBpm(Math.round((song.bpm * ladderPct) / 100));
     setPhase('play'); onStart();
   };
   const close = () => { if (phase === 'play') finish(true); else { releaseMic(); } onClose(); };
@@ -1741,6 +1888,10 @@ function GuitarHero({ song, bars, easy, bpm, setBpm, playing, onStart, onStop, a
       const W = box.clientWidth, H = box.clientHeight, dpr = Math.min(2, window.devicePixelRatio || 1);
       if (c.width !== Math.round(W * dpr) || c.height !== Math.round(H * dpr)) { c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); }
       const x = c.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0);
+      // vänsterhänt: spegla banan men håll texten läsbar
+      x.__left = document.documentElement.classList.contains('lefty');
+      if (!x.__ft) { const o = x.fillText.bind(x); x.__ft = o; x.fillText = function (t, X, Y, mw) { if (!this.__left) return o(t, X, Y, mw); this.save(); this.translate(X, Y); this.scale(-1, 1); const al = this.textAlign; this.textAlign = al === 'left' ? 'right' : al === 'right' ? 'left' : al; o(t, 0, 0, mw); this.textAlign = al; this.restore(); }; }
+      if (x.__left) { x.translate(W, 0); x.scale(-1, 1); }
       const tNow = performance.now(), dt = Math.min(50, tNow - last) / 16.7; last = tNow;
       const p = P.current, g = G.current;
       // låtposition
@@ -1765,8 +1916,9 @@ function GuitarHero({ song, bars, easy, bpm, setBpm, playing, onStart, onStop, a
           m.an.getFloatTimeDomainData(m.buf); let r = 0; for (let i = 0; i < m.buf.length; i++) r += m.buf[i] * m.buf[i]; r = Math.sqrt(r / m.buf.length);
           if (lvl.current) lvl.current.style.width = Math.min(100, r * 900) + '%';
           // under inräkningen mäter vi hur högt det är i rummet utan att du spelar
-          if (now < 0) { m.fn = (m.fn || 0) + 1; m.floor += (r - m.floor) / m.fn; } // medelnivån i rummet
-          if (now >= -0.5 && r > Math.max(0.015, m.floor * 2.2) && r > m.avg * 2.4 && r > m.prev * 1.25 && tNow - m.last > 110) {
+          // rummets nivå = de tystaste ögonblicken under inräkningen (fungerar även om du slår an i förväg)
+          if (now < 0) { (m.fr = m.fr || []).push(r); if (m.fr.length % 10 === 0) { const so = [...m.fr].sort((a, b) => a - b); m.floor = so[Math.floor(so.length * 0.2)]; } }
+          if (now >= -0.5 && r > Math.max(m.cal.onset * 0.8, m.floor * 2.2) && r > m.avg * 1.8 && r > m.prev * 1.2 && tNow - m.last > 110) {
             m.last = tNow; m.pend.push({ t0: engine.ctx.currentTime - m.buf.length / engine.ctx.sampleRate / 2, at: tNow + 90 });
           }
           m.avg = m.avg * 0.94 + r * 0.06; m.prev = r;
@@ -1775,10 +1927,14 @@ function GuitarHero({ song, bars, easy, bpm, setBpm, playing, onStart, onStop, a
             const pd = m.pend.shift(), ppos = ghPosAt(pd.t0 - (p.calib.mic || 0) / 1000); if (ppos == null) continue;
             let near = null, bd = 1e9; for (const ev of g.evs) { if (ev.res) continue; const d = Math.abs(ev.pos - ppos); if (d < bd) { bd = d; near = ev; } if (ev.pos > ppos + 3) break; }
             if (!near) continue;
+            // ett ackord klingar kvar, en knackning gör det inte
+            m.an2.getFloatTimeDomainData(m.tbuf); let e2 = 0; for (let i = m.tbuf.length - 2048; i < m.tbuf.length; i++) e2 += m.tbuf[i] * m.tbuf[i];
+            if (Math.sqrt(e2 / 2048) < Math.max(m.cal.onset * 0.35, m.floor * 1.5)) continue;
             const { ch, tot } = chromaFrom(m.an2, m.fbuf); if (tot <= 0) continue;
-            const want = chordPcs(near.chord, p.easy); let inC = 0; ch.forEach((v, pc) => { if (want.has(pc)) inC += v; });
+            const want = new Set([...chordPcs(near.chord, p.easy)].map((pc) => (pc + (engine.transpose || 0)) % 12)); let inC = 0; ch.forEach((v, pc) => { if (want.has(pc)) inC += v; });
             const match = inC / tot, need = 0.25 + want.size * 0.075; // rätt toner ska dominera
-            if (match >= need) hit(pd.t0);
+            const tonal = Math.max(...ch) / (tot / 12); // brus och knackningar har ingen tydlig ton
+            if (match >= need && tonal > 2.2) hit(pd.t0);
             else if (bd * sd * 1000 < p.win.g && Math.max(...ch) / (tot / 12) > 2.5) g.pops.push({ t: tNow, txt: 'Fel ackord?', c: '#ff9a5c' }); // bara om det lät som toner, inte knackningar
           }
         }
@@ -2223,6 +2379,12 @@ function GuitarHero({ song, bars, easy, bpm, setBpm, playing, onStart, onStop, a
             <button aria-pressed=${view === 'grip'} onClick=${() => setView('grip')}>Grepp och namn</button>
             <button aria-pressed=${view === 'name'} onClick=${() => setView('name')}>Bara namn</button>
           </div></div>` : null}
+        <div className="row between"><span className="label">Tempotrappa</span>
+          <div className="seg" role="group" aria-label="Tempotrappa">
+            <button aria-pressed=${ladder} onClick=${() => setLadder(true)}>På · ${ladderPct} %</button>
+            <button aria-pressed=${!ladder} onClick=${() => setLadder(false)}>Av</button>
+          </div></div>
+        ${ladder ? html`<p className="muted" style=${{ fontSize: 13, marginTop: -6 }}>Startar på ${ladderPct} % av originaltempot. Får du minst 80 % träffsäkerhet höjs tempot 5 % till nästa gång, ända upp till 100 %.</p>` : null}
         <div className="row between"><span className="label">Tempo</span><${Bpm} value=${bpm} set=${setBpm} /></div>
         ${mode !== 'watch' ? html`<details className="more"><summary>Fördröjning (${calib[mode === 'mic' ? 'mic' : 'tap']} ms)</summary>
           <p className="muted" style=${{ fontSize: 13 }}>Säger appen ofta "sent" fast du slår i takt? Öka värdet. Säger den "tidigt"? Minska det.</p>
@@ -2240,6 +2402,7 @@ function GuitarHero({ song, bars, easy, bpm, setBpm, playing, onStart, onStop, a
         <h2>${result.watch ? 'Låten är slut' : result.stars >= 4 ? 'Grymt spelat!' : result.stars >= 3 ? 'Snyggt!' : 'Bra kämpat!'}</h2>
         ${result.watch ? html`<p className="muted">Bara titta-läget ger inga poäng. Välj Tryck eller Mikrofon nästa gång för att samla stjärnor.</p>` : html`
         <div className="gh-big mono">${result.score.toLocaleString('sv-SE')}</div>
+        ${result.ladder ? html`<p className="gh-rec" style=${{ color: result.acc >= 0.8 ? '#2ee6b8' : '#aba4d4', fontSize: 14 }}>${result.acc >= 0.8 ? (result.pct < 100 ? 'Tempotrappa: ' + Math.min(100, result.pct + 5) + ' % nästa gång' : 'Du spelar i originaltempo!') : 'Nå 80 % träffsäkerhet så höjs tempot'}</p>` : null}
         ${result.score > result.prevBest ? html`<p className="gh-rec">Nytt rekord!</p>` : html`<p className="muted">Rekord: ${result.prevBest.toLocaleString('sv-SE')}</p>`}
         <div className="stats">
           <div className="stat"><b>${Math.round(result.acc * 100)}%</b><span>träffsäkerhet</span></div>
@@ -2448,6 +2611,15 @@ function chromaFrom(an, freq) {
 }
 const chordPcs = (k, easy) => new Set(voicing(k, easy).frets.map((f, i) => (f < 0 ? null : (OPEN_MIDI[i] + f) % 12)).filter((x) => x !== null));
 const STR_NAME = ['E', 'A', 'D', 'G', 'B', 'e'];
+// Mikrofonkalibrering: rummets brusnivå och hur starkt din gitarr hörs. Används av stämmare, greppkoll och Guitar Hero.
+const SENS = { lag: 1.6, normal: 1, hog: 0.6 };
+function micCal() {
+  let c = null; try { c = JSON.parse(localStorage.getItem('ng-mic-cal') || 'null'); } catch (e) {}
+  c = c || { floor: 0.004, strum: 0.08, sens: 'normal', done: false };
+  const k = SENS[c.sens] || 1;
+  return { ...c, onset: Math.max(0.008, c.floor * 3, c.strum * 0.18) * k, gate: Math.max(0.003, c.floor * 1.6) * k };
+}
+function saveMicCal(c) { try { localStorage.setItem('ng-mic-cal', JSON.stringify(c)); } catch (e) {} }
 // Bedöm ett anslag utifrån varje tons grundfrekvens. Toner som bara är övertoner av ackordets egna toner räknas inte som fel.
 function judgeChord(k, easy, acc) {
   const v = voicing(k, easy), strings = [], tips = [];
@@ -2497,6 +2669,55 @@ const MIC_BLOCKED = html`<div className="coach" style=${{ background: 'color-mix
   <div style=${{ display: 'grid', gap: 6 }}><b>Mikrofonen gick inte att starta</b>
     <p className="muted" style=${{ fontSize: 13 }}>Inne i Claude är mikrofonen blockerad. Öppna appen från din startskärm (eller adressen på GitHub Pages) i Chrome och tillåt mikrofonen när Chrome frågar.</p></div></div>`;
 
+function MicCalib({ onDone }) {
+  const [cal, setCal] = useState(micCal);
+  const [step, setStep] = useState('idle'); // idle | quiet | strum | done | blocked
+  const [count, setCount] = useState(0);
+  const mic = useRef(null), raf = useRef(0), lvl = useRef(null);
+  const stop = () => { cancelAnimationFrame(raf.current); if (mic.current) mic.current.stop(); mic.current = null; };
+  useEffect(() => stop, []);
+  const run = async () => {
+    try {
+      const m = new Mic(); await m.start({ aec: false }); mic.current = m;
+      setStep('quiet'); setCount(0);
+      const t0 = performance.now(), Q = []; const P = []; let env = 0.01, last = 0, peak = 0, inHit = false, shown = false;
+      const loop = (t) => {
+        raf.current = requestAnimationFrame(loop); m.read(); const r = m.rms();
+        if (lvl.current) lvl.current.style.width = Math.min(100, r * 600) + '%';
+        if (t - t0 < 2200) { if (t - t0 > 300) Q.push(r); return; }
+        if (!shown) { shown = true; setStep('strum'); }
+        const floor = Q.reduce((a, b) => a + b, 0) / Math.max(1, Q.length);
+        if (!inHit && r > Math.max(0.006, floor * 4) && r > env * 2.2 && t - last > 500) { inHit = true; peak = r; last = t; }
+        if (inHit) { peak = Math.max(peak, r); if (t - last > 350) { inHit = false; P.push(peak); setCount(P.length); } }
+        env = env * 0.9 + r * 0.1;
+        if (P.length >= 3) {
+          stop(); const strum = [...P].sort((a, b) => a - b)[1];
+          const c = { floor, strum, sens: cal.sens || 'normal', done: true }; saveMicCal(c); setCal(micCal()); setStep('done'); onDone && onDone();
+        } else if (t - t0 > 20000) { stop(); setStep('idle'); }
+      };
+      raf.current = requestAnimationFrame(loop);
+    } catch (e) { setStep('blocked'); }
+  };
+  const setSens = (v) => { const c = { ...cal, sens: v }; saveMicCal(c); setCal(micCal()); };
+  const noise = cal.floor < 0.004 ? 'tyst' : cal.floor < 0.012 ? 'lite brus' : 'mycket brus';
+  return html`<section className="card" style=${{ display: 'grid', gap: 12 }}>
+    <div className="section-head" style=${{ margin: 0 }}><h3>Kalibrera mikrofonen</h3><p>${cal.done ? 'Kalibrerad · ' + noise + ' i rummet' : 'Gör en gång, tar 15 sekunder'}</p></div>
+    ${step === 'idle' || step === 'done' ? html`<div className="row between">
+      <p className="lead" style=${{ flex: '1 1 220px' }}>${step === 'done' ? 'Klart! Stämmaren, greppkollen och Guitar Hero är nu inställda efter din gitarr och ditt rum.' : 'Appen lär sig hur tyst det är i rummet och hur starkt din gitarr hörs. Då blir stämmaren, greppkollen och mikrofonläget mycket säkrare.'}</p>
+      <button className=${step === 'done' ? 'btn' : 'play'} onClick=${run}>${step === 'done' ? 'Kalibrera igen' : html`${I.play}Starta kalibrering`}</button></div>` : null}
+    ${step === 'quiet' || step === 'strum' ? html`<div className="coach">
+      <div className="big">${step === 'quiet' ? 'Tyst' : count + '/3'}</div>
+      <div style=${{ display: 'grid', gap: 8 }}><b>${step === 'quiet' ? 'Var helt tyst i två sekunder…' : 'Slå an alla sex strängarna, tre gånger med en paus emellan'}</b>
+        <div className="gh-lvl cc-lvl"><i ref=${lvl}></i></div></div></div>` : null}
+    ${step === 'blocked' ? MIC_BLOCKED : null}
+    <div className="row between"><span className="label">Känslighet</span>
+      <div className="seg" role="group" aria-label="Känslighet">
+        ${[['lag', 'Låg'], ['normal', 'Normal'], ['hog', 'Hög']].map(([k, l]) => html`<button key=${k} aria-pressed=${(cal.sens || 'normal') === k} onClick=${() => setSens(k)}>${l}</button>`)}
+      </div></div>
+    <p className="muted" style=${{ fontSize: 12 }}>Reagerar appen på ljud fast du inte spelar: välj Låg. Missar den dina slag: välj Hög.</p>
+  </section>`;
+}
+
 function MicTools({ easy, onTuned, onChordOk }) {
   const [mode, setMode] = useState('tune');
   const [state, setState] = useState('off');
@@ -2516,9 +2737,9 @@ function MicTools({ easy, onTuned, onChordOk }) {
         raf.current = requestAnimationFrame(loop);
         if (t - T.last < 45) return; const dt = t - T.last; T.last = t;
         m.read(); const r = m.rms(), pr = m.pitch(), tgt = S.current.target;
-        const onset = r > 0.02 && r > T.env * 2.2; T.env = T.env * 0.85 + r * 0.15;
+        const cal = T.cal || (T.cal = micCal()); const onset = r > cal.onset && r > T.env * 2.2; T.env = T.env * 0.85 + r * 0.15;
         if (onset) { T.hist = []; T.ema = null; if (tgt === 'auto') T.lock = null; }
-        const valid = pr.hz > 60 && pr.hz < 1000 && pr.clarity > 0.88 && r > 0.005;
+        const valid = pr.hz > 60 && pr.hz < 1000 && pr.clarity > 0.88 && r > cal.gate;
         if (valid) {
           T.hist.push(pr.hz); if (T.hist.length > 5) T.hist.shift();
           let med = [...T.hist].sort((a, b) => a - b)[Math.floor(T.hist.length / 2)];
@@ -2590,12 +2811,12 @@ function ChordCheck({ k, easy, onOk }) {
   const start = async () => {
     try {
       const m = new Mic(); await m.start({ aec: false }); mic.current = m; setState('on'); setPhase('wait');
-      const C = { env: 0.01, last: -1e9, onset: null, acc: null };
+      const C = { env: 0.01, last: -1e9, onset: null, acc: null, cal: micCal() };
       const loop = (t) => {
         raf.current = requestAnimationFrame(loop);
         m.read(); const r = m.rms();
         if (lvl.current) lvl.current.style.width = Math.min(100, r * 600) + '%';
-        if (!C.onset && r > 0.02 && r > C.env * 2.5 && t - C.last > 700) { C.onset = t; C.acc = new Array(128).fill(0); setPhase('listen'); }
+        if (!C.onset && r > C.cal.onset && r > C.env * 2.5 && t - C.last > 700) { C.onset = t; C.acc = new Array(128).fill(0); setPhase('listen'); }
         C.env = C.env * 0.9 + r * 0.1;
         if (C.onset) {
           const age = t - C.onset;
@@ -2685,14 +2906,25 @@ function App() {
   const [custom, setCustom] = useState(loadCustom);
   const songs = useMemo(() => [...INITIAL_SONGS, ...custom], [custom]);
   const [songId, setSongId] = useState('three-little-birds');
-  const song = songs.find((s) => s.id === songId) || songs[0];
-  const bars = useMemo(() => song.form.flatMap((p) => p.bars.map((c) => mkBar(c, p.part))), [song]);
+  const song0 = songs.find((s) => s.id === songId) || songs[0];
+  const [patOv, setPatOv] = useState(() => { try { return JSON.parse(localStorage.getItem('ng-pat') || '{}'); } catch (e) { return {}; } });
+  const song = useMemo(() => (patOv[song0.id] ? { ...song0, pattern: patOv[song0.id] } : song0), [song0, patOv]);
+  const [patEdit, setPatEdit] = useState(false);
+  const editPat = (i) => { const pt = [...song.pattern]; pt[i] = DIR_NEXT[pt[i]]; const nx = { ...patOv, [song0.id]: pt }; setPatOv(nx); try { localStorage.setItem('ng-pat', JSON.stringify(nx)); } catch (e) {} };
+  const resetPat = () => { const nx = { ...patOv }; delete nx[song0.id]; setPatOv(nx); try { localStorage.setItem('ng-pat', JSON.stringify(nx)); } catch (e) {} };
+  const capoN = song.capo ? +((/capo\s*(\d+)/i.exec(song.capo) || [])[1] || 0) : 0;
+  const [capoOn, setCapoOn] = useState(() => { try { return localStorage.getItem('ng-capo') === '1'; } catch (e) { return false; } });
+  const toggleCapo = () => { const v = !capoOn; setCapoOn(v); try { localStorage.setItem('ng-capo', v ? '1' : '0'); } catch (e) {} if (playing === 'song') engine.transpose = v && capoN ? capoN : 0; };
+  const allBars = useMemo(() => song.form.flatMap((p) => p.bars.map((c) => mkBar(c, p.part))), [song]);
+  const [loop, setLoop] = useState(null); // { pi, from, to, part } – loopa en del av låten
+  const bars = useMemo(() => (loop ? allBars.slice(loop.from, loop.to + 1) : allBars), [allBars, loop]);
   const [selChord, setSelChord] = useState(bars[0].chord);
   const [startBar, setStartBar] = useState(0);
 
   const [playing, setPlaying] = useState(null);
   const [pos, setPos] = useState({ step: -1, bar: -1 });
   const [bpm, setBpm] = useState(song.bpm);
+  const [ladderOn, setLadderOn] = useState(() => { try { return localStorage.getItem('ng-ladder') === '1'; } catch (e) { return false; } });
   const [style, setStyle] = useState('reggae');
   const [countIn, setCountIn] = useState(true);
   const [autoGuitar, setAutoGuitar] = useState(true);
@@ -2720,6 +2952,40 @@ function App() {
   const [skin, setSkinState] = useState(() => { try { return localStorage.getItem('ng-skin') || 'neon'; } catch (e) { return 'neon'; } });
   const [skinOpen, setSkinOpen] = useState(false);
   const [ghOpen, setGhOpen] = useState(false);
+  const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : v; } catch (e) { return d; } };
+  const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+  const [lefty, setLefty] = useState(() => lsGet('ng-lefty', '0') === '1');
+  const [vibe, setVibe] = useState(() => lsGet('ng-vibe', '1') !== '0');
+  useEffect(() => { document.documentElement.classList.toggle('lefty', lefty); lsSet('ng-lefty', lefty ? '1' : '0'); }, [lefty]);
+  useEffect(() => { lsSet('ng-vibe', vibe ? '1' : '0'); }, [vibe]);
+  // flytta framsteg mellan enheter med en kod (ingen server)
+  const [codeOut, setCodeOut] = useState('');
+  const [codeIn, setCodeIn] = useState('');
+  const [codeMsg, setCodeMsg] = useState('');
+  const [codeAsk, setCodeAsk] = useState(null);
+  const makeCode = () => {
+    const data = { v: 1, p: P.current, custom, pat: patOv, cal: lsGet('ng-mic-cal', null), skin, lefty };
+    const code = 'NG1:' + btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+    setCodeOut(code);
+    try { navigator.clipboard.writeText(code).then(() => setCodeMsg('Koden är kopierad. Klistra in den i appen på din andra enhet.'), () => setCodeMsg('Markera koden nedan och kopiera den.')); } catch (e) { setCodeMsg('Markera koden nedan och kopiera den.'); }
+  };
+  const readCode = () => {
+    try {
+      const t = codeIn.trim(); if (!t.startsWith('NG1:')) throw new Error('fel');
+      const d = JSON.parse(decodeURIComponent(escape(atob(t.slice(4))))); if (!d.p || typeof d.p.xp !== 'number') throw new Error('fel');
+      setCodeAsk(d); setCodeMsg('Koden innehåller ' + d.p.xp + ' XP, ' + (d.p.missions || []).length + ' uppdrag och ' + (d.custom || []).length + ' egna låtar. Vill du ersätta framstegen på den här enheten?');
+    } catch (e) { setCodeAsk(null); setCodeMsg('Koden gick inte att läsa. Kopiera hela koden, den börjar med NG1:'); }
+  };
+  const applyCode = () => {
+    const d = codeAsk; if (!d) return;
+    const n = { ...EMPTY, ...d.p }; P.current = n; setProg(n); saveProg(n);
+    if (d.custom) { setCustom(d.custom); saveCustom(d.custom); }
+    if (d.pat) { setPatOv(d.pat); lsSet('ng-pat', JSON.stringify(d.pat)); }
+    if (d.cal) lsSet('ng-mic-cal', d.cal);
+    if (d.skin) setSkinState(d.skin);
+    if (typeof d.lefty === 'boolean') setLefty(d.lefty);
+    setCodeAsk(null); setCodeIn(''); setCodeMsg('Klart! Dina framsteg är flyttade hit.');
+  };
   useEffect(() => { document.documentElement.setAttribute('data-skin', skin); try { localStorage.setItem('ng-skin', skin); } catch (e) {} }, [skin]);
   const narrowM = useNarrow('(max-width: 760px)');
 
@@ -2740,6 +3006,7 @@ function App() {
     if (mutate) mutate(n);
     let total = xp; const msgs = [];
     for (const m of MISSIONS) if (m.auto && !n.missions.includes(m.id) && m.auto(n)) { n.missions.push(m.id); total += m.xp; msgs.push({ x: '+' + m.xp, t: 'Uppdrag klart', s: m.title, big: true }); }
+    { const day = (n.planDay || 0) + 1; if (day <= PLAN.length && PLAN[day - 1].steps.every((st) => stepDone(n, st))) { n.planDay = day; total += 50; msgs.push({ x: 'Dag ' + day, t: 'Dagens pass klart! +50', s: day < PLAN.length ? 'Dag ' + (day + 1) + ': ' + PLAN[day].t : 'Hela tvåveckorsplanen är klar!', big: true }); } }
     if (total > 0) { n.xp += total; if (!n.days.includes(d)) n.days.push(d); n.dayXp[d] = (n.dayXp[d] || 0) + total; }
     for (const b of BADGES) if (!n.badges.includes(b.id) && b.got(n)) { n.badges.push(b.id); msgs.push({ x: b.ch, t: 'Nytt märke: ' + b.title, s: b.desc, big: true }); }
     const lo = levelOf(old.xp), ln = levelOf(n.xp);
@@ -2756,11 +3023,16 @@ function App() {
   useEffect(() => {
     if (!playing || pos.bar < 0) return;
     const key = playing + ':' + songId;
-    if (playing === 'song' && pos.bar === bars.length && !doneRef.current[key]) {
-      doneRef.current[key] = 1; const solo = !autoGuitar;
-      award(solo ? 60 : 40, 'Låt genomspelad: ' + song.title, (n) => { if (!n.songs.includes(song.id)) n.songs.push(song.id); if (solo) n.solo = true; });
+    // tempotrappa: +5 % efter varje helt varv tills originaltempot
+    if (ladderOn && playing === 'song' && pos.bar > 0 && pos.bar % bars.length === 0 && !doneRef.current['lad' + pos.bar]) {
+      doneRef.current['lad' + pos.bar] = 1; const cur = ladderPct(song.id);
+      if (cur < 100) { const nx = Math.min(100, cur + 5); setBpm(Math.round((song.bpm * nx) / 100)); award(5, 'Tempotrappa: ' + nx + ' % av originaltempot', (n) => { n.ladder = n.ladder || {}; n.ladder[song.id] = nx; }); }
     }
-    if (playing === 'skank' && pos.bar === 8 && !doneRef.current[key]) { doneRef.current[key] = 1; award(30, '8 takter skank', (n) => { n.skank8 = true; }); }
+    if (playing === 'song' && !loop && pos.bar === bars.length && !doneRef.current[key]) {
+      doneRef.current[key] = 1; const solo = !autoGuitar;
+      award(solo ? 60 : 40, 'Låt genomspelad: ' + song.title, (n) => { if (!n.songs.includes(song.id)) n.songs.push(song.id); if (solo) { n.solo = true; addTag(n, 'solo'); } addTag(n, 'song:' + song.id); });
+    }
+    if (playing === 'skank' && pos.bar === 8 && !doneRef.current[key]) { doneRef.current[key] = 1; award(30, '8 takter skank', (n) => { n.skank8 = true; addTag(n, 'skank'); }); }
     if (playing === 'byten' && pos.bar === 8 && !doneRef.current[key]) { doneRef.current[key] = 1; award(20, '8 takter ackordbyten'); }
   }, [pos.bar]);
   useEffect(() => { doneRef.current = {}; }, [playing]);
@@ -2780,7 +3052,7 @@ function App() {
 
   const stopAll = () => {
     if (playing === 'song' && pos.bar >= 0) setStartBar(barIdx);
-    engine.stop(); setPlaying(null); setPos({ step: -1, bar: -1 });
+    engine.stop(); engine.transpose = 0; setPlaying(null); setPos({ step: -1, bar: -1 });
   };
 
   const startSong = (fromBar = startBar) => {
@@ -2797,6 +3069,7 @@ function App() {
         else engine.strum(v.frets, t, dir, { vel: s.song.accents.includes(step) ? 1 : 0.62 });
       },
     });
+    engine.transpose = capoOn && capoN ? capoN : 0;
     setPlaying('song');
   };
 
@@ -2848,9 +3121,14 @@ function App() {
   }, [tab, tLoop, tString]);
 
   const goTab = (t) => { if (playing) stopAll(); setTab(t); };
+  const ladderPct = (id) => ((P.current.ladder || {})[id] || 60);
+  const toggleLadder = () => {
+    const on = !ladderOn; setLadderOn(on); try { localStorage.setItem('ng-ladder', on ? '1' : '0'); } catch (e) {}
+    setBpm(on ? Math.round((song.bpm * ladderPct(song.id)) / 100) : song.bpm);
+  };
   const pickSong = (s) => {
     if (playing) stopAll();
-    setSongId(s.id); setBpm(s.bpm); setStartBar(0); setPicking(false);
+    setSongId(s.id); setBpm(ladderOn ? Math.round((s.bpm * ladderPct(s.id)) / 100) : s.bpm); setStartBar(0); setPicking(false); setLoop(null);
     setSelChord([].concat(s.form[0].bars[0])[0]); setStyle(s.feel === 'reggae' ? 'reggae' : 'acoustic');
   };
   const setMix = (k, v) => { engine.setMix(k, v); setMixState((m) => ({ ...m, [k]: v })); };
@@ -2887,7 +3165,7 @@ function App() {
           const list = custom.filter((c) => c.id !== s.id); setCustom(list); saveCustom(list); if (s.id === song.id) pickSong(INITIAL_SONGS[0]);
         }}>×</button>` : null}
       </div>`])}
-      <button className="add" onClick=${() => setModal(true)}>+ Egen ackordföljd</button>
+      <button className="add" onClick=${() => { setPicking(false); setModal(true); }}>+ Lägg till låt (klistra in ackordblad)</button>
     </nav>
 
     <div className="stage">
@@ -2915,7 +3193,17 @@ function App() {
             ${STYLES.map((s) => html`<button key=${s.id} aria-pressed=${style === s.id} onClick=${() => setStyle(s.id)}>${s.label}</button>`)}
           </div>
         </div>
-        <${BeatStrip} pattern=${song.pattern} accents=${song.accents} cur=${playing === 'song' ? pos.step : -1} count=${playing === 'song' && counting ? 1 : null} />
+        <div className="row" style=${{ gap: 8 }}>
+          <button className=${'chip' + (ladderOn ? ' on' : '')} onClick=${toggleLadder} title="Börjar på 60 % och höjer 5 % efter varje varv">Tempotrappa${ladderOn ? ' · ' + ladderPct(song.id) + ' %' : ''}</button>
+          ${loop ? html`<button className="chip on" onClick=${() => { if (playing) stopAll(); setLoop(null); setStartBar(0); }}>Loopar ${loop.part.toLowerCase()} ×</button>` : html`<span className="muted" style=${{ fontSize: 12 }}>Loopa en del med knappen i ackordschemat</span>`}
+        </div>
+        <${BeatStrip} pattern=${song.pattern} accents=${song.accents} cur=${playing === 'song' ? pos.step : -1} count=${playing === 'song' && counting ? 1 : null} onEdit=${patEdit ? editPat : null} />
+        <div className="row" style=${{ gap: 8 }}>
+          <button className=${'chip' + (patEdit ? ' on' : '')} onClick=${() => setPatEdit(!patEdit)}>${patEdit ? 'Klar med slagmönstret' : 'Ändra slagmönster'}</button>
+          ${patEdit ? html`<span className="muted" style=${{ fontSize: 12 }}>Tryck på en ruta: Paus → Ner → Upp</span>` : null}
+          ${patOv[song0.id] ? html`<button className="chip" onClick=${resetPat}>Återställ</button>` : null}
+          ${capoN ? html`<button className=${'chip' + (capoOn ? ' on' : '')} onClick=${toggleCapo} title=${'Sätt capo på band ' + capoN + ' så låter det som originalet'}>Originaltonart · capo ${capoN} ${capoOn ? 'på' : 'av'}</button>` : null}
+        </div>
         <${narrowM ? 'details' : 'div'} className="tp-grid more">
           ${narrowM ? html`<summary>Mixer och känsla</summary>` : null}
           <div className="mixer">
@@ -2941,15 +3229,19 @@ function App() {
 
       <section className="card chart" aria-label="Ackordschema">
         <div className="section-head" style=${{ margin: 0 }}><h3>Ackordschema</h3><p>En ruta är en takt. Klicka för att starta därifrån.</p></div>
-        ${(() => { let n = 0; return song.form.map((p, pi) => html`<div className="part" key=${pi}>
-          <div className="label">${p.part}</div>
-          <div className="bars">${p.bars.map((c) => { const i = n++; const cur = playing === 'song' && pos.bar >= 0 && i === barIdx;
-            return html`<button key=${i} className=${'bar' + (cur ? ' cur' : '') + (!playing && i === startBar ? ' start' : '')}
-              onClick=${() => { const c0 = [].concat(c)[0]; setSelChord(c0); setStartBar(i); if (playing === 'song') { engine.stop(); startSong(i); } else hear(c0); }}>
+        ${(() => { let n = 0; return song.form.map((p, pi) => { const from = n, on = loop && loop.pi === pi; return html`<div className=${'part' + (loop && !on ? ' dim' : '')} key=${pi}>
+          <div className="part-head"><div className="label">${p.part}</div>
+            <button className=${'chip loopchip' + (on ? ' on' : '')} onClick=${() => { if (playing) stopAll(); setStartBar(0); setLoop(on ? null : { pi, from, to: from + p.bars.length - 1, part: p.part }); }}>${on ? 'Loopar ×' : 'Loopa'}</button></div>
+          <div className="bars">${p.bars.map((c) => { const i = n++, inL = !loop || (i >= loop.from && i <= loop.to), rel = loop ? i - loop.from : i;
+            const cur = playing === 'song' && pos.bar >= 0 && inL && rel === barIdx;
+            return html`<button key=${i} className=${'bar' + (cur ? ' cur' : '') + (!playing && inL && rel === startBar ? ' start' : '')}
+              onClick=${() => { const c0 = [].concat(c)[0]; setSelChord(c0);
+                if (!inL) { if (playing) stopAll(); setLoop(null); setStartBar(i); hear(c0); return; }
+                setStartBar(rel); if (playing === 'song') { engine.stop(); startSong(rel); } else hear(c0); }}>
               <small>${i + 1}</small>${Array.isArray(c) ? html`<b className="split">${CHORD_DB[c[0]].name}<i>${CHORD_DB[c[1]].name}</i></b>` : html`<b>${CHORD_DB[c].name}</b>`}
               ${cur ? html`<span className="prog" style=${{ width: ((pos.step + 1) / 8 * 100) + '%' }}></span>` : null}
             </button>`; })}</div>
-        </div>`); })()}
+        </div>`; }); })()}
       </section>
 
       <div className="tip"><span className="mark">Tips</span><p>${song.tip}</p></div>
@@ -2967,15 +3259,15 @@ function App() {
     const first = !(P.current.chordsOk || []).includes(k);
     award(first ? 25 : 3, first ? CHORD_DB[k].name + ' rätt för första gången!' : '', (n) => {
       const map = { Em: 'em', Am: 'am' }; if (map[k] && !n.missions.includes(map[k])) { n.missions.push(map[k]); n.xp += 50; }
-      n.chordsOk = [...new Set([...(n.chordsOk || []), k])];
+      n.chordsOk = [...new Set([...(n.chordsOk || []), k])]; addTag(n, 'chord:' + k);
       if (n.chordsOk.includes('C') && n.chordsOk.includes('G') && !n.missions.includes('cg')) { n.missions.push('cg'); n.xp += 60; }
     }, !first);
   };
   const AckordTab = html`<div style=${{ display: 'grid', gap: 22 }}>
     <div className="row between">
-      <div><h2 className="page">Ackordtabell</h2><p className="lead">29 grepp, varav 6 barréackord och 5 rockgrepp. Klicka på ett ackord för att höra det och se det stort.</p></div>
+      <div><h2 className="page">Ackordtabell</h2><p className="lead">${CHORD_KEYS.length} grepp, varav ${BARRE_N} barréackord. Klicka på ett ackord för att höra det och se det stort.</p></div>
       <div className="seg" role="group" aria-label="Filter">
-        ${[['all', 'Alla 29'], ['open', 'Öppna 23'], ['barre', 'Barré 6']].map(([id, l]) => html`<button key=${id} aria-pressed=${filter === id} onClick=${() => setFilter(id)}>${l}</button>`)}
+        ${[['all', 'Alla ' + CHORD_KEYS.length], ['open', 'Öppna ' + (CHORD_KEYS.length - BARRE_N)], ['barre', 'Barré ' + BARRE_N]].map(([id, l]) => html`<button key=${id} aria-pressed=${filter === id} onClick=${() => setFilter(id)}>${l}</button>`)}
       </div>
     </div>
     <${Fretboard} k=${tableChord} easy=${easy} />
@@ -2983,7 +3275,14 @@ function App() {
       <div className="section-head" style=${{ margin: 0 }}><h3>Gör jag rätt?</h3><p>Appen lyssnar på ditt ${CHORD_DB[tableChord].name} och säger vilka strängar som låter rätt</p></div>
       <${ChordCheck} k=${tableChord} easy=${easy} onOk=${chordOk} />
     </section>
-    ${TABLE.filter((s) => filter === 'all' || (filter === 'barre') === (s.id === 'barre')).map((s) => html`<section key=${s.id}>
+    <section className="card" style=${{ display: 'grid', gap: 12 }}>
+      <div className="section-head" style=${{ margin: 0 }}><h3>Vägen till F</h3><p>Det svåraste nybörjarackordet, i tre steg</p></div>
+      <div className="fpath">${[['Fmaj7', 'Steg 1 · Fmaj7', 'Ingen barré. Trappan 3-2-1 på de fyra tunnaste strängarna.'], ['F', 'Steg 2 · Litet barré', 'Pekfingret trycker ner både B- och e-strängen på band 1.'], ['F_barre', 'Steg 3 · Helt barré', 'Pekfingret över alla sex strängar. Rulla det lite mot tummen.']].map(([k, t, d], i) => {
+        const ok = (prog.chordsOk || []).includes(k); return html`<button key=${k} className=${'fstep' + (tableChord === k ? ' sel' : '') + (ok ? ' ok' : '')} onClick=${() => { setTableChord(k); hear(k); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+          <span className="ck">${ok ? '✓' : i + 1}</span><b>${t}</b><span>${d}</span></button>`; })}</div>
+      <p className="muted" style=${{ fontSize: 12 }}>Välj ett steg, ta greppet och låt appen lyssna under Gör jag rätt? När du får Rätt! bockas steget av. Gå vidare när det klingar rent tre gånger i rad.</p>
+    </section>
+    ${TABLE.filter((s) => filter === 'all' || (filter === 'barre') === s.id.startsWith('barre')).map((s) => html`<section key=${s.id}>
       <div className="section-head"><h3>${s.title}</h3><p>${s.sub}</p></div>
       <div className="diagrams">${s.chords.map((k) => html`<${Diagram} key=${k} k=${k} easy=${easy} selected=${tableChord === k} onClick=${() => { setTableChord(k); hear(k); }} />`)}</div>
     </section>`)}
@@ -3095,9 +3394,10 @@ function App() {
   </div>`;
 
   const StamTab = html`<div style=${{ display: 'grid', gap: 22 }}>
-    <div><h2 className="page">Stämning och lyssna</h2><p className="lead">Stämmaren och ackordkollen lyssnar på din gitarr genom mikrofonen. Referenstonerna längre ner fungerar alltid.</p></div>
+    <div><h2 className="page">Stämning och lyssna</h2><p className="lead">Stämmaren och greppkollen lyssnar på din gitarr genom mikrofonen. Referenstonerna längre ner fungerar alltid.</p></div>
+    <${MicCalib} />
     <${MicTools} easy=${easy}
-      onTuned=${(i) => award(10, 'Sträng ' + STRINGS[i].n + ' stämd', (n) => { if (!n.tuned.includes(i)) n.tuned.push(i); })}
+      onTuned=${(i) => award(10, 'Sträng ' + STRINGS[i].n + ' stämd', (n) => { if (!n.tuned.includes(i)) n.tuned.push(i); addTag(n, 'tune'); })}
       onChordOk=${chordOk} />
     <div className="row between">
       <div><h3 style=${{ fontSize: 18 }}>Referenstoner</h3><p className="muted" style=${{ fontSize: 14 }}>Klicka på en sträng och vrid stämskruven tills din sträng låter likadant.</p></div>
@@ -3105,7 +3405,7 @@ function App() {
     </div>
     <div className="tuner">
       ${STRINGS.map((s, i) => html`<button key=${i} className=${'tstr' + (tString === i ? ' sel' : '')} onClick=${() => { setTString(i); engine.note(s.freq, engine.now(), { vel: 1, wound: s.wound }); window.dispatchEvent(new CustomEvent('ng-pluck', { detail: [i] }));
-          if (!P.current.tuned.includes(i)) award(5, 'Sträng ' + s.n + ' kollad', (n) => n.tuned.push(i), true); }}>
+          award(P.current.tuned.includes(i) ? 0 : 5, 'Sträng ' + s.n + ' kollad', (n) => { if (!n.tuned.includes(i)) n.tuned.push(i); if (n.tuned.length >= 6) addTag(n, 'tune'); }, true); }}>
         <span className="kind">Sträng ${s.n} · ${s.wound ? 'omspunnen' : 'klar nylon'}</span>
         <span className="nt">${s.note}<span className="mono" style=${{ fontSize: 14, color: 'var(--muted)', marginLeft: 6 }}>${['E2', 'A2', 'D3', 'G3', 'B3', 'E4'][i]}</span></span>
         <span className="hz">${s.freq.toFixed(2)} Hz</span>
@@ -3127,6 +3427,14 @@ function App() {
   const curMission = MISSIONS.find((m) => !prog.missions.includes(m.id));
   const curIdx = curMission ? MISSIONS.indexOf(curMission) : MISSIONS.length;
 
+  const songTitle = (id) => (INITIAL_SONGS.find((x) => x.id === id) || {}).title || id;
+  const stepLabel = (st) => st.k === 'tune' ? 'Stäm gitarren' : st.k === 'chord' ? 'Lär dig ' + CHORD_DB[st.c].name + ' tills greppkollen säger Rätt!'
+    : st.k === 'chal' ? '1-minutsbyte ' + CHORD_DB[st.p[0]].name + ' ↔ ' + CHORD_DB[st.p[1]].name + ': minst ' + st.n + ' byten'
+    : st.k === 'skank' ? 'Skanka 8 takter i Skank-skolan' : st.k === 'song' ? 'Spela ' + songTitle(st.s) + ' (Guitar Hero eller hela låten)'
+    : st.k === 'solo' ? 'Spela en hel låt med "Appen spelar gitarren" avstängd' : st.n + ' stjärnor i ' + (st.s === 'any' ? 'valfri låt' : songTitle(st.s)) + ' i Guitar Hero';
+  const stepGo = (st) => st.k === 'tune' ? { tab: 'stam' } : st.k === 'chord' ? { tab: 'ackord', chord: st.c } : st.k === 'chal' ? { tab: 'spel', game: 'chal', pair: st.p }
+    : st.k === 'skank' ? { tab: 'skank' } : st.k === 'song' ? { tab: 'spela', song: st.s, gh: true } : st.k === 'solo' ? { tab: 'spela' } : { tab: 'spela', song: st.s === 'any' ? undefined : st.s, gh: true };
+  const planDone = (prog.planDay || 0), planDay = Math.min(PLAN.length, planDone + 1), pd = PLAN[planDay - 1];
   const VagTab = html`<div style=${{ display: 'grid', gap: 22 }}>
     <section className="card hero">
       <div className="medal"><small>NIVÅ</small><b>${lvl}</b></div>
@@ -3138,6 +3446,20 @@ function App() {
         <div><div className="row between" style=${{ fontSize: 12, color: 'var(--muted)', marginBottom: 4 }}><span>Dagens mål</span><span className="mono">${Math.min(dayXp, DAILY_GOAL)} / ${DAILY_GOAL} XP</span></div>
           <div className="xpbar goal"><i style=${{ width: Math.min(100, dayXp / DAILY_GOAL * 100) + '%' }}></i></div></div>
       </div>
+    </section>
+
+    <section className="card plan">
+      <div className="row between" style=${{ alignItems: 'flex-start' }}>
+        <div style=${{ minWidth: 0 }}><div className="label" style=${{ color: 'var(--brass)' }}>Din tvåveckorsplan · ${planDone >= PLAN.length ? 'klar!' : 'dag ' + planDay + ' av ' + PLAN.length}</div>
+          <h2 className="page" style=${{ marginTop: 4 }}>${planDone >= PLAN.length ? 'Du har klarat alla 14 dagarna' : pd.t}</h2></div>
+        ${planDone < PLAN.length ? html`<span className="xp" style=${{ fontSize: 15 }}>+50 XP</span>` : null}
+      </div>
+      <div className="plan-dots" aria-label=${planDone + ' av 14 dagar klara'}>${PLAN.map((_, i) => html`<i key=${i} className=${i < planDone ? 'done' : i === planDay - 1 && planDone < PLAN.length ? 'cur' : ''}></i>`)}</div>
+      ${planDone < PLAN.length ? html`<ol className="plan-steps">${pd.steps.map((st, i) => { const ok = stepDone(prog, st); return html`<li key=${i} className=${ok ? 'done' : ''}>
+        <span className="ck">${ok ? '✓' : i + 1}</span><span className="tx">${stepLabel(st)}</span>
+        ${ok ? null : html`<div className="row" style=${{ gap: 4, flexWrap: 'nowrap' }}>${st.k === 'chord' ? html`<button className="chip" title="Bocka av utan mikrofon" onClick=${() => award(0, '', (n) => addTag(n, 'chord:' + st.c), true)}>Klar</button>` : null}<button className="chip" onClick=${() => goMission({ go: stepGo(st) })}>Kör</button></div>`}</li>`; })}</ol>
+        <p className="muted" style=${{ fontSize: 12 }}>Stegen bockas av automatiskt när du gör dem. Missar du en dag fortsätter du där du var. Målet: hela låtar efter 14 dagar.</p>`
+        : html`<p className="lead">Nu kan du lägga in egna låtar under Låtar och köra dem med tempotrappan tills du spelar i originaltempo.</p>`}
     </section>
 
     ${curMission ? html`<section className="card mission-now" style=${{ display: 'grid', gap: 12 }}>
@@ -3187,7 +3509,7 @@ function App() {
         award(xp, '', (n) => { n.quizRight++; n.quizCombo = Math.max(n.quizCombo, combo); }, true); return xp; }} />`
       : html`<${Challenge} easy=${easy} pair=${chPair} setPair=${setChPair} best=${prog.best}
         onFinish=${(cnt, pair) => { const k = pair[0] + '-' + pair[1], rec = cnt > (P.current.best[k] || 0) && cnt > 0;
-          award(cnt * 2 + (rec ? 20 : 0), rec ? 'Nytt rekord: ' + cnt + ' byten!' : cnt + ' byten på en minut', (n) => { n.best[k] = Math.max(n.best[k] || 0, cnt); }); }} />`}
+          award(cnt * 2 + (rec ? 20 : 0), rec ? 'Nytt rekord: ' + cnt + ' byten!' : cnt + ' byten på en minut', (n) => { n.best[k] = Math.max(n.best[k] || 0, cnt); addTag(n, 'chal:' + k + ':' + cnt); }); }} />`}
   </div>`;
 
   const TABS = [['vag', 'Min väg', 'Väg'], ['spela', 'Spela låtar', 'Låtar'], ['spel', 'Spel', 'Spel'], ['skank', 'Skank-skola', 'Skank'], ['ackord', 'Ackordtabell', 'Ackord'], ['byten', 'Ackordbyten', 'Byten'], ['stam', 'Stämning', 'Stäm']];
@@ -3209,7 +3531,7 @@ function App() {
           <span className="flame mono">${FlameIcon}${streak}</span>
         </button>
         <button className=${'chip' + (easy ? ' on' : '')} onClick=${() => setEasy(!easy)} title="Växla till förenklade nybörjargrepp">${I.spark}<span className="hide-s">Nybörjargrepp ${easy ? 'på' : 'av'}</span><span className="show-s">Lätt</span></button>
-        <button className="chip" onClick=${() => setSkinOpen(true)} aria-label="Byt färgtema" title="Färgtema"><svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18c1.2 0 1.6-1 1.1-1.9-.6-1.1.1-2.4 1.4-2.4H17a4 4 0 0 0 4-4c0-5.3-4-9.7-9-9.7z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10.5" cy="7" r="1.2"/><circle cx="15" cy="7.5" r="1.2"/></svg></button>
+        <button className="chip" onClick=${() => { setSkinOpen(true); setCodeMsg(''); setCodeOut(''); setCodeAsk(null); }} aria-label="Inställningar" title="Inställningar"><svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
         <button className=${'chip' + (muted ? ' warn' : '')} onClick=${() => { engine.setMuted(!muted); setMuted(!muted); }} aria-label=${muted ? 'Slå på ljud' : 'Stäng av ljud'}>${muted ? I.mute : I.vol}</button>
       </div>
     </div></header>
@@ -3231,49 +3553,145 @@ function App() {
       onStart=${() => { setCountIn(true); S.current.countIn = true; S.current.startBar = 0; startSong(0); }}
       onStop=${() => { engine.stop(); setPlaying(null); setPos({ step: -1, bar: -1 }); setStartBar(0); }}
       autoGuitar=${autoGuitar} setAutoGuitar=${(v) => { setAutoGuitar(v); S.current.autoGuitar = v; }}
-      best=${(prog.ghBest || {})[song.id] || 0} onClose=${() => setGhOpen(false)}
-      onResult=${(r) => { const rec = r.score > ((P.current.ghBest || {})[song.id] || 0);
+      best=${(prog.ghBest || {})[song.id] || 0} onClose=${() => setGhOpen(false)} ladderPct=${ladderPct(song.id)}
+      onResult=${(r) => { if (r.watch) { if (!loop) award(10, 'Spelade med i ' + song.title, (n) => addTag(n, 'song:' + song.id)); return; } const rec = r.score > ((P.current.ghBest || {})[song.id] || 0);
         award(10 + r.stars * 8 + (rec ? 15 : 0), r.stars + ' stjärnor i ' + song.title + (rec ? ' · nytt rekord' : ''), (n) => {
+          if (r.ladder && r.acc >= 0.8) { n.ladder = n.ladder || {}; n.ladder[song.id] = Math.min(100, (n.ladder[song.id] || 60) + 5); }
+          if (!loop) { addTag(n, 'song:' + song.id); addTag(n, 'stars:' + song.id + ':' + r.stars); }
           n.ghBest = n.ghBest || {}; n.ghStars = n.ghStars || {}; n.ghBest[song.id] = Math.max(n.ghBest[song.id] || 0, r.score); n.ghStars[song.id] = Math.max(n.ghStars[song.id] || 0, r.stars); }); }} />` : null}
     ${skinOpen ? html`<div className="scrim" onClick=${(e) => e.target === e.currentTarget && setSkinOpen(false)}>
-      <div className="modal"><div className="row between"><h3 style=${{ fontSize: 20 }}>Färgtema</h3><button className="btn" onClick=${() => setSkinOpen(false)}>Klar</button></div>
+      <div className="modal settings"><div className="row between"><h3 style=${{ fontSize: 20 }}>Inställningar</h3><button className="btn" onClick=${() => setSkinOpen(false)}>Klar</button></div>
+        <div className="label">Färgtema</div>
         <div className="skins">${SKINS.map((k) => html`<button key=${k.id} className="skin" aria-pressed=${skin === k.id} style=${{ background: k.bg, color: k.fg }} onClick=${() => setSkinState(k.id)}>
           <span className="sw">${k.sw.map((c) => html`<i key=${c} style=${{ background: c }}></i>`)}</span><b>${k.name}</b><small>${k.sub}</small></button>`)}</div>
+        <div className="set-row"><div><b>Vänsterhänt</b><small>Spegelvänder greppbrädor, greppbilder och Guitar Hero-banan</small></div>
+          <button className=${'chip' + (lefty ? ' on' : '')} onClick=${() => setLefty(!lefty)}>${lefty ? 'På' : 'Av'}</button></div>
+        <div className="set-row"><div><b>Vibration</b><small>Telefonen vibrerar vid träffar i Guitar Hero och vid ackordbyten</small></div>
+          <button className=${'chip' + (vibe ? ' on' : '')} onClick=${() => { setVibe(!vibe); if (!vibe) setTimeout(() => vib(30), 50); }}>${vibe ? 'På' : 'Av'}</button></div>
+        <div className="set-sec"><b>Flytta framsteg</b><small>XP, märken, rekord, egna låtar och kalibrering följer med. Gör så här: kopiera koden på enheten du övat på och klistra in den på den andra.</small>
+          <div className="row"><button className="btn primary" onClick=${makeCode}>Kopiera min kod</button></div>
+          ${codeOut ? html`<textarea id="codeout" readOnly rows="3" value=${codeOut} onFocus=${(e) => e.target.select()}></textarea>` : null}
+          <textarea id="codein" rows="2" placeholder="Klistra in en kod från din andra enhet (börjar med NG1:)" value=${codeIn} onInput=${(e) => { setCodeIn(e.target.value); setCodeAsk(null); }} onChange=${() => {}}></textarea>
+          <div className="row">${codeAsk ? html`<button className="btn primary" onClick=${applyCode}>Ja, ersätt mina framsteg</button><button className="btn" onClick=${() => { setCodeAsk(null); setCodeMsg(''); }}>Avbryt</button>` : html`<button className="btn" disabled=${!codeIn.trim()} onClick=${readCode}>Hämta framsteg</button>`}</div>
+          ${codeMsg ? html`<p className="muted" style=${{ fontSize: 13 }}>${codeMsg}</p>` : null}
+        </div>
       </div></div>` : null}
     ${modal ? html`<${NewSong} onClose=${() => setModal(false)} onSave=${(s) => { const list = [...custom, s]; setCustom(list); saveCustom(list); setModal(false); pickSong(s); }} />` : null}
   </div>`;
 }
 
+/* ---------------------------------------------------------------- ackordblad: tolka inklistrad text */
+const SECTION_SV = [[/^(pre[- ]?chorus|förrefräng|brygga)/i, 'Förrefräng'], [/^(chorus|refräng|refrain|ref)/i, 'Refräng'], [/^(verse|vers)/i, 'Vers'], [/^(bridge|stick)/i, 'Stick'],
+  [/^intro/i, 'Intro'], [/^(outro|avslut|ending)/i, 'Avslut'], [/^(instrumental|interlude|mellanspel)/i, 'Mellanspel'], [/^solo/i, 'Solo'], [/^(hook)/i, 'Refräng']];
+const CHORD_RE = /^([A-G])(#|b)?((?:maj|min|m|M|dim|aug|sus|add|°|\+|-)?[0-9]*(?:sus[24]?|add[0-9]+|maj[0-9]*|[0-9]+)*)(\/[A-G](#|b)?)?$/;
+const FLAT2SHARP = { Db: 'C#', Eb: 'D#', Gb: 'F#', Ab: 'G#', 'A#': 'Bb' };
+function chordKey(raw) {
+  const m = CHORD_RE.exec(raw.replace(/[()*]/g, '')); if (!m) return null;
+  let root = m[1] + (m[2] || ''); root = FLAT2SHARP[root] || root;
+  let suf = (m[3] || '').replace(/^min/, 'm').replace(/^-/, 'm').replace(/^M7|^Δ/, 'maj7');
+  const names = {}; for (const k of CHORD_KEYS) { const n = CHORD_DB[k].name; if (!(n in names) || k === n) names[n] = k; }
+  const tries = [suf, suf.replace(/add[0-9]+|6|9|11|13/g, ''), suf.replace(/^(m?)maj7.*/, '$1').replace(/^(m?)7.*/, '$17'), suf.replace(/^(m?)7.*/, '$1'),
+    suf.replace(/sus[24]?/, ''), suf.startsWith('m') && !suf.startsWith('maj') ? 'm' : ''];
+  for (let i = 0; i < tries.length; i++) { const k = names[root + tries[i]]; if (k) return { key: k, simplified: i > 0 || !!m[4], orig: raw }; }
+  return { key: null, orig: raw };
+}
+const isChordTok = (t) => CHORD_RE.test(t.replace(/[()*]/g, '')) || /^(N\.?C\.?)$/i.test(t);
+function parseSheet(text, perBar = 1) {
+  const parts = []; let cur = null, capo = 0; const unknown = new Set(), simplified = {};
+  const push = (name) => { cur = { part: name, bars: [] }; parts.push(cur); };
+  const addChords = (list, repeat = 1) => {
+    if (!cur) push('Vers');
+    const keys = list.map((t) => { const r = chordKey(t); if (!r || !r.key) { if (!/^N\.?C/i.test(t)) unknown.add(t); return null; } if (r.simplified) simplified[t] = CHORD_DB[r.key].name; return r.key; }).filter(Boolean);
+    for (let n = 0; n < repeat; n++) {
+      if (perBar === 2) for (let i = 0; i < keys.length; i += 2) cur.bars.push(keys[i + 1] && keys[i + 1] !== keys[i] ? [keys[i], keys[i + 1]] : keys[i]);
+      else keys.forEach((k) => cur.bars.push(k));
+    }
+  };
+  for (let line of text.replace(/\r/g, '').split('\n')) {
+    const cm = /capo\s*[:\-]?\s*(\d+)/i.exec(line); if (cm) { capo = +cm[1]; continue; }
+    const t = line.trim(); if (!t) continue;
+    const head = /^\[([^\]]+)\]$/.exec(t) || /^([A-Za-zÅÄÖåäö\- ]+?)\s*[0-9]*\s*:$/.exec(t) || /^(intro|verse|vers|chorus|refräng|bridge|stick|outro|pre[- ]?chorus|instrumental|solo|interlude)\s*[0-9]*$/i.exec(t);
+    if (head && !isChordTok(head[1].trim())) { const nm = head[1].trim(); const sv = SECTION_SV.find(([re]) => re.test(nm)); push(sv ? sv[1] : nm.charAt(0).toUpperCase() + nm.slice(1)); continue; }
+    // ChordPro: [Am]text[C]text
+    const inl = [...t.matchAll(/\[([^\]]+)\]/g)].map((x) => x[1]).filter(isChordTok);
+    if (inl.length && t.replace(/\[[^\]]+\]/g, '').trim().length > 0) { addChords(inl); continue; }
+    const rep = /(?:^|\s)[x×](\d)\s*$|\((?:x|×)?(\d)x?\)\s*$/i.exec(t); const times = rep ? +(rep[1] || rep[2]) : 1;
+    const body = rep ? t.slice(0, rep.index) : t;
+    // takter med |
+    if (body.includes('|')) {
+      const segs = body.split('|').map((x) => x.trim().split(/\s+/).filter(Boolean)).filter((x) => x.length);
+      if (segs.length && segs.every((sg) => sg.every((tok) => isChordTok(tok) || /^[-\/.%]+$/.test(tok)))) {
+        if (!cur) push('Vers');
+        for (let n = 0; n < times; n++) segs.forEach((sg) => { const ks = sg.filter(isChordTok).map((x) => { const r = chordKey(x); if (!r || !r.key) { unknown.add(x); return null; } if (r.simplified) simplified[x] = CHORD_DB[r.key].name; return r.key; }).filter(Boolean); if (ks.length) cur.bars.push(ks.length > 1 && ks[1] !== ks[0] ? [ks[0], ks[1]] : ks[0]); });
+        continue;
+      }
+    }
+    const toks = body.split(/\s+/).filter((x) => x && !/^[-–|.,]+$/.test(x));
+    if (toks.length && toks.filter(isChordTok).length / toks.length >= 0.75) addChords(toks.filter(isChordTok), times);
+  }
+  return { parts: parts.filter((p) => p.bars.length), capo, unknown: [...unknown], simplified };
+}
+
 function NewSong({ onClose, onSave }) {
+  const [tab, setTab] = useState('paste');
   const [name, setName] = useState('');
+  const [artist, setArtist] = useState('');
+  const [text, setText] = useState('');
+  const [perBar, setPerBar] = useState(1);
+  const [bpm, setBpm] = useState(80);
   const [chords, setChords] = useState(['Em', 'G', 'D', 'C']);
   const [feel, setFeel] = useState('acoustic');
+  const parsed = useMemo(() => (text.trim() ? parseSheet(text, perBar) : null), [text, perBar]);
+  const nBars = parsed ? parsed.parts.reduce((a, p) => a + p.bars.length, 0) : 0;
+  const canSave = name.trim() && (tab === 'pick' || nBars > 0);
   const submit = (e) => {
-    e.preventDefault(); if (!name.trim()) return;
-    onSave({ id: 'custom-' + Date.now(), custom: true, title: name.trim(), artist: 'Egen ackordföljd', level: 'Egen', bpm: 70, feel,
+    e.preventDefault(); if (!canSave) return;
+    const form = tab === 'paste' ? parsed.parts : [{ part: 'Runda', bars: chords }];
+    const simp = parsed && Object.keys(parsed.simplified).length ? ' Förenklade ackord: ' + Object.entries(parsed.simplified).map(([a, b]) => a + ' → ' + b).join(', ') + '.' : '';
+    onSave({ id: 'custom-' + Date.now(), custom: true, title: name.trim(), artist: artist.trim() || (tab === 'paste' ? 'Inklistrat ackordblad' : 'Egen ackordföljd'), level: 'Egen', bpm, feel,
+      capo: tab === 'paste' && parsed.capo ? 'Capo ' + parsed.capo : undefined,
       pattern: feel === 'reggae' ? P_SKANK : P_FOLK, accents: feel === 'reggae' ? [] : [0, 6],
-      tip: 'Spela igenom rundan i lugnt tempo och höj takten när bytena sitter.', form: [{ part: 'Runda', bars: chords }] });
+      tip: 'Börja med tempotrappan och låt appen höja tempot när bytena sitter.' + simp, form });
   };
   return html`<div className="scrim" onClick=${(e) => e.target === e.currentTarget && onClose()}>
-    <form className="modal" onSubmit=${submit}>
-      <h3 style=${{ fontSize: 20 }}>Egen ackordföljd</h3>
-      <label className="label" htmlFor="songname">Namn</label>
-      <input type="text" id="songname" required placeholder="Till exempel Kvällsrundan" value=${name} onInput=${(e) => setName(e.target.value)} onChange=${() => {}} />
-      <div className="row between"><span className="label">Takter (${chords.length})</span>
-        <div className="row" style=${{ gap: 6 }}>
-          <button type="button" className="chip" disabled=${chords.length <= 2} onClick=${() => setChords(chords.slice(0, -1))}>− Takt</button>
-          <button type="button" className="chip" disabled=${chords.length >= 12} onClick=${() => setChords([...chords, chords[chords.length - 1]])}>+ Takt</button>
-        </div></div>
-      <div className="slots">${chords.map((c, i) => html`<select key=${i} id=${'slot' + i} value=${c} onChange=${(e) => { const u = [...chords]; u[i] = e.target.value; setChords(u); }}>
-        ${CHORD_KEYS.map((k) => html`<option key=${k} value=${k}>${CHORD_DB[k].name}</option>`)}</select>`)}</div>
+    <form className="modal ns" onSubmit=${submit}>
+      <div className="row between"><h3 style=${{ fontSize: 20 }}>Lägg till låt</h3><button type="button" className="btn" onClick=${onClose}>Stäng</button></div>
+      <div className="seg" role="group" aria-label="Sätt">
+        <button type="button" aria-pressed=${tab === 'paste'} onClick=${() => setTab('paste')}>Klistra in ackordblad</button>
+        <button type="button" aria-pressed=${tab === 'pick'} onClick=${() => setTab('pick')}>Välj ackord själv</button>
+      </div>
+      <div className="ns-row">
+        <label className="ns-f"><span className="label">Låt</span><input type="text" id="songname" required placeholder="Till exempel Often" value=${name} onInput=${(e) => setName(e.target.value)} onChange=${() => {}} /></label>
+        <label className="ns-f"><span className="label">Artist</span><input type="text" id="songartist" placeholder="Till exempel Ellen Krauss" value=${artist} onInput=${(e) => setArtist(e.target.value)} onChange=${() => {}} /></label>
+      </div>
+      ${tab === 'paste' ? html`
+        <p className="muted" style=${{ fontSize: 13 }}>Kopiera ett ackordblad (till exempel från Ultimate Guitar) och klistra in här. Appen plockar ut ackorden, delarna och capo. Texten sparas inte.</p>
+        <textarea id="sheet" rows="7" placeholder=${'[Verse]\nAm   C   F\n…\n[Chorus]\nC   G   Am   F'} value=${text} onInput=${(e) => setText(e.target.value)} onChange=${() => {}}></textarea>
+        <div className="row between"><span className="label">Ackord per takt</span>
+          <div className="seg" role="group" aria-label="Ackord per takt">
+            <button type="button" aria-pressed=${perBar === 1} onClick=${() => setPerBar(1)}>Ett</button>
+            <button type="button" aria-pressed=${perBar === 2} onClick=${() => setPerBar(2)}>Två</button>
+          </div></div>
+        ${parsed ? html`<div className="ns-prev">
+          ${parsed.parts.length ? parsed.parts.map((pt, i) => html`<div key=${i} className="ns-part"><span className="label">${pt.part}</span>
+            <div className="ns-bars">${pt.bars.map((b, j) => html`<span key=${j}>${[].concat(b).map((k) => CHORD_DB[k].name).join(' | ')}</span>`)}</div></div>`)
+            : html`<p className="muted">Hittade inga ackord än. Ackorden ska stå på egna rader eller inom [ ] i texten.</p>`}
+          <p className="muted" style=${{ fontSize: 12 }}>${nBars} takter${parsed.capo ? ' · capo ' + parsed.capo : ''}${Object.keys(parsed.simplified).length ? ' · förenklat: ' + Object.entries(parsed.simplified).map(([a, b]) => a + '→' + b).join(', ') : ''}</p>
+          ${parsed.unknown.length ? html`<p className="gh-err" style=${{ color: 'var(--text)' }}>Saknar grepp för ${parsed.unknown.join(', ')}. De hoppas över. Prova en capo-version av ackordbladet.</p>` : null}
+        </div>` : null}` : html`
+        <div className="row between"><span className="label">Takter (${chords.length})</span>
+          <div className="row" style=${{ gap: 6 }}>
+            <button type="button" className="chip" disabled=${chords.length <= 2} onClick=${() => setChords(chords.slice(0, -1))}>− Takt</button>
+            <button type="button" className="chip" disabled=${chords.length >= 16} onClick=${() => setChords([...chords, chords[chords.length - 1]])}>+ Takt</button>
+          </div></div>
+        <div className="slots">${chords.map((c, i) => html`<select key=${i} id=${'slot' + i} value=${c} onChange=${(e) => { const u = [...chords]; u[i] = e.target.value; setChords(u); }}>
+          ${CHORD_KEYS.map((k) => html`<option key=${k} value=${k}>${CHORD_DB[k].name}</option>`)}</select>`)}</div>`}
+      <div className="row between"><span className="label">Tempo</span><${Bpm} value=${bpm} set=${setBpm} /></div>
       <div className="seg" role="group" aria-label="Spelsätt">
         <button type="button" aria-pressed=${feel === 'acoustic'} onClick=${() => setFeel('acoustic')}>Akustiskt komp</button>
         <button type="button" aria-pressed=${feel === 'reggae'} onClick=${() => setFeel('reggae')}>Reggae-skank</button>
       </div>
-      <div className="row" style=${{ justifyContent: 'flex-end' }}>
-        <button type="button" className="btn" onClick=${onClose}>Avbryt</button>
-        <button type="submit" className="btn primary">Spara och öppna</button>
-      </div>
+      <button type="submit" className="btn primary" disabled=${!canSave}>Spara och öppna</button>
     </form>
   </div>`;
 }
