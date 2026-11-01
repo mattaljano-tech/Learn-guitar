@@ -367,6 +367,50 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
   .strip{grid-template-columns:minmax(0,1fr)}
   .strip .panel{grid-template-columns:110px minmax(0,1fr);align-items:center;gap:10px}
 }
+
+/* Skank-skolan, förenklad */
+.sk-intro .lead{max-width:56ch}
+.sk-main{position:relative;display:grid;gap:14px;overflow:hidden}
+.sk-flash{position:absolute;inset:0;pointer-events:none;border-radius:inherit;box-shadow:inset 0 0 0 3px var(--leaf),inset 0 0 60px color-mix(in oklab,var(--leaf) 35%,transparent);animation:skflash .35s ease-out forwards}
+@keyframes skflash{0%{opacity:1}100%{opacity:0}}
+.sk-cue{display:grid;justify-items:center;text-align:center;min-height:96px;align-content:center;gap:2px}
+.sk-cue b{font-family:var(--f-display);font-weight:800;font-size:64px;line-height:1;letter-spacing:-.02em}
+.sk-cue span{font-size:14px;color:var(--muted);font-weight:600}
+.sk-cue.idle b{font-size:40px;color:var(--text)}
+.sk-cue.count b{color:var(--brass);animation:tjack .3s ease-out}
+.sk-cue.du b{color:color-mix(in oklab,var(--brass) 70%,var(--muted))}
+.sk-cue.tj b{background:linear-gradient(135deg,var(--leaf),var(--leaf-2));-webkit-background-clip:text;background-clip:text;color:transparent;animation:tjack .25s ease-out}
+.sk-cue.tj span{color:var(--leaf)}
+.sk-lane{padding-top:66px}
+.sk-lane .pa-ball{width:24px;height:24px;margin:-12px 0 0 -12px}
+.sk-row{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:4px}
+.sk-row span{display:grid;justify-items:center;gap:2px;padding:10px 0 8px;border-radius:12px;background:var(--surface-2);color:var(--faint);transition:background .08s,color .08s}
+.sk-row span b{font-family:var(--f-display);font-weight:800;font-size:22px;line-height:1}
+.sk-row span small{font-size:10px;font-weight:800;letter-spacing:.04em}
+.sk-row span.tj{background:color-mix(in oklab,var(--leaf) 12%,var(--surface-2));color:color-mix(in oklab,var(--leaf) 75%,var(--text))}
+.sk-row span.on.du{background:linear-gradient(160deg,var(--brass),var(--brass-2));color:var(--brass-ink)}
+.sk-row span.on.tj{background:linear-gradient(160deg,var(--leaf),var(--leaf-2));color:var(--leaf-ink);animation:tjack .25s ease-out}
+.sk-hands{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:10px}
+.sk-hands .panel p{margin:0;font-size:13px;line-height:1.35;color:var(--text)}
+.sk-hands .panel:last-child svg{max-width:200px;margin:0 auto}
+.sk-mute{font-size:78px;text-align:center;line-height:1.6}
+.sk-ctl{display:grid;gap:12px;border-top:1px solid var(--line);padding-top:14px}
+.sk-opt{display:grid;gap:6px}
+.sk-lab{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.sk-grip{flex-wrap:wrap}
+.sk-tip{margin:0;font-size:13px}
+.sk-more>summary{font-size:15px;color:var(--text)}
+@media (max-width:760px){
+  .sk-cue{min-height:84px}
+  .sk-cue b{font-size:56px}
+  .sk-row span b{font-size:18px}
+  .sk-row span small{font-size:9px}
+  .sk-hands{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:8px}
+  .sk-hands .panel{padding:8px}
+  .sk-hands .panel p{font-size:12px}
+  .sk-hands .panel .cap{font-size:11px}
+  .sk-mute{font-size:58px}
+}
 /* Teman */
 .skins{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .skin{text-align:left;border-radius:14px;padding:12px;border:2px solid transparent;display:grid;gap:8px;color:#fff}
@@ -2470,60 +2514,63 @@ function LeftHand({ k, easy, pressed, tick = 0 }) {
     </g>` : null)}
   </svg>`;
 }
-function SkankAnim({ step, playing, chordKey, easy, onStart }) {
-  const [local, setLocal] = useState(1);
-  const [demo, setDemo] = useState(48);
-  const lane = useRef(null), ball = useRef(null), stRef = useRef(1);
+function SkankAnim({ playing, chordKey, muted, easy, children }) {
+  const [st, setSt] = useState(-1);      // aktuellt slag 0–7, -1 = stoppad
+  const [cnt, setCnt] = useState(null);  // inräkning 4 … 1
+  const lane = useRef(null), ball = useRef(null), r = useRef({ st: -2, cnt: null });
   useEffect(() => {
-    let raf; const t0 = performance.now();
+    if (!playing) { r.current = { st: -2, cnt: null }; setSt(-1); setCnt(null); return; }
+    let raf;
     const loop = () => {
       raf = requestAnimationFrame(loop);
-      let c;
-      if (playing) { const k = clockNow(); if (!k || k.bar < 0) return; c = k.step + k.frac; }
-      else { const sd = 60 / demo / 2; c = ((performance.now() - t0) / 1000 / sd + 0.6) % 8; }
-      const st = Math.floor(c) % 8; if (st !== stRef.current) { stRef.current = st; setLocal(st); }
+      const k = clockNow(), el = ball.current, R = r.current;
+      if (!k) return;
+      if (k.bar < 0) {
+        const n = 4 - Math.floor(k.step / 2);
+        if (n !== R.cnt) { R.cnt = n; setCnt(n); }
+        if (el) el.style.opacity = 0;
+        return;
+      }
+      if (R.cnt !== null) { R.cnt = null; setCnt(null); }
+      if (k.step !== R.st) { R.st = k.step; setSt(k.step); }
+      const c = k.step + k.frac;
       const L = c >= 1 ? Math.floor((c - 1) / 2) * 2 + 1 : 7, q = ((c - L + 8) % 8) / 2, to = L + 2 > 7 ? 1 : L + 2;
-      const el = ball.current, w = lane.current ? lane.current.clientWidth : 320;
-      const x = (((L + (to - L) * q) + 0.5) / 8) * w, h = to < L ? 52 : 40, y = 52 - h * 4 * q * (1 - q);
-      if (el) el.style.transform = `translate(${x}px, ${y}px)`;
+      const w = lane.current ? lane.current.clientWidth : 320;
+      const x = (((L + (to - L) * q) + 0.5) / 8) * w, h = to < L ? 56 : 46, y = 60 - h * 4 * q * (1 - q);
+      if (el) { el.style.opacity = 1; el.style.transform = `translate(${x}px, ${y}px)`; }
     };
     loop();
     return () => cancelAnimationFrame(raf);
-  }, [playing, demo]);
-  const st = local;
+  }, [playing]);
   const tickRef = useRef(0), lastRef = useRef(-1);
   if (st !== lastRef.current) { tickRef.current++; lastRef.current = st; }
-  const tick = tickRef.current, tj = st % 2 === 1;
-  return html`<section className="card anim" aria-label="Animerad skank-guide">
-    <div className="anim-head">
-      <div className="anim-word">
-        <b className=${tj ? 'tj' : 'du'}>${tj ? 'TJACK' : 'DUNS'}</b>
-        <span>${tj ? 'Pekfingret snärtar neråt över de 3 tunna strängarna. Vänsterhanden trycker greppet.' : 'Tummen vilar mot E-strängen. Vänsterhanden släpper, så att det blir tyst.'}</span>
-      </div>
-      <div className="row">
-        ${playing ? html`<span className="chip on">Följer tränaren</span>` : html`<div className="seg" role="group" aria-label="Demotempo">
-          <button aria-pressed=${demo === 34} onClick=${() => setDemo(34)}>Slowmotion</button>
-          <button aria-pressed=${demo === 48} onClick=${() => setDemo(48)}>Långsamt</button>
-          <button aria-pressed=${demo === 70} onClick=${() => setDemo(70)}>Normalt</button>
-        </div>`}
-        ${!playing ? html`<button className="btn primary" onClick=${onStart}>Spela med ljud</button>` : null}
-      </div>
+  const tick = tickRef.current, on = playing && cnt === null && st >= 0, tj = on && st % 2 === 1;
+  const name = CHORD_DB[chordKey] ? CHORD_DB[chordKey].name : chordKey;
+  const cue = !playing ? html`<div className="sk-cue idle"><b>Redo?</b><span>Tryck på Starta. Slå när den gröna bollen landar.</span></div>`
+    : cnt !== null ? html`<div className="sk-cue count"><b key=${'c' + cnt}>${cnt}</b><span>Gör dig redo …</span></div>`
+    : tj ? html`<div className="sk-cue tj"><b key=${'t' + tick}>SLÅ!</b><span>Kort slag nu</span></div>`
+    : html`<div className="sk-cue du"><b>${on ? BEATS[st] : ''}</b><span>vila …</span></div>`;
+  return html`<section className=${'card sk-main' + (tj ? ' hit' : '')} aria-label="Skank-tränare">
+    ${tj ? html`<div key=${'f' + tick} className="sk-flash" aria-hidden="true"></div>` : null}
+    ${cue}
+    <div className="bounce sk-lane" ref=${lane}>
+      <div className="pa-ball" ref=${ball} style=${{ opacity: 0 }}></div>
+      <div className="sk-row" aria-hidden="true">${BEATS.map((b, i) => html`<span key=${i + (on && i === st ? 'on' + tick : '')}
+        className=${(on && i === st ? 'on ' : '') + (i % 2 ? 'tj' : 'du')}><b>${b}</b><small>${i % 2 ? 'SLÅ' : 'vila'}</small></span>`)}</div>
     </div>
-    <div className="bounce" ref=${lane}>
-      <div className="pa-ball" ref=${ball}></div>
-      <div className="count-row" aria-hidden="true">${BEATS.map((b, i) => html`<span key=${i + (i === st ? 'on' + tick : '')} className=${(i === st ? 'on ' : '') + (i % 2 ? 'tj' : 'du')}>${b}</span>`)}</div>
-    </div>
-    <p className="muted" style=${{ fontSize: 12, marginTop: -6 }}>Bollen landar på varje &. Tjacka precis när den slår i.</p>
-    <div className="anim-panels">
+    <div className="sk-hands">
       <div className="panel">
-        <div className="cap"><span>Högerhand · sett framifrån</span><span className="state" style=${{ color: tj ? 'var(--leaf)' : 'var(--brass)' }}>${tj ? 'SLÅ NER' : 'VILA'}</span></div>
-        <${RightHand} pose=${tj ? 'chop' : 'rest'} tick=${tick} />
+        <div className="cap"><span>Höger hand</span><span className="state" style=${{ color: tj ? 'var(--leaf)' : 'var(--brass)' }}>${!on ? 'SLÅ PÅ &' : tj ? 'SLÅ NER' : 'VILA'}</span></div>
+        <${RightHand} pose=${!on ? 'down' : tj ? 'chop' : 'rest'} tick=${tick} />
+        <p>${!on ? 'Ner med pekfingret över de 3 tunna strängarna.' : tj ? 'Snärta ner över de 3 tunna strängarna.' : 'Tummen vilar på tjocka E-strängen.'}</p>
       </div>
       <div className="panel">
-        <div className="cap"><span>Vänsterhand · ${CHORD_DB[chordKey].name}</span><span className="state" style=${{ color: tj ? 'var(--leaf)' : 'var(--muted)' }}>${tj ? 'TRYCK' : 'SLÄPP'}</span></div>
-        <${LeftHand} k=${chordKey} easy=${easy} pressed=${tj} tick=${tick} />
+        <div className="cap"><span>Vänster hand</span><span className="state" style=${{ color: tj ? 'var(--leaf)' : 'var(--muted)' }}>${muted ? 'LÖST' : !on ? name : tj ? 'TRYCK' : 'SLÄPP'}</span></div>
+        ${muted ? html`<div className="sk-mute emo" aria-hidden="true">✋</div>` : html`<${LeftHand} k=${chordKey} easy=${easy} pressed=${!on || tj} tick=${tick} />`}
+        <p>${muted ? 'Fingrarna ligger löst över alla strängar. Tryck inte.' : !on ? 'Håll greppet ' + name + '.' : tj ? 'Tryck ner greppet.' : 'Lätta på trycket så det blir tyst.'}</p>
       </div>
     </div>
+    ${children}
   </section>`;
 }
 function SkankStrip({ chordKey, easy }) {
@@ -3075,7 +3122,7 @@ function App() {
 
   const startSkank = () => {
     engine.start({
-      bpm: () => S.current.skBpm, swing: () => 0.06, countIn: () => false,
+      bpm: () => S.current.skBpm, swing: () => 0.06, countIn: () => true,
       onStep: (step, bar, t, sd) => {
         const s = S.current, key = s.skLevel === 3 ? (bar % 2 === 0 ? 'Am' : 'Em') : s.skChord, v = voicing(key, s.easy);
         if (s.skBand) engine.band('reggae', step, t, sd, CHORD_DB[key].root);
@@ -3296,61 +3343,60 @@ function App() {
     </section>
   </div>`;
 
-  const SKC = BEATS.map((b, i) => ({ b, tj: i % 2 === 1 }));
-  const SkankTab = html`<div style=${{ display: 'grid', gap: 22 }}>
-    <section className="card" style=${{ display: 'grid', gap: 16 }}>
-      <div className="row between" style=${{ alignItems: 'flex-start' }}>
-        <div style=${{ maxWidth: '64ch' }}>
-          <div className="label" style=${{ color: 'var(--leaf)' }}>Skank-skolan</div>
-          <h2 className="page" style=${{ marginTop: 4 }}>Duns – Tjack: handen gör något på varje slag</h2>
-          <p className="lead" style=${{ marginTop: 8 }}>Det svåra med reggae är pauserna. Om handen svävar fritt på 1, 2, 3 och 4 tappar du takten. Låt i stället tummen <strong>dunsa</strong> på siffrorna och pekfingret <strong>tjacka</strong> på varje &.</p>
-        </div>
+  const SK_OPTS = [['mute', 'Dämpat'], ['Am', 'Am'], ['Em', 'Em'], ['G', 'G'], ['C', 'C'], ['D', 'D'], ['Dm', 'Dm'], ['Gm', 'Gm'], ['AmEm', 'Am ↔ Em']];
+  const skSel = skLevel === 1 ? 'mute' : skLevel === 3 ? 'AmEm' : skChord;
+  const pickSk = (v) => { if (v === 'mute') setSkLevel(1); else if (v === 'AmEm') setSkLevel(3); else { setSkLevel(2); setSkChord(v); } };
+  const SkankTab = html`<div style=${{ display: 'grid', gap: 16 }}>
+    <section className="card sk-intro">
+      <div className="label" style=${{ color: 'var(--leaf)' }}>Skank-skolan</div>
+      <h2 className="page" style=${{ marginTop: 4 }}>Slå bara på &</h2>
+      <p className="lead" style=${{ marginTop: 6 }}>Räkna <b>1 & 2 & 3 & 4 &</b>. På siffrorna vilar du. På varje <b>&</b> slår du ett kort ackord. Slå när den gröna bollen landar.</p>
+    </section>
+
+    <${SkankAnim} playing=${playing === 'skank'} chordKey=${skLevel === 1 ? 'Am' : skShown} muted=${skLevel === 1} easy=${easy}>
+      <div className="sk-ctl">
+        ${playBtn('Starta')}
+        <div className="sk-opt"><span className="sk-lab">Tempo</span>
+          <div className="seg" role="group" aria-label="Tempo">
+            ${[[50, 'Långsamt'], [65, 'Lagom'], [76, 'Original']].map(([v, l]) => html`<button key=${v} aria-pressed=${skBpm === v} onClick=${() => setSkBpm(v)}>${l}</button>`)}
+          </div></div>
+        <div className="sk-opt"><span className="sk-lab">Grepp</span>
+          <div className="seg sk-grip" role="group" aria-label="Grepp">
+            ${SK_OPTS.map(([v, l]) => html`<button key=${v} aria-pressed=${skSel === v} onClick=${() => pickSk(v)}>${l}</button>`)}
+          </div></div>
+        <p className="muted sk-tip">${skLevel === 1 ? 'Börja här: bara rytmen, inget grepp. Säg högt: vila, SLÅ, vila, SLÅ.' : skLevel === 3 ? 'Appen byter mellan Am och Em varje takt.' : 'Välj Dämpat om det känns svårt. Ta Am ↔ Em när det sitter.'}</p>
+        <details className="more"><summary>Fler inställningar</summary>
+          <div style=${{ display: 'grid', gap: 12, marginTop: 10 }}>
+            <${Bpm} value=${skBpm} set=${setSkBpm} min=${40} max=${110} />
+            <div className="row">
+              <button className=${'chip' + (skBand ? ' on' : '')} onClick=${() => setSkBand(!skBand)}>Bas och trummor ${skBand ? 'på' : 'av'}</button>
+              <button className=${'chip' + (skGuitar ? ' on' : '')} onClick=${() => setSkGuitar(!skGuitar)}>Appens skank ${skGuitar ? 'på' : 'av'}</button>
+            </div>
+          </div>
+        </details>
+      </div>
+    <//>
+
+    <details className="card more sk-more"><summary>Så gör du, steg för steg</summary>
+      <div style=${{ display: 'grid', gap: 14, marginTop: 12 }}>
+        <${SkankStrip} chordKey=${skLevel === 1 ? 'Am' : skShown} easy=${easy} />
         <div className="row">
-          <button className="btn" onClick=${() => hear(skShown)}>Långt ackord</button>
-          <button className="btn primary" onClick=${() => engine.chop(voicing(skShown, easy).frets, engine.now())}>Kort skank</button>
+          <button className="btn" onClick=${() => hear(skShown)}>Hör långt ackord</button>
+          <button className="btn primary" onClick=${() => engine.chop(voicing(skShown, easy).frets, engine.now())}>Hör en skank</button>
         </div>
+        <${Fretboard} k=${skShown} easy=${easy} />
+        <div className="vidlink">Vill du se en riktig gitarrist göra det?
+          <a href="https://www.youtube.com/results?search_query=reggae+skank+guitar+lesson+beginner" target="_blank" rel="noopener">Videolektioner på YouTube ↗</a></div>
       </div>
-    </section>
-
-    <${SkankAnim} step=${pos.step} playing=${playing === 'skank' && pos.bar >= 0} chordKey=${skLevel === 1 ? 'Am' : skShown} easy=${easy} onStart=${() => { if (!playing) startSkank(); }} />
-    <${SkankStrip} chordKey=${skLevel === 1 ? 'Am' : skShown} easy=${easy} />
-    <div className="vidlink">Vill du se en riktig gitarrist göra det?
-      <a href="https://www.youtube.com/results?search_query=reggae+skank+guitar+lesson+beginner" target="_blank" rel="noopener">Videolektioner om reggae-skank på YouTube ↗</a></div>
-    <div className="levels" role="group" aria-label="Övningssteg">
-      ${[[1, 'Steg 1 · Dämpat', 'Vänsterhanden ligger löst över strängarna'], [2, 'Steg 2 · Ett ackord', 'Krama åt greppet bara på &'], [3, 'Steg 3 · Am och Em', 'Byte varje takt, som i Get Up, Stand Up']].map(([l, t, d]) =>
-        html`<button key=${l} className="level" aria-pressed=${skLevel === l} onClick=${() => { setSkLevel(l); setSkChord('Am'); }}><b>${t}</b><span>${d}</span></button>`)}
-    </div>
-
-    <section className="card" style=${{ display: 'grid', gap: 16 }}>
-      <div className="tp-main">
-        ${playBtn('Starta tränaren')}
-        <${Bpm} value=${skBpm} set=${setSkBpm} min=${40} max=${110} />
-        <div className="seg" role="group" aria-label="Tempo">
-          ${[[50, 'Långsamt'], [65, 'Lagom'], [76, 'Originaltempo']].map(([v, l]) => html`<button key=${v} aria-pressed=${skBpm === v} onClick=${() => setSkBpm(v)}>${l}</button>`)}
-        </div>
+    </details>
+    <details className="card more sk-more"><summary>Testa din timing</summary>
+      <div style=${{ marginTop: 12 }}>
+        <${RhythmMeter} active=${playing === 'skank'} onHit=${(g, streak) => {
+          if (g === 'p') award(2, '', null, true);
+          if (streak > 0 && streak % 16 === 0) award(20, streak + ' träffar i rad!');
+        }} />
       </div>
-      <div className="row">
-        ${skLevel === 2 ? html`<div className="seg" role="group" aria-label="Ackord">${['Am', 'Em', 'G', 'C', 'D', 'Dm', 'Gm'].map((c) =>
-          html`<button key=${c} aria-pressed=${skChord === c} onClick=${() => setSkChord(c)}>${c}</button>`)}</div>` : null}
-        <button className=${'chip' + (skBand ? ' on' : '')} onClick=${() => setSkBand(!skBand)}>Bas och trummor ${skBand ? 'på' : 'av'}</button>
-        <button className=${'chip' + (skGuitar ? ' on' : '')} onClick=${() => setSkGuitar(!skGuitar)}>Appens skank ${skGuitar ? 'på' : 'av'}</button>
-      </div>
-      <div className="sk">
-        ${SKC.map((c, i) => html`<div key=${i} className=${'skc ' + (c.tj ? 'tjack' : 'boom') + (playing === 'skank' && pos.step === i ? ' cur' : '')}>
-          <span className="n">${c.b}</span><span className="w">${c.tj ? 'TJACK' : 'DUNS'}</span><span className="s">${c.tj ? '3 tunna str.' : 'tumme, bas'}</span></div>`)}
-      </div>
-      <div className="coach">
-        <div className="big">${skLevel === 1 ? '×' : CHORD_DB[skShown].name}</div>
-        <p>${skLevel === 1 ? 'Lägg vänsterhandens fingrar platt och löst över alla sex strängar kring band 3, utan att trycka. Säg högt: duns, tjack, duns, tjack.'
-          : skLevel === 2 ? 'Håll fingrarna i ' + skChord + '-form men tryck bara ner precis när den gröna &-rutan lyser. Slappna av direkt efteråt så att strängarna tystnar.'
-          : 'Tränaren byter mellan Am och Em varje takt. Lägg nästan all uppmärksamhet på högerhandens duns och tjack.'}</p>
-      </div>
-    </section>
-    <${RhythmMeter} active=${playing === 'skank'} onHit=${(g, streak) => {
-      if (g === 'p') award(2, '', null, true);
-      if (streak > 0 && streak % 16 === 0) award(20, streak + ' träffar i rad!');
-    }} />
-    <${Fretboard} k=${skShown} easy=${easy} />
+    </details>
   </div>`;
 
   const BytenTab = html`<div style=${{ display: 'grid', gap: 22 }}>
