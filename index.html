@@ -1047,6 +1047,14 @@ const INITIAL_SONGS = [
     pattern: P_FOLK, accents: [0, 6],
     tip: 'Åtta olika ackord i varje varv, inklusive F och Dm. Det här är provet på att du kan hela ackordtabellens första två rader. Använd Fmaj7 om F-barrén bromsar dig.',
     form: [{ part: 'Vers', bars: ['Am', 'E7', 'G', 'D', 'F', 'C', 'Dm', 'E'] }, { part: 'Refräng', bars: ['F', 'C', 'E', 'Am', 'F', 'C', 'Dm', 'E'] }] },
+  { id: 'ca-reste-la', title: 'Ça reste là', artist: 'mattaljano (egen låt, Suno)', feel: 'acoustic', level: 'Lätt', bpm: 81,
+    pattern: P_FOLK, accents: [0, 6],
+    tip: 'Samma fyra ackord genom hela låten: Em, C, G och D, ett ackord per takt. Basen spelar grundton och kvint, så du kan dunsa på tjockaste strängen i varje grepp på 1 och 3. Ackorden är framtagna ur inspelningen, så säg till om något låter fel.',
+    form: [{ part: 'Slinga', bars: ['Em', 'C', 'G', 'D', 'Em', 'C', 'G', 'D'] }] },
+  { id: 'jag-ar-storre-nu', title: 'JAG ÄR STÖRRE NU', artist: 'mattaljano (egen låt, Suno)', feel: 'acoustic', level: 'Medel', bpm: 78,
+    pattern: P_FOLK, accents: [0, 6],
+    tip: 'Hela låten går C, Em, F, G med två slag per ackord, och basen går uppåt C–E–F–G. Byt redan på 2& så hinner du. Använd Fmaj7 om F känns tungt. Ackorden är framtagna ur inspelningen, så säg till om något låter fel.',
+    form: [{ part: 'Slinga', bars: [['C', 'Em'], ['F', 'G'], ['C', 'Em'], ['F', 'G']] }] },
 ];
 const TIER_OF = (s) => (s.custom ? 'Egna' : s.tier ? s.tier : s.level === 'Utmaning' ? 'Utmaning' : s.level === 'Nästa steg' ? 'Nästa steg' : 'Kom igång');
 
