@@ -449,11 +449,9 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 .wv-stop{display:none}
 .wv-card.full{position:fixed;inset:0;z-index:80;border-radius:0;align-content:center;padding:12px max(16px,env(safe-area-inset-right)) 12px max(16px,env(safe-area-inset-left))}
 .wv-card.full .wv-stop{display:inline-flex}
-.wv-card.full .wv-box svg{max-height:calc(100vh - 70px);max-height:calc(100dvh - 70px)}
 @media (orientation:landscape) and (max-height:540px){
   .wv-card.playing{position:fixed;inset:0;z-index:80;border-radius:0;align-content:center}
   .wv-card.playing .wv-stop{display:inline-flex}
-  .wv-card.playing .wv-box svg{max-height:calc(100vh - 60px);max-height:calc(100dvh - 60px)}
 }
 .lvl-list{display:grid;gap:8px}
 .lvl{display:flex;align-items:center;gap:12px;text-align:left;padding:10px 12px;border-radius:16px;border:1px solid var(--line);background:var(--surface);color:var(--text)}
@@ -464,11 +462,15 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 .lvl.rec small{color:#ffb37a}
 .lvl[aria-pressed="true"]{border-color:var(--leaf);box-shadow:inset 0 0 0 1px var(--leaf);background:color-mix(in oklab,var(--leaf) 8%,var(--surface))}
 .pat-presets{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.sk-ctl>.inline-play{justify-self:start;min-width:220px}
 .wv-song{display:grid;grid-template-columns:96px minmax(0,1fr);gap:10px;align-items:stretch}
 .wv-grip{display:grid;align-content:center}
 .wv-grip .dg{width:100%}
 @media (max-width:560px){.wv-song{grid-template-columns:72px minmax(0,1fr);gap:6px}.wv-grip .dg .ft{display:none}}
 
+/* Stora skärmar: lite större och bredare, så att appen inte blir en smal remsa */
+@media (min-width:1700px){.wrap{max-width:1360px}}
+@media (min-width:2400px) and (min-height:1100px){html{zoom:1.25}.wrap{max-width:1500px}}
 /* Teman */
 .skins{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .skin{text-align:left;border-radius:14px;padding:12px;border:2px solid transparent;display:grid;gap:8px;color:#fff}
@@ -2626,6 +2628,21 @@ function WaveView({ pattern, chordAt, playing, demo = true, demoBpm = 40, easy, 
   const [s, setS] = useState(0);
   const [cnt, setCnt] = useState(null);
   const grp = useRef(null), grp2 = useRef(null), hand = useRef(null), R = useRef({ s: 0, cnt: null, f: 0 });
+  // Bredare skärm = fler slag syns, i stället för att vågen blir jättehög
+  const box = useRef(null), [vw, setVw] = useState(WV.W);
+  useEffect(() => {
+    const el = box.current; if (!el) return;
+    const fit = () => {
+      const cw = el.clientWidth; if (!cw) return;
+      const over = full || (playing && window.matchMedia('(orientation: landscape) and (max-height: 540px)').matches);
+      const h = Math.min((cw * WV.H) / WV.W, over ? window.innerHeight - 80 : Math.max(250, window.innerHeight * 0.48));
+      setVw(Math.max(WV.W, Math.round((WV.H * cw) / h)));
+    };
+    fit();
+    const ro = window.ResizeObserver ? new ResizeObserver(fit) : null; if (ro) ro.observe(el);
+    window.addEventListener('resize', fit);
+    return () => { if (ro) ro.disconnect(); window.removeEventListener('resize', fit); };
+  }, [full, playing]);
   const downEven = wvDownEven(pattern);
   const isDown = (k) => (wvMod(k) % 2 === 0) === downEven;
   const still = !playing && (!demo || onEdit);
@@ -2654,9 +2671,9 @@ function WaveView({ pattern, chordAt, playing, demo = true, demoBpm = 40, easy, 
     return () => cancelAnimationFrame(raf);
   }, [playing, still, demoBpm, downEven]);
 
-  const { W, H, MID, A, SP, NU } = WV;
+  const { H, MID, A, SP, NU } = WV, W = vw;
   const x = (k) => NU + SP * (k - s);
-  const ks = []; for (let k = s - 4; k <= s + 9; k++) ks.push(k);
+  const ks = []; for (let k = s - 4; k <= s + Math.ceil((W - NU) / SP) + 1; k++) ks.push(k);
   let d = `M${x(ks[0])} ${MID}`;
   for (const k of ks.slice(0, -1)) d += ` Q${x(k) + SP / 2} ${isDown(k) ? MID + 2 * A : MID - 2 * A} ${x(k + 1)} ${MID}`;
   const ch = ks.map((k) => (chordAt ? chordAt(Math.max(0, k)) : null));
@@ -2675,7 +2692,7 @@ function WaveView({ pattern, chordAt, playing, demo = true, demoBpm = 40, easy, 
         ${onStop && playing ? html`<button className="chip wv-stop" onClick=${onStop}>Stoppa</button>` : null}
       </div>
     </div>
-    <div className="wv-box">
+    <div className="wv-box" ref=${box}>
       <svg viewBox=${`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label="Handens väg. Gröna prickar är slag, orange är tjack, bruten våg är luft.">
         <rect x="0" y=${MID - 17} width=${W} height="34" rx="7" fill="var(--wv-band)" />
         <g ref=${grp} transform=${`translate(${(-R.current.f * WV.SP).toFixed(2)},0)`}>
@@ -3274,6 +3291,7 @@ function App() {
     if (g.chord) setTableChord(g.chord);
     if (g.game) setGame(g.game);
     if (g.pair) setChPair(g.pair);
+    if (g.skank) setSkMode('skank');
     if (g.gh) setGhOpen(true);
     setTab(g.tab); window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -3827,7 +3845,7 @@ function App() {
     : st.k === 'skank' ? 'Skanka 8 takter i Skank-skolan' : st.k === 'song' ? 'Spela ' + songTitle(st.s) + ' (Guitar Hero eller hela låten)'
     : st.k === 'solo' ? 'Spela en hel låt med "Appen spelar gitarren" avstängd' : st.n + ' stjärnor i ' + (st.s === 'any' ? 'valfri låt' : songTitle(st.s)) + ' i Guitar Hero';
   const stepGo = (st) => st.k === 'tune' ? { tab: 'stam' } : st.k === 'chord' ? { tab: 'ackord', chord: st.c } : st.k === 'chal' ? { tab: 'spel', game: 'chal', pair: st.p }
-    : st.k === 'skank' ? { tab: 'skank' } : st.k === 'song' ? { tab: 'spela', song: st.s, gh: true } : st.k === 'solo' ? { tab: 'spela' } : { tab: 'spela', song: st.s === 'any' ? undefined : st.s, gh: true };
+    : st.k === 'skank' ? { tab: 'skank', skank: true } : st.k === 'song' ? { tab: 'spela', song: st.s, gh: true } : st.k === 'solo' ? { tab: 'spela' } : { tab: 'spela', song: st.s === 'any' ? undefined : st.s, gh: true };
   const planDone = (prog.planDay || 0), planDay = Math.min(PLAN.length, planDone + 1), pd = PLAN[planDay - 1];
   const VagTab = html`<div style=${{ display: 'grid', gap: 22 }}>
     <section className="card hero">
