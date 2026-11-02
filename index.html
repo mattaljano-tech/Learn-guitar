@@ -2681,7 +2681,7 @@ function WaveView({ pattern, chordAt, playing, demo = true, demoBpm = 40, easy, 
         <g ref=${grp} transform=${`translate(${(-R.current.f * WV.SP).toFixed(2)},0)`}>
           ${runs.map((r) => html`<g key=${'c' + r.start}>
             <rect x=${x(r.start) + 2} y="50" width=${Math.max(0, x(r.end + 1) - x(r.start) - 4)} height="26" rx="7" fill="var(--surface-2)" />
-            <text x=${Math.max(x(r.start) + 10, 8)} y="68" fontFamily="var(--f-display)" fontWeight="800" fontSize="15" fill="var(--text)">${name(r.c)}</text>
+            ${x(r.start) > NU ? html`<text x=${x(r.start) + 10} y="68" fontFamily="var(--f-display)" fontWeight="800" fontSize="15" fill="var(--text)">${name(r.c)}</text>` : null}
           </g>`)}
           ${ks.map((k, i) => (i + 1 < ks.length && ch[i] && ch[i + 1] && ch[i] !== ch[i + 1]) ? html`<g key=${'b' + k}>
             <rect x=${x(k) - SP / 2 + 2} y="50" width=${SP - 4 + SP / 2} height="26" rx="7" fill="rgba(255,154,74,.28)" />
@@ -2707,6 +2707,7 @@ function WaveView({ pattern, chordAt, playing, demo = true, demoBpm = 40, easy, 
         </g>
         <rect x="0" y="44" width=${NU - SP * 0.6} height=${H - 44} fill="var(--surface)" opacity=".55" pointerEvents="none" />
         <line x1=${NU} y1="80" x2=${NU} y2=${H - 26} stroke="var(--text)" strokeWidth="2" strokeDasharray="5 5" opacity=".55" />
+        ${chordAt && chordAt(Math.max(0, s)) ? html`<text x="10" y="68" fontFamily="var(--f-display)" fontWeight="800" fontSize="15" fill="var(--text)">${name(chordAt(Math.max(0, s)))}</text>` : null}
         ${still ? null : html`<circle ref=${hand} cx=${NU} cy=${MID} r="17" fill="none" stroke="var(--text)" strokeWidth="2.5" opacity=".85" />`}
         <text key=${'q' + s + cue} x=${NU} y="34" textAnchor="middle" className="wv-cue" fontFamily="var(--f-display)" fontWeight="800" fontSize=${cnt != null || kind === 'X' ? 32 : 28} fill=${cueCol}>${cue}</text>
       </svg>
