@@ -486,6 +486,67 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
   .quick .lvl{width:100%;justify-content:flex-start}
   .toasts{left:calc(50% + 124px)}
 }
+/* Dagens lektion och ny startsida */
+.home{display:grid;gap:22px;max-width:640px;margin:0 auto;width:100%}
+.home-day{display:grid;gap:8px;margin-top:12px}
+.home-h1{font-family:var(--f-display);font-weight:800;font-size:clamp(32px,6vw,44px);line-height:1.08;margin:0}
+.ls-kicker{font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--brass)}
+.ls-lead{margin:0;font-size:17px;line-height:1.45;color:var(--muted)}
+.home-steps{list-style:none;margin:0;padding:18px;display:grid;gap:12px;background:var(--surface);border-radius:20px;border:1px solid var(--line)}
+.home-steps li{display:flex;align-items:center;gap:12px;font-size:16px;color:var(--muted)}
+.home-steps li>span{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:14px;box-shadow:inset 0 0 0 2px var(--line)}
+.home-steps li.done>span{background:var(--leaf);color:var(--leaf-ink);box-shadow:none}
+.home-steps li.done>span svg{width:16px;height:16px}
+.home-steps li.cur{color:var(--text);font-weight:700}
+.home-steps li.cur>span{background:var(--brass);color:var(--brass-ink);box-shadow:none}
+.ls-btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;height:60px;padding:0 24px;border-radius:30px;background:linear-gradient(135deg,var(--brass),var(--brass-2));color:var(--brass-ink);font-weight:800;font-size:18px;border:0}
+.ls-btn svg{width:18px;height:18px}
+.ls-btn.big{height:66px;font-size:19px;width:100%}
+.ls-btn.ghost{background:var(--surface-2);color:var(--text)}
+.ls-link{background:none;border:0;color:var(--muted);font-weight:600;font-size:15px;padding:12px 6px;text-decoration:underline;text-underline-offset:3px}
+.home-more>summary{font-size:15px}
+.ls{position:fixed;inset:0;z-index:65;background:var(--bg);overflow-y:auto;display:flex;flex-direction:column;padding:max(16px,env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left))}
+.ls-top{display:flex;align-items:center;gap:14px;max-width:640px;width:100%;margin:0 auto}
+.ls-x{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--surface);color:var(--muted);border:0}
+.ls-x svg{width:18px;height:18px}
+.ls-prog{flex:1;display:flex;gap:6px}
+.ls-prog i{flex:1;height:8px;border-radius:4px;background:var(--surface-2)}
+.ls-prog i.done{background:var(--leaf)}
+.ls-prog i.cur{background:var(--brass)}
+.ls-body{flex:1;display:flex;flex-direction:column;gap:18px;max-width:640px;width:100%;margin:22px auto 0}
+.ls-h1{font-family:var(--f-display);font-weight:800;font-size:clamp(30px,6vw,40px);line-height:1.1;margin:4px 0 0}
+.ls-dg{display:flex;justify-content:center}
+.ls-dg .dg{width:min(280px,80vw);padding:14px}
+.ls-dg .dg .nm{font-size:28px}
+.ls-lines{list-style:none;margin:0;padding:0;display:grid;gap:10px;font-size:17px;line-height:1.35}
+.ls-lines li{display:flex;align-items:center;gap:12px}
+.ls-lines li>span{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:14px;color:#15122a}
+.ls-actions{margin-top:auto;display:flex;gap:10px;padding-top:8px}
+.ls-actions .ls-btn:last-child{flex:1}
+.ls-actions.col{flex-direction:column}
+.ls-links{display:flex;justify-content:space-between;margin-top:auto}
+.ls-tip{margin:0;padding:14px 16px;border-radius:16px;background:var(--surface);font-size:16px;line-height:1.4}
+.ls-pair{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:10px;align-items:center}
+.ls-pair>span{font-size:24px;color:var(--muted)}
+.ls-done{align-items:center;text-align:center}
+.ls-stars{width:220px;fill:#ffd23f;margin-top:24px}
+.ls-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;width:100%}
+.ls-stats>div{background:var(--surface);border-radius:16px;padding:14px 0;display:grid;gap:2px}
+.ls-stats b{font-family:var(--f-display);font-size:24px}
+.ls-stats span{font-size:13px;color:var(--muted)}
+.ls-next{width:100%;box-sizing:border-box;text-align:left;background:var(--surface);border-radius:16px;padding:14px 16px;display:grid;gap:2px}
+.ls-next small{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.ls-next b{font-size:17px}
+.ls-done .ls-actions{width:100%}
+.ls-back{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom));z-index:45;display:inline-flex;align-items:center;gap:8px;height:50px;padding:0 20px;border-radius:25px;border:0;background:linear-gradient(135deg,var(--brass),var(--brass-2));color:var(--brass-ink);font-weight:800;box-shadow:0 10px 30px -8px rgba(0,0,0,.7)}
+.ls-back svg{width:16px;height:16px}
+@media (max-width:760px){.ls-back{bottom:calc(150px + env(safe-area-inset-bottom))}}
+.bib{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+.bib-c{display:grid;gap:6px;justify-items:start;text-align:left;padding:18px;border-radius:20px;background:var(--surface);border:1px solid var(--line);color:var(--text);min-height:130px}
+.bib-c svg{width:28px;height:28px}
+.bib-c b{font-size:17px}
+.bib-c span{font-size:13px;color:var(--muted)}
+.bib-c:hover{border-color:var(--brass)}
 /* Teman */
 .skins{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .skin{text-align:left;border-radius:14px;padding:12px;border:2px solid transparent;display:grid;gap:8px;color:#fff}
@@ -714,7 +775,7 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 .fab svg{width:18px;height:18px}
 @media (max-width:760px){
   .tabs{display:none}
-  .bottomnav{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));position:fixed;left:0;right:0;bottom:0;z-index:30;background:color-mix(in oklab,var(--surface) 94%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:6px max(4px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(4px,env(safe-area-inset-left,0px))}
+  .bottomnav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));position:fixed;left:0;right:0;bottom:0;z-index:30;background:color-mix(in oklab,var(--surface) 94%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:6px max(4px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(4px,env(safe-area-inset-left,0px))}
   .bottomnav button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;min-height:52px;border-radius:12px;font-size:11px;font-weight:700;color:var(--muted)}
   .bottomnav svg{width:22px;height:22px}
   .bottomnav button[aria-current="page"]{color:var(--brass);background:color-mix(in oklab,var(--brass) 12%,transparent)}
@@ -1691,7 +1752,7 @@ function Quiz({ easy, onAnswer, record }) {
 }
 
 const PAIRS = [['Am', 'Em'], ['Em', 'G'], ['Am', 'C'], ['C', 'G'], ['G', 'D'], ['D', 'A'], ['Am', 'E'], ['C', 'Fmaj7'], ['Em7', 'Cadd9'], ['Dsus4', 'A7sus4'], ['F', 'C'], ['Dm', 'E']];
-function Challenge({ easy, pair, setPair, best, onFinish }) {
+function Challenge({ easy, pair, setPair, best, onFinish, fixed = false }) {
   const [phase, setPhase] = useState('idle');
   const [cd, setCd] = useState(3);
   const [left, setLeft] = useState(60);
@@ -1749,7 +1810,7 @@ function Challenge({ easy, pair, setPair, best, onFinish }) {
   });
   const curIdx = count % 2;
   return html`<section className="card" style=${{ display: 'grid', gap: 18 }}>
-    ${phase === 'idle' || phase === 'done' ? html`<div className="row" style=${{ gap: 6 }}>
+    ${!fixed && (phase === 'idle' || phase === 'done') ? html`<div className="row" style=${{ gap: 6 }}>
       ${PAIRS.map((p) => html`<button key=${p.join()} className=${'chip' + (p[0] === pair[0] && p[1] === pair[1] ? ' on' : '')} onClick=${() => setPair(p)}>${p[0]} ↔ ${p[1]}</button>`)}
     </div>` : null}
     ${phase === 'idle' || phase === 'done' ? html`<div className="row between"><span className="label">Räkna bytena</span>
@@ -3137,6 +3198,8 @@ function RhythmMeter({ active, onHit }) {
 /* ---------------------------------------------------------------- app */
 function App() {
   const [tab, setTab] = useState('vag');
+  const [lesson, setLesson] = useState(null); // { day, look } – dagens lektion i helskärm
+  const [lessonAway, setLessonAway] = useState(false);
   const [prog, setProg] = useState(loadProg);
   const P = useRef(prog);
   const [toasts, setToasts] = useState([]);
@@ -3862,7 +3925,116 @@ function App() {
   const stepGo = (st) => st.k === 'tune' ? { tab: 'stam' } : st.k === 'chord' ? { tab: 'ackord', chord: st.c } : st.k === 'chal' ? { tab: 'spel', game: 'chal', pair: st.p }
     : st.k === 'skank' ? { tab: 'skank', skank: true } : st.k === 'song' ? { tab: 'spela', song: st.s, gh: true } : st.k === 'solo' ? { tab: 'spela' } : { tab: 'spela', song: st.s === 'any' ? undefined : st.s, gh: true };
   const planDone = (prog.planDay || 0), planDay = Math.min(PLAN.length, planDone + 1), pd = PLAN[planDay - 1];
-  const VagTab = html`<div style=${{ display: 'grid', gap: 22 }}>
+  /* ---------- dagens lektion: ett steg i taget ---------- */
+  const FNAME = { 1: 'Pekfingret', 2: 'Långfingret', 3: 'Ringfingret', 4: 'Lillfingret' };
+  const SNAME = ['tjocka E', 'A', 'D', 'G', 'B', 'tunna e'];
+  const gripLines = (k) => {
+    const d = voicing(k, easy), out = [];
+    if (d.barre) out.push({ f: d.barre.finger, t: FNAME[d.barre.finger] + ' ligger över strängarna ' + STR_NAME[d.barre.from] + '–' + STR_NAME[d.barre.to] + ' på band ' + d.barre.fret });
+    d.frets.forEach((f, i) => { if (f > 0 && d.fingers[i] && !(d.barre && d.fingers[i] === d.barre.finger && f === d.barre.fret)) out.push({ f: d.fingers[i], t: FNAME[d.fingers[i]] + ' på ' + SNAME[i] + '-strängen, band ' + f }); });
+    const mute = d.frets.map((f, i) => (f < 0 ? SNAME[i] : null)).filter(Boolean);
+    if (mute.length) out.push({ f: 0, t: 'Slå inte an ' + mute.join(' och ') + (mute.length > 1 ? '-strängarna' : '-strängen') });
+    return out;
+  };
+  const anchors = (a, b) => { const x = voicing(a, easy), y = voicing(b, easy), keep = [], move = [];
+    [1, 2, 3, 4].forEach((fi) => { const i1 = x.fingers.indexOf(fi), i2 = y.fingers.indexOf(fi); if (i1 < 0 || i2 < 0) return; (i1 === i2 && x.frets[i1] === y.frets[i2] ? keep : move).push(FNAME[fi].toLowerCase()); });
+    return keep.length ? 'Tips: ' + keep.join(' och ') + ' står kvar. ' + (move.length ? 'Bara ' + move.join(' och ') + ' flyttar.' : '') : 'Tips: titta på nästa grepp redan innan du byter.';
+  };
+  const lessonDay = lesson ? lesson.day : Math.min(PLAN.length, (prog.planDay || 0) + 1);
+  const lp = PLAN[lessonDay - 1];
+  const lSteps = lp ? lp.steps : [];
+  const lDone = lSteps.map((st) => stepDone(prog, st));
+  const lCur = lDone.indexOf(false);
+  const openLesson = (day) => { if (playing) stopAll(); setLessonAway(false); setLesson({ day: day || Math.min(PLAN.length, (prog.planDay || 0) + 1), look: true }); window.scrollTo({ top: 0 }); };
+  const leaveFor = (st) => { setLessonAway(lesson.day); setLesson(null); goMission({ go: stepGo(st) }); };
+  const lessonStepView = () => {
+    if (lCur < 0) {
+      const next = PLAN[lessonDay] ? PLAN[lessonDay].t : null;
+      return html`<div className="ls-body ls-done">
+        <svg className="ls-stars" viewBox="0 0 220 80" role="img" aria-label="Tre stjärnor"><path d="M40 8 l9 19 21 3 -15 15 4 21 -19 -10 -19 10 4 -21 -15 -15 21 -3 z" /><path d="M110 0 l11 23 25 4 -18 18 4 25 -22 -12 -22 12 4 -25 -18 -18 25 -4 z" /><path d="M180 8 l9 19 21 3 -15 15 4 21 -19 -10 -19 10 4 -21 -15 -15 21 -3 z" /></svg>
+        <h1 className="ls-h1">Dag ${lessonDay} klar!</h1>
+        <p className="ls-lead">${lp.t}. Bra jobbat.</p>
+        <div className="ls-stats"><div><b>${streak}</b><span>${streak === 1 ? 'dag' : 'dagar'} i rad</span></div><div><b>${prog.dayXp[today()] || 0}</b><span>XP idag</span></div><div><b>${lessonDay}/14</b><span>dagar klara</span></div></div>
+        ${next ? html`<div className="ls-next"><small>Imorgon</small><b>${next}</b></div>` : null}
+        <div className="ls-actions col">
+          <button className="ls-btn ghost" onClick=${() => { setLesson(null); goTab('spela'); }}>Spela en låt till</button>
+          <button className="ls-btn" onClick=${() => setLesson(null)}>Klar för idag</button>
+        </div></div>`;
+    }
+    const st = lSteps[lCur];
+    if (st.k === 'chord') {
+      const k = st.c, nm = CHORD_DB[k].name;
+      if (lesson.look) return html`<div className="ls-body">
+        <div><span className="ls-kicker">Titta</span><h1 className="ls-h1">Så tar du ${nm}</h1></div>
+        <div className="ls-dg"><${Diagram} k=${k} easy=${easy} onClick=${() => hear(k)} /></div>
+        <ol className="ls-lines">${gripLines(k).map((l, i) => html`<li key=${i}><span style=${{ background: l.f ? FINGERS[l.f].c : 'var(--ember)' }}>${l.f || '×'}</span>${l.t}</li>`)}</ol>
+        <div className="ls-actions"><button className="ls-btn ghost" onClick=${() => hear(k)}>${I.vol}Lyssna</button>
+          <button className="ls-btn" onClick=${() => setLesson({ ...lesson, look: false })}>Jag är redo</button></div></div>`;
+      return html`<div className="ls-body">
+        <div><span className="ls-kicker">Spela</span><h1 className="ls-h1">Slå an ${nm}</h1><p className="ls-lead">Låt det klinga. Appen lyssnar och går vidare när alla strängar låter rätt.</p></div>
+        <${ChordCheck} key=${'cc' + k} k=${k} easy=${easy} onOk=${(c) => { chordOk(c); setLesson((l) => l && { ...l, look: true }); }} />
+        <div className="ls-links"><button className="ls-link" onClick=${() => setLesson({ ...lesson, look: true })}>Visa greppet igen</button>
+          <button className="ls-link" onClick=${() => { award(0, '', (n) => addTag(n, 'chord:' + k), true); setLesson({ ...lesson, look: true }); }}>Hoppa över</button></div></div>`;
+    }
+    if (st.k === 'chal') return html`<div className="ls-body">
+      <div><span className="ls-kicker">Byt i takt</span><h1 className="ls-h1">${CHORD_DB[st.p[0]].name} och ${CHORD_DB[st.p[1]].name}</h1><p className="ls-lead">Mål: minst ${st.n} byten på en minut.</p></div>
+      <div className="ls-pair"><${Diagram} k=${st.p[0]} easy=${easy} onClick=${() => hear(st.p[0])} /><span aria-hidden="true">⇄</span><${Diagram} k=${st.p[1]} easy=${easy} onClick=${() => hear(st.p[1])} /></div>
+      <p className="ls-tip">${anchors(st.p[0], st.p[1])}</p>
+      <${Challenge} key=${'ch' + st.p.join()} fixed=${true} easy=${easy} pair=${st.p} setPair=${() => {}} best=${prog.best}
+        onFinish=${(cnt, pair) => { const kk = pair[0] + '-' + pair[1], rec = cnt > (P.current.best[kk] || 0) && cnt > 0;
+          award(cnt * 2 + (rec ? 20 : 0), cnt >= st.n ? cnt + ' byten. Målet klart!' : cnt + ' byten. Målet är ' + st.n + ', försök igen!', (n) => { n.best[kk] = Math.max(n.best[kk] || 0, cnt); addTag(n, 'chal:' + kk + ':' + cnt); }); }} />
+      <div className="ls-links"><span></span><button className="ls-link" onClick=${() => award(0, '', (n) => addTag(n, 'chal:' + st.p.join('-') + ':' + st.n), true)}>Hoppa över</button></div></div>`;
+    if (st.k === 'tune') return html`<div className="ls-body">
+      <div><span className="ls-kicker">Förbered</span><h1 className="ls-h1">Stäm gitarren</h1><p className="ls-lead">Slå an en sträng i taget. Nålen ska stå i mitten.</p></div>
+      <${MicTools} easy=${easy} onTuned=${(i) => award(10, 'Sträng ' + STRINGS[i].n + ' stämd', (n) => { if (!n.tuned.includes(i)) n.tuned.push(i); addTag(n, 'tune'); })} onChordOk=${chordOk} />
+      <div className="ls-actions"><button className="ls-btn" onClick=${() => award(0, '', (n) => addTag(n, 'tune'), true)}>Gitarren är stämd</button></div></div>`;
+    const what = st.k === 'skank' ? { h: 'Reggae-skank', p: 'Skanka 8 takter i rad. Vågen visar när du ska slå.', b: 'Öppna skank-övningen' }
+      : st.k === 'song' ? { h: songTitle(st.s), p: 'Spela hela låten, med kompet eller i Guitar Hero.', b: 'Spela ' + songTitle(st.s) }
+      : st.k === 'solo' ? { h: 'Spela själv', p: 'Stäng av "Appen spelar gitarren" och spela en hel låt.', b: 'Välj en låt' }
+      : { h: st.n + ' stjärnor', p: 'Få ' + st.n + ' stjärnor i ' + (st.s === 'any' ? 'valfri låt' : songTitle(st.s)) + ' i Guitar Hero.', b: 'Starta Guitar Hero' };
+    return html`<div className="ls-body">
+      <div><span className="ls-kicker">Spela</span><h1 className="ls-h1">${what.h}</h1><p className="ls-lead">${what.p}</p></div>
+      <p className="ls-tip">När du är klar kommer du tillbaka hit med knappen längst ner.</p>
+      <div className="ls-actions"><button className="ls-btn" onClick=${() => leaveFor(st)}>${I.play}${what.b}</button></div></div>`;
+  };
+  const LessonView = lesson ? html`<div className="ls" role="dialog" aria-label="Dagens lektion">
+    <div className="ls-top">
+      <button className="ls-x" onClick=${() => setLesson(null)} aria-label="Avsluta lektionen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg></button>
+      <div className="ls-prog" role="img" aria-label=${'Steg ' + (lCur < 0 ? lSteps.length : lCur + 1) + ' av ' + lSteps.length}>${lSteps.map((_, i) => html`<i key=${i} className=${lDone[i] ? 'done' : i === lCur ? 'cur' : ''}></i>`)}</div>
+    </div>
+    ${lessonStepView()}
+  </div>` : null;
+
+  const doneCount = lDone.filter(Boolean).length;
+  const stepShort = (st) => st.k === 'tune' ? 'Stäm gitarren' : st.k === 'chord' ? 'Lär dig ' + CHORD_DB[st.c].name
+    : st.k === 'chal' ? 'Byt mellan ' + CHORD_DB[st.p[0]].name + ' och ' + CHORD_DB[st.p[1]].name : st.k === 'skank' ? 'Reggae-skank'
+    : st.k === 'song' ? songTitle(st.s) : st.k === 'solo' ? 'Spela en hel låt själv' : st.n + ' stjärnor i ' + (st.s === 'any' ? 'valfri låt' : songTitle(st.s));
+  const HomeTab = () => html`<div className="home">
+    <div className="home-day">
+      <span className="ls-kicker">${(prog.planDay || 0) >= PLAN.length ? 'Alla 14 dagar klara' : 'Dag ' + lessonDay + ' av ' + PLAN.length}</span>
+      <h1 className="home-h1">${(prog.planDay || 0) >= PLAN.length ? 'Spela dina låtar' : lp.t}</h1>
+      <p className="ls-lead">${lSteps.length} korta steg. Ha gitarren i knät.</p>
+    </div>
+    ${(prog.planDay || 0) < PLAN.length ? html`<ol className="home-steps">${lSteps.map((st, i) => html`<li key=${i} className=${lDone[i] ? 'done' : i === lCur ? 'cur' : ''}>
+      <span>${lDone[i] ? html`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10" /></svg>` : i + 1}</span>${stepShort(st)}</li>`)}</ol>
+    <button className="ls-btn big" onClick=${() => openLesson()}>${I.play}${lCur < 0 ? 'Dagens lektion är klar' : doneCount ? 'Fortsätt dagens lektion' : 'Starta dagens lektion'}</button>`
+    : html`<button className="ls-btn big" onClick=${() => goTab('spela')}>${I.play}Till låtarna</button>`}
+    <button className="ls-link" style=${{ justifySelf: 'center' }} onClick=${() => goTab('bib')}>Öppna biblioteket</button>
+    <details className="card more home-more"><summary>Dina framsteg, uppdrag och märken</summary>
+      <div style=${{ display: 'grid', gap: 22, marginTop: 14 }}>${OldVag}</div>
+    </details>
+  </div>`;
+
+  const BIB = [['spela', 'Låtar', 'Alla låtar och dina egna', 'var(--brass)'], ['skank', 'Rytm', 'Skank och tjack med vågen', 'var(--leaf)'], ['ackord', 'Ackord', 'Alla grepp med ljud', 'var(--f1)'],
+    ['byten', 'Ackordbyten', 'Öva två ackord', 'var(--ember)'], ['spel', 'Spel', 'Quiz och 1-minutsutmaningen', '#c07bff'], ['stam', 'Stämmare', 'Lyssnar på gitarren', 'var(--f3)']];
+  const BibTab = () => html`<div style=${{ display: 'grid', gap: 18 }}>
+    <h2 className="page">Bibliotek</h2>
+    <div className="bib">${BIB.map(([id, t, d, c]) => html`<button key=${id} className="bib-c" onClick=${() => goTab(id)}>
+      <svg viewBox="0 0 24 24" fill="none" stroke=${c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d=${TabIcon[id]} /></svg>
+      <b>${t}</b><span>${d}</span></button>`)}</div>
+  </div>`;
+
+  const OldVag = html`<div style=${{ display: 'grid', gap: 22 }}>
     <section className="card hero">
       <div className="medal"><small>NIVÅ</small><b>${lvl}</b></div>
       <div style=${{ display: 'grid', gap: 10, minWidth: 0, width: '100%' }}>
@@ -3940,7 +4112,10 @@ function App() {
   </div>`;
 
   const TABS = [['vag', 'Min väg', 'Väg'], ['spela', 'Spela låtar', 'Låtar'], ['spel', 'Spel', 'Spel'], ['skank', 'Skank-skola', 'Skank'], ['ackord', 'Ackordtabell', 'Ackord'], ['byten', 'Ackordbyten', 'Byten'], ['stam', 'Stämning', 'Stäm']];
+  const NAV = [['vag', 'Idag', 'Idag'], ['spela', 'Låtar', 'Låtar'], ['skank', 'Rytm', 'Rytm'], ['bib', 'Bibliotek', 'Bibliotek']];
+  const navOn = (id) => tab === id || (id === 'bib' && ['ackord', 'byten', 'spel', 'stam'].includes(tab));
   const TabIcon = {
+    bib: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',
     vag: 'M5 19c3-1 3-6 7-7s4-6 7-7', spela: 'M9 18V6l10-2v12M9 18a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0zM19 16a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z',
     spel: 'M6 9h12a3 3 0 0 1 3 3v2a3 3 0 0 1-5 2l-1-1H9l-1 1a3 3 0 0 1-5-2v-2a3 3 0 0 1 3-3zM8 11v3M6.5 12.5h3M16 12h.01', skank: 'M4 12h3l2-6 4 12 2-6h5',
     ackord: 'M6 4v16M10 4v16M14 4v16M18 4v16M4 8h16M4 13h16', byten: 'M4 8h13l-3-3M20 16H7l3 3', stam: 'M12 3v10M8 7l4-4 4 4M5 20a7 7 0 0 1 14 0',
@@ -3950,7 +4125,7 @@ function App() {
     <header className="top"><div className="wrap top-in">
       <div className="brand">${Rosette}<div><h1>NylonGitarr <span>Studio</span></h1><small>Grepp, komp och reggae-skank för klassisk gitarr</small></div></div>
       <nav className="tabs" role="tablist">
-        ${TABS.map(([id, l]) => html`<button key=${id} role="tab" aria-selected=${tab === id} onClick=${() => goTab(id)}>
+        ${NAV.map(([id, l]) => html`<button key=${id} role="tab" aria-selected=${navOn(id)} onClick=${() => goTab(id)}>
           <svg className="tab-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d=${TabIcon[id]} /></svg>${l}</button>`)}
       </nav>
       <div className="quick">
@@ -3964,7 +4139,7 @@ function App() {
       </div>
     </div></header>
     <main className="wrap">
-      ${tab === 'vag' ? VagTab : tab === 'spel' ? SpelTab : tab === 'spela' ? SpelaTab : tab === 'ackord' ? AckordTab : tab === 'skank' ? SkankTab : tab === 'byten' ? BytenTab : StamTab}
+      ${tab === 'vag' ? HomeTab() : tab === 'bib' ? BibTab() : tab === 'spel' ? SpelTab : tab === 'spela' ? SpelaTab : tab === 'ackord' ? AckordTab : tab === 'skank' ? SkankTab : tab === 'byten' ? BytenTab : StamTab}
       ${['spela', 'skank', 'byten'].includes(tab) ? html`<p className="muted desk-only" style=${{ fontSize: 12 }}>Tryck <span className="kbd">mellanslag</span> för att starta och stoppa.</p>` : null}
     </main>
     ${['spela', 'skank', 'byten'].includes(tab) ? html`<div className="mbar">
@@ -3972,9 +4147,11 @@ function App() {
       ${tab === 'spela' ? (origOn ? null : html`<${Bpm} value=${bpm} set=${setBpm} />`) : tab === 'skank' ? (skMode === 'tjack' ? html`<${Bpm} value=${tjBpm} set=${setTjBpm} min=${40} max=${110} />` : html`<${Bpm} value=${skBpm} set=${setSkBpm} min=${40} max=${110} />`) : html`<${Bpm} value=${btBpm} set=${setBtBpm} min=${40} max=${120} />`}
     </div>` : null}
     <nav className="bottomnav" aria-label="Meny">
-      ${TABS.map(([id, , s]) => html`<button key=${id} aria-current=${tab === id ? 'page' : null} onClick=${() => { goTab(id); window.scrollTo({ top: 0 }); }}>
+      ${NAV.map(([id, , s]) => html`<button key=${id} aria-current=${navOn(id) ? 'page' : null} onClick=${() => { goTab(id); window.scrollTo({ top: 0 }); }}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d=${TabIcon[id]} /></svg>${s}</button>`)}
     </nav>
+    ${LessonView}
+    ${lessonAway && !lesson ? html`<button className="ls-back" onClick=${() => openLesson(lessonAway)}>${I.play}Tillbaka till lektionen</button>` : null}
     ${playing ? html`<button className="fab" onClick=${toggle} aria-label="Stoppa">${I.stop}<span>Stoppa</span></button>` : null}
     <div className=${'toasts' + (ghOpen ? ' gh-toasts' : '')} aria-live="polite">${toasts.map((t) => html`<div key=${t.id} className=${'toast' + (t.big ? ' big' : '')}><span className="x">${t.x}</span><div><b>${t.t}</b>${t.s ? html`<span>${t.s}</span>` : null}</div></div>`)}</div>
     ${ghOpen ? html`<${GuitarHero} key=${song.id + (easy ? 'e' : '')} song=${song} bars=${bars} easy=${easy} bpm=${bpm} setBpm=${setBpm} playing=${playing === 'song'}
