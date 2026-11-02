@@ -453,14 +453,14 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
   .wv-card.playing{position:fixed;inset:0;z-index:80;border-radius:0;align-content:center}
   .wv-card.playing .wv-stop{display:inline-flex}
 }
-.lvl-list{display:grid;gap:8px}
-.lvl{display:flex;align-items:center;gap:12px;text-align:left;padding:10px 12px;border-radius:16px;border:1px solid var(--line);background:var(--surface);color:var(--text)}
-.lvl svg{flex:none;width:112px;height:36px}
-.lvl b{display:block;font-size:15px}
-.lvl small{font-size:12px;color:var(--muted)}
-.lvl.done small{color:var(--leaf)}
-.lvl.rec small{color:#ffb37a}
-.lvl[aria-pressed="true"]{border-color:var(--leaf);box-shadow:inset 0 0 0 1px var(--leaf);background:color-mix(in oklab,var(--leaf) 8%,var(--surface))}
+.tjl-list{display:grid;gap:8px}
+.tjl{display:flex;align-items:center;gap:12px;text-align:left;padding:10px 12px;border-radius:16px;border:1px solid var(--line);background:var(--surface);color:var(--text)}
+.tjl svg{flex:none;width:112px;height:36px}
+.tjl b{display:block;font-size:15px}
+.tjl small{font-size:12px;color:var(--muted)}
+.tjl.done small{color:var(--leaf)}
+.tjl.rec small{color:#ffb37a}
+.tjl[aria-pressed="true"]{border-color:var(--leaf);box-shadow:inset 0 0 0 1px var(--leaf);background:color-mix(in oklab,var(--leaf) 8%,var(--surface))}
 .pat-presets{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .sk-ctl>.inline-play{justify-self:start;min-width:220px}
 .wv-song{display:grid;grid-template-columns:96px minmax(0,1fr);gap:10px;align-items:stretch}
@@ -471,6 +471,21 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 /* Stora skärmar: lite större och bredare, så att appen inte blir en smal remsa */
 @media (min-width:1700px){.wrap{max-width:1360px}}
 @media (min-width:2400px) and (min-height:1100px){html{zoom:1.25}.wrap{max-width:1500px}}
+/* Bred skärm: menyn som en lodrät sidopanel till vänster */
+.tab-ic{display:none}
+@media (min-width:1400px){
+  .app{padding-left:248px}
+  header.top{position:fixed;top:0;left:0;bottom:0;width:248px;border-bottom:0;border-right:1px solid var(--line);overflow-y:auto}
+  header.top>.wrap.top-in{max-width:none;margin:0;padding:24px 16px;flex-direction:column;align-items:stretch;flex-wrap:nowrap;gap:24px;min-height:100%;box-sizing:border-box}
+  .brand{margin-right:0}
+  .brand small{max-width:170px}
+  .tabs{flex-direction:column;overflow:visible;gap:4px}
+  .tabs button{display:flex;align-items:center;gap:12px;padding:12px 14px;font-size:15px;text-align:left}
+  .tab-ic{display:block;width:20px;height:20px;flex:none}
+  .quick{margin-top:auto;flex-wrap:wrap}
+  .quick .lvl{width:100%;justify-content:flex-start}
+  .toasts{left:calc(50% + 124px)}
+}
 /* Teman */
 .skins{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .skin{text-align:left;border-radius:14px;padding:12px;border:2px solid transparent;display:grid;gap:8px;color:#fff}
@@ -2635,7 +2650,7 @@ function WaveView({ pattern, chordAt, playing, demo = true, demoBpm = 40, easy, 
     const fit = () => {
       const cw = el.clientWidth; if (!cw) return;
       const over = full || (playing && window.matchMedia('(orientation: landscape) and (max-height: 540px)').matches);
-      const h = Math.min((cw * WV.H) / WV.W, over ? window.innerHeight - 80 : Math.max(250, window.innerHeight * 0.48));
+      const h = Math.min((cw * WV.H) / WV.W, over ? window.innerHeight - 80 : Math.max(250, window.innerHeight * 0.42));
       setVw(Math.max(WV.W, Math.round((WV.H * cw) / h)));
     };
     fit();
@@ -3688,12 +3703,12 @@ function App() {
     </section>
     <section className="card" style=${{ display: 'grid', gap: 10 }}>
       <div className="sk-lab">Nivåer</div>
-      <div className="lvl-list">
-        ${TJ_LEVELS.map((l) => html`<button key=${l.id} className=${'lvl' + (tjDone.includes(l.id) ? ' done' : '') + (l.id === tjRec ? ' rec' : '')} aria-pressed=${l.id === tjLevel} onClick=${() => pickTj(l.id)}>
+      <div className="tjl-list">
+        ${TJ_LEVELS.map((l) => html`<button key=${l.id} className=${'tjl' + (tjDone.includes(l.id) ? ' done' : '') + (l.id === tjRec ? ' rec' : '')} aria-pressed=${l.id === tjLevel} onClick=${() => pickTj(l.id)}>
           <${MiniWave} pat=${l.pat} chords=${l.loop} />
           <span><b>${l.id} · ${l.t}</b><small>${tjDone.includes(l.id) ? 'Klar' : l.id === tjRec ? 'Rekommenderad nästa' : 'Prova när du vill'}</small></span>
         </button>`)}
-        <button className="lvl" onClick=${() => { const so = songs.find((x) => x.id === 'ca-reste-la'); if (so) { goTab('spela'); pickSong(so); } }}>
+        <button className="tjl" onClick=${() => { const so = songs.find((x) => x.id === 'ca-reste-la'); if (so) { goTab('spela'); pickSong(so); } }}>
           <span style=${{ width: 112, display: 'grid', placeItems: 'center', fontSize: 22 }} aria-hidden="true">${I.play}</span>
           <span><b>6 · Ça reste là, hela låten</b><small>Målet: spela med din inspelning</small></span>
         </button>
@@ -3931,11 +3946,12 @@ function App() {
     ackord: 'M6 4v16M10 4v16M14 4v16M18 4v16M4 8h16M4 13h16', byten: 'M4 8h13l-3-3M20 16H7l3 3', stam: 'M12 3v10M8 7l4-4 4 4M5 20a7 7 0 0 1 14 0',
   };
 
-  return html`<div>
+  return html`<div className="app">
     <header className="top"><div className="wrap top-in">
       <div className="brand">${Rosette}<div><h1>NylonGitarr <span>Studio</span></h1><small>Grepp, komp och reggae-skank för klassisk gitarr</small></div></div>
       <nav className="tabs" role="tablist">
-        ${TABS.map(([id, l]) => html`<button key=${id} role="tab" aria-selected=${tab === id} onClick=${() => goTab(id)}>${l}</button>`)}
+        ${TABS.map(([id, l]) => html`<button key=${id} role="tab" aria-selected=${tab === id} onClick=${() => goTab(id)}>
+          <svg className="tab-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d=${TabIcon[id]} /></svg>${l}</button>`)}
       </nav>
       <div className="quick">
         <button className="lvl" onClick=${() => goTab('vag')} title="Din nivå och dagens streak">
