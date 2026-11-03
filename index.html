@@ -430,29 +430,8 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 .tj-how{display:grid;gap:10px;margin-top:12px}
 .tj-how p{margin:0;font-size:14px;line-height:1.45}
 
-/* Handvågen */
-:root{--wv-band:#2b2348;--wv-str:rgba(205,198,240,.55);--wv-ink:#0d2a25}
-:root[data-skin="ljus"]{--wv-band:#ece8fb;--wv-str:rgba(60,50,110,.35);--wv-ink:#fff}
-.wv-card{display:grid;gap:8px;padding:12px}
-.wv-top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
-.wv-hint{font-size:13px;color:var(--muted);font-weight:600}
-.wv-box{position:relative}
-.wv-box svg{display:block;width:100%;height:auto}
-.wv-tap{cursor:pointer}
-.wv-cur>g{animation:wvpop .35s ease-out;transform-box:fill-box;transform-origin:center}
-@keyframes wvpop{0%{transform:scale(1.45)}100%{transform:scale(1)}}
-.wv-cue{animation:tjack .25s ease-out;transform-box:fill-box;transform-origin:center}
-.wv-next{position:absolute;right:0;top:0;width:86px;display:grid;gap:2px;justify-items:center;background:var(--surface);border-radius:12px;padding:4px;box-shadow:0 0 0 2px #ff9a4a}
-.wv-next>span{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#ffb37a}
-.wv-next .dg{padding:0;background:none;border:0;width:100%}
-.wv-next .dg .hd,.wv-next .dg .ft{display:none}
-.wv-stop{display:none}
-.wv-card.full{position:fixed;inset:0;z-index:80;border-radius:0;align-content:center;padding:12px max(16px,env(safe-area-inset-right)) 12px max(16px,env(safe-area-inset-left))}
-.wv-card.full .wv-stop{display:inline-flex}
-@media (orientation:landscape) and (max-height:540px){
-  .wv-card.playing{position:fixed;inset:0;z-index:80;border-radius:0;align-content:center}
-  .wv-card.playing .wv-stop{display:inline-flex}
-}
+:root{--wv-band:#2b2348}
+:root[data-skin="ljus"]{--wv-band:#ece8fb}
 .tjl-list{display:grid;gap:8px}
 .tjl{display:flex;align-items:center;gap:12px;text-align:left;padding:10px 12px;border-radius:16px;border:1px solid var(--line);background:var(--surface);color:var(--text)}
 .tjl svg{flex:none;width:112px;height:36px}
@@ -463,10 +442,6 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 .tjl[aria-pressed="true"]{border-color:var(--leaf);box-shadow:inset 0 0 0 1px var(--leaf);background:color-mix(in oklab,var(--leaf) 8%,var(--surface))}
 .pat-presets{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .sk-ctl>.inline-play{justify-self:start;min-width:220px}
-.wv-song{display:grid;grid-template-columns:96px minmax(0,1fr);gap:10px;align-items:stretch}
-.wv-grip{display:grid;align-content:center}
-.wv-grip .dg{width:100%}
-@media (max-width:560px){.wv-song{grid-template-columns:72px minmax(0,1fr);gap:6px}.wv-grip .dg .ft{display:none}}
 
 /* Stora skärmar: lite större och bredare, så att appen inte blir en smal remsa */
 @media (min-width:1700px){.wrap{max-width:1360px}}
@@ -547,6 +522,22 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 .bib-c b{font-size:17px}
 .bib-c span{font-size:13px;color:var(--muted)}
 .bib-c:hover{border-color:var(--brass)}
+/* Lugn rytmvy */
+.rc{display:grid;gap:14px}
+.rc-top{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.rc-chord{display:grid;gap:2px;min-width:90px}
+.rc-chord small{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.rc-chord b{font-family:var(--f-display);font-size:34px;line-height:1}
+.rc-word{font-family:var(--f-display);font-weight:800;font-size:clamp(34px,8vw,52px);line-height:1;color:var(--leaf)}
+.rc-word.tj{color:#ff9a4a}
+.rc-word.rest{color:var(--faint)}
+.beat.tj .a{color:#ff9a4a}
+.beat.tj.cur{background:linear-gradient(160deg,#ff9a4a,#ffb35c);color:#2a1205}
+.beat .a svg{width:20px;height:18px}
+.mini-pat{flex:none;display:grid;grid-template-columns:repeat(8,12px);gap:2px;font-weight:800;font-size:14px;color:var(--leaf);text-align:center}
+.mini-pat i{font-style:normal}
+.mini-pat i.x{color:#ff9a4a}
+.mini-pat i.r{color:var(--faint)}
 /* Teman */
 .skins{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .skin{text-align:left;border-radius:14px;padding:12px;border:2px solid transparent;display:grid;gap:8px;color:#fff}
@@ -1583,12 +1574,26 @@ const vib = (pat) => { try { if (localStorage.getItem('ng-vibe') !== '0' && navi
 const DIR_NEXT = { '-': 'D', D: 'U', U: '-' };
 function BeatStrip({ pattern, accents = [], cur, count, onEdit }) {
   return html`<div className="beats" aria-label="Slagmönster">
-    ${pattern.map((dir, i) => html`<div key=${i} className=${'beat' + (dir === '-' ? ' rest' : ' hit') + (cur === i ? ' cur' : '') + (onEdit ? ' edit' : '')} onClick=${onEdit ? () => onEdit(i) : null} role=${onEdit ? 'button' : null}>
+    ${pattern.map((dir, i) => html`<div key=${i} className=${'beat' + (dir === '-' ? ' rest' : dir === 'X' ? ' hit tj' : ' hit') + (cur === i ? ' cur' : '') + (onEdit ? ' edit' : '')} onClick=${onEdit ? () => onEdit(i) : null} role=${onEdit ? 'button' : null}>
       <div className="n">${count != null && i % 2 === 0 ? html`<span className="count">${4 - i / 2}</span>` : BEATS[i]}</div>
-      <div className="a">${dir === 'D' ? I.down : dir === 'U' ? I.up : '·'}</div>
-      <div className="t">${dir === 'D' ? (accents.includes(i) ? 'Ner!' : 'Ner') : dir === 'U' ? 'Upp' : 'Paus'}</div>
+      <div className="a">${dir === 'D' ? I.down : dir === 'U' ? I.up : dir === 'X' ? html`<svg viewBox="0 0 24 20" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><path d="M2 16h20M6 4l2 6M12 2v7M18 4l-2 6" /></svg>` : '·'}</div>
+      <div className="t">${dir === 'D' ? (accents.includes(i) ? 'Ner!' : 'Ner') : dir === 'U' ? 'Upp' : dir === 'X' ? 'Tjack' : 'Paus'}</div>
     </div>`)}
   </div>`;
+}
+
+// Lugn rytmvy: dagens ackord, ett stort ord för slaget just nu och raden med åtta slag. Inget som rullar.
+const RC_WORD = { D: 'Ner', U: 'Upp', X: 'Tjack', '-': 'Vila' };
+function RhythmCard({ pattern, step, counting, chord, easy, note }) {
+  const on = step >= 0 && !counting, d = on ? pattern[step] : null;
+  return html`<section className="card rc">
+    <div className="rc-top">
+      ${chord ? html`<div className="rc-chord"><small>Grepp</small><b>${CHORD_DB[chord] ? CHORD_DB[chord].name : chord}</b></div>` : html`<div className="rc-chord"><small>Grepp</small><b>Dämpat</b></div>`}
+      <div className=${'rc-word' + (d === 'X' ? ' tj' : d === '-' ? ' rest' : '')}>${counting ? 'Räknar in …' : on ? RC_WORD[d] : 'Tryck Starta'}</div>
+    </div>
+    <${BeatStrip} pattern=${pattern} cur=${on ? step : -1} count=${counting ? 1 : null} />
+    ${note ? html`<p className="muted" style=${{ margin: 0, fontSize: 13 }}>${note}</p>` : null}
+  </section>`;
 }
 
 function Bpm({ value, set, min = 40, max = 140 }) {
@@ -2694,120 +2699,7 @@ function LeftHand({ k, easy, pressed, tick = 0 }) {
     </g>` : null)}
   </svg>`;
 }
-/* ---------------------------------------------------------------- handvågen */
-// Handens väg som en våg som rullar mot NU-linjen. Fylld prick = slag, orange = tjack, bruten våg = luft.
-const WV = { W: 360, H: 236, MID: 150, A: 44, SP: 36, NU: 100 };
-const wvMod = (s) => ((s % 8) + 8) % 8;
 const wvDownEven = (pat) => { let e = 0, o = 0; pat.forEach((d, i) => { if (d === 'D' || d === 'X') (i % 2 ? o++ : e++); }); return e >= o; };
-const WV_WORD = { D: 'ner', U: 'upp', X: 'TJACK!', '-': 'luft' };
-function WaveView({ pattern, chordAt, playing, demo = true, demoBpm = 40, easy, onEdit, color = 'var(--leaf)', full, setFull, onStop, idleText }) {
-  const [s, setS] = useState(0);
-  const [cnt, setCnt] = useState(null);
-  const grp = useRef(null), grp2 = useRef(null), hand = useRef(null), R = useRef({ s: 0, cnt: null, f: 0 });
-  // Bredare skärm = fler slag syns, i stället för att vågen blir jättehög
-  const box = useRef(null), [vw, setVw] = useState(WV.W);
-  useEffect(() => {
-    const el = box.current; if (!el) return;
-    const fit = () => {
-      const cw = el.clientWidth; if (!cw) return;
-      const over = full || (playing && window.matchMedia('(orientation: landscape) and (max-height: 540px)').matches);
-      const h = Math.min((cw * WV.H) / WV.W, over ? window.innerHeight - 80 : Math.max(250, window.innerHeight * 0.42));
-      setVw(Math.max(WV.W, Math.round((WV.H * cw) / h)));
-    };
-    fit();
-    const ro = window.ResizeObserver ? new ResizeObserver(fit) : null; if (ro) ro.observe(el);
-    window.addEventListener('resize', fit);
-    return () => { if (ro) ro.disconnect(); window.removeEventListener('resize', fit); };
-  }, [full, playing]);
-  const downEven = wvDownEven(pattern);
-  const isDown = (k) => (wvMod(k) % 2 === 0) === downEven;
-  const still = !playing && (!demo || onEdit);
-  useEffect(() => {
-    let raf; const t0 = performance.now();
-    const loop = () => {
-      raf = requestAnimationFrame(loop);
-      let st = 0, f = 0, c = null;
-      if (playing) {
-        const k = clockNow(); if (!k) return;
-        if (k.bar < 0) { c = 4 - Math.floor(k.step / 2); f = 0; st = 0; }
-        else { st = k.bar * 8 + k.step; f = k.frac; }
-      } else if (!still) { const sd = 60 / demoBpm / 2, x = (performance.now() - t0) / 1000 / sd; st = Math.floor(x); f = x - st; }
-      const r = R.current;
-      if (st !== r.s) { r.s = st; setS(st); }
-      if (c !== r.cnt) { r.cnt = c; setCnt(c); }
-      r.f = f; const tf = `translate(${(-f * WV.SP).toFixed(2)},0)`;
-      if (grp.current) grp.current.setAttribute('transform', tf);
-      if (grp2.current) grp2.current.setAttribute('transform', tf);
-      if (hand.current) {
-        const down = (wvMod(st) % 2 === 0) === downEven, cy = down ? WV.MID + 2 * WV.A : WV.MID - 2 * WV.A;
-        hand.current.setAttribute('cy', (WV.MID + 2 * f * (1 - f) * (cy - WV.MID)).toFixed(1));
-      }
-    };
-    loop();
-    return () => cancelAnimationFrame(raf);
-  }, [playing, still, demoBpm, downEven]);
-
-  const { H, MID, A, SP, NU } = WV, W = vw;
-  const x = (k) => NU + SP * (k - s);
-  const ks = []; for (let k = s - 4; k <= s + Math.ceil((W - NU) / SP) + 1; k++) ks.push(k);
-  let d = `M${x(ks[0])} ${MID}`;
-  for (const k of ks.slice(0, -1)) d += ` Q${x(k) + SP / 2} ${isDown(k) ? MID + 2 * A : MID - 2 * A} ${x(k + 1)} ${MID}`;
-  const ch = ks.map((k) => (chordAt ? chordAt(Math.max(0, k)) : null));
-  const runs = [];
-  ks.forEach((k, i) => { if (!ch[i]) return; const l = runs[runs.length - 1]; if (l && l.c === ch[i] && l.end === k - 1) l.end = k; else runs.push({ c: ch[i], start: k, end: k }); });
-  const nextIn = (() => { for (let j = 1; j <= 3; j++) { const a = chordAt ? chordAt(s + j) : null, b = chordAt ? chordAt(s + j - 1) : null; if (a && b && a !== b) return { c: a, j }; } return null; })();
-  const kind = pattern[wvMod(s)];
-  const cue = playing && cnt != null ? String(cnt) : still ? (idleText || '') : WV_WORD[kind];
-  const cueCol = cnt != null ? 'var(--brass)' : kind === 'X' ? '#ff9a4a' : kind === '-' ? 'var(--faint)' : color;
-  const name = (c) => (CHORD_DB[c] ? CHORD_DB[c].name : c);
-  return html`<section className=${'card wv-card' + (playing ? ' playing' : '') + (full ? ' full' : '')} aria-label="Handvågen">
-    <div className="wv-top">
-      <span className="wv-hint">${playing ? (cnt != null ? 'Räknar in …' : 'Slå när pricken når linjen') : onEdit ? 'Tryck på en prick för att ändra' : still ? 'Vågen rullar när du spelar' : 'Handen går hela tiden. Demo utan ljud.'}</span>
-      <div className="row" style=${{ gap: 6 }}>
-        ${setFull ? html`<button className="chip wv-big" onClick=${() => setFull(!full)}>${full ? 'Liten vy' : 'Stor vy'}</button>` : null}
-        ${onStop && playing ? html`<button className="chip wv-stop" onClick=${onStop}>Stoppa</button>` : null}
-      </div>
-    </div>
-    <div className="wv-box" ref=${box}>
-      <svg viewBox=${`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label="Handens väg. Gröna prickar är slag, orange är tjack, bruten våg är luft.">
-        <rect x="0" y=${MID - 17} width=${W} height="34" rx="7" fill="var(--wv-band)" />
-        <g ref=${grp} transform=${`translate(${(-R.current.f * WV.SP).toFixed(2)},0)`}>
-          ${runs.map((r) => html`<g key=${'c' + r.start}>
-            <rect x=${x(r.start) + 2} y="50" width=${Math.max(0, x(r.end + 1) - x(r.start) - 4)} height="26" rx="7" fill="var(--surface-2)" />
-            ${x(r.start) > NU ? html`<text x=${x(r.start) + 10} y="68" fontFamily="var(--f-display)" fontWeight="800" fontSize="15" fill="var(--text)">${name(r.c)}</text>` : null}
-          </g>`)}
-          ${ks.map((k, i) => (i + 1 < ks.length && ch[i] && ch[i + 1] && ch[i] !== ch[i + 1]) ? html`<g key=${'b' + k}>
-            <rect x=${x(k) - SP / 2 + 2} y="50" width=${SP - 4 + SP / 2} height="26" rx="7" fill="rgba(255,154,74,.28)" />
-            <text x=${x(k) + 4} y="67" textAnchor="middle" fontSize="11" fontWeight="800" fill="#ffb37a">byt</text>
-          </g>` : null)}
-          ${ks.map((k) => wvMod(k) === 0 ? html`<line key=${'l' + k} x1=${x(k)} y1="80" x2=${x(k)} y2=${H - 26} stroke="var(--faint)" strokeWidth="1.2" strokeDasharray="3 4" />` : null)}
-          <path d=${d} fill="none" stroke=${color} strokeWidth="4" strokeLinecap="round" />
-          ${ks.map((k) => pattern[wvMod(k)] === '-' ? html`<rect key=${'g' + k} x=${x(k) - 8} y=${MID - 16} width="16" height="32" fill="var(--wv-band)" />` : null)}
-        </g>
-        ${[-12.5, -7.5, -2.5, 2.5, 7.5, 12.5].map((o, i) => html`<line key=${'s' + i} x1="0" y1=${MID + o} x2=${W} y2=${MID + o} stroke="var(--wv-str)" strokeWidth=${i < 3 ? 1.6 - i * 0.2 : 1} />`)}
-        <g ref=${grp2} transform=${`translate(${(-R.current.f * WV.SP).toFixed(2)},0)`}>
-          ${ks.map((k) => {
-            const p = pattern[wvMod(k)], cx = x(k), cur = k === s && playing && cnt == null, dn = isDown(k);
-            const tap = onEdit && !playing ? () => onEdit(wvMod(k), dn) : null;
-            const g = p === 'X' ? html`<g><rect x=${cx - 12} y=${MID - 12} width="24" height="24" rx="6" fill="#ff9a4a" />
-                <path d=${`M${cx - 7} ${MID + 5} L${cx + 7} ${MID + 5} M${cx - 5} ${MID - 6} L${cx - 3} ${MID - 1} M${cx} ${MID - 8} L${cx} ${MID - 2} M${cx + 5} ${MID - 6} L${cx + 3} ${MID - 1}`} stroke="#2a1205" strokeWidth="2.6" strokeLinecap="round" fill="none" /></g>`
-              : p === '-' ? html`<circle cx=${cx} cy=${MID} r="9" fill="none" stroke="var(--muted)" strokeWidth="2" strokeDasharray="3 3" />`
-              : html`<g><circle cx=${cx} cy=${MID} r=${p === 'D' ? 12 : 10} fill=${color} />
-                <path d=${p === 'D' ? `M${cx} ${MID - 6} L${cx} ${MID + 6} M${cx - 5} ${MID + 1} L${cx} ${MID + 6} L${cx + 5} ${MID + 1}` : `M${cx} ${MID + 5} L${cx} ${MID - 5} M${cx - 4} ${MID - 1} L${cx} ${MID - 5} L${cx + 4} ${MID - 1}`} stroke="var(--wv-ink)" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" fill="none" /></g>`;
-            return html`<g key=${'m' + k + (cur ? 'c' : '')} className=${(cur ? 'wv-cur' : '') + (tap ? ' wv-tap' : '')} onClick=${tap}>${tap ? html`<rect x=${cx - 17} y=${MID - 30} width="34" height="60" fill="transparent" />` : null}${g}</g>`;
-          })}
-          ${ks.map((k) => html`<text key=${'n' + k} x=${x(k)} y=${H - 8} textAnchor="middle" fontFamily="var(--f-display)" fontWeight="800" fontSize="15" fill=${k === s && !still ? 'var(--text)' : 'var(--faint)'}>${BEATS[wvMod(k)]}</text>`)}
-        </g>
-        <rect x="0" y="44" width=${NU - SP * 0.6} height=${H - 44} fill="var(--surface)" opacity=".55" pointerEvents="none" />
-        <line x1=${NU} y1="80" x2=${NU} y2=${H - 26} stroke="var(--text)" strokeWidth="2" strokeDasharray="5 5" opacity=".55" />
-        ${chordAt && chordAt(Math.max(0, s)) ? html`<text x="10" y="68" fontFamily="var(--f-display)" fontWeight="800" fontSize="15" fill="var(--text)">${name(chordAt(Math.max(0, s)))}</text>` : null}
-        ${still ? null : html`<circle ref=${hand} cx=${NU} cy=${MID} r="17" fill="none" stroke="var(--text)" strokeWidth="2.5" opacity=".85" />`}
-        <text key=${'q' + s + cue} x=${NU} y="34" textAnchor="middle" className="wv-cue" fontFamily="var(--f-display)" fontWeight="800" fontSize=${cnt != null || kind === 'X' ? 32 : 28} fill=${cueCol}>${cue}</text>
-      </svg>
-      ${nextIn && !still ? html`<div className="wv-next"><span>Nästa${nextIn.j === 1 ? ' nu' : ''}</span><${Diagram} k=${nextIn.c} easy=${easy} /></div>` : null}
-    </div>
-  </section>`;
-}
 /* ---------------------------------------------------------------- tjack-vägen: nivåer */
 const TJ_LEVELS = [
   { id: 1, t: 'Bara ner', d: 'Ner på varje siffra. På & går handen upp i luften.', pat: ['D', '-', 'D', '-', 'D', '-', 'D', '-'] },
@@ -3592,16 +3484,7 @@ function App() {
         </div>
       </div>
 
-      <div className="seg" role="group" aria-label="Vy" style=${{ justifySelf: 'start' }}>
-        ${[['wave', 'Handvågen'], ['cards', 'Ackordkort']].map(([v, l]) => html`<button key=${v} aria-pressed=${songView === v} onClick=${() => pickView(v)}>${l}</button>`)}
-      </div>
-      ${songView === 'wave' ? html`<div className="wv-song">
-        <div className="wv-grip">
-          <${Diagram} k=${songCur} easy=${easy} onClick=${() => hear(songCur)} />
-        </div>
-        <${WaveView} pattern=${song.pattern} chordAt=${songChordAt} playing=${playing === 'song'} demo=${false} easy=${easy}
-          onEdit=${patEdit ? editPat : null} full=${waveFull} setFull=${setWaveFull} onStop=${stopAll} idleText="Tryck Spela" />
-      </div>` : html`<${PlayAlong} bars=${bars} startBar=${startBar} playing=${playing === 'song'} easy=${easy} />`}
+      <${PlayAlong} bars=${bars} startBar=${startBar} playing=${playing === 'song'} easy=${easy} />
 
       <section className="card transport" aria-label="Kompband">
         <div className="tp-main">
@@ -3625,7 +3508,7 @@ function App() {
           <button className=${'chip' + (ladderOn ? ' on' : '')} onClick=${toggleLadder} title="Börjar på 60 % och höjer 5 % efter varje varv">Tempotrappa${ladderOn ? ' · ' + ladderPct(song.id) + ' %' : ''}</button>
           ${loop ? html`<button className="chip on" onClick=${() => { if (playing) stopAll(); setLoop(null); setStartBar(0); }}>Loopar ${loop.part.toLowerCase()} ×</button>` : html`<span className="muted" style=${{ fontSize: 12 }}>Loopa en del med knappen i ackordschemat</span>`}
         </div>
-        ${songView === 'wave' ? null : html`<${BeatStrip} pattern=${song.pattern} accents=${song.accents} cur=${playing === 'song' ? pos.step : -1} count=${playing === 'song' && counting ? 1 : null} onEdit=${patEdit ? (i) => editPat(i, song.pattern[i] === 'D' || song.pattern[i] === 'X' || (song.pattern[i] === '-' && i % 2 === 0)) : null} />`}
+        ${html`<${BeatStrip} pattern=${song.pattern} accents=${song.accents} cur=${playing === 'song' ? pos.step : -1} count=${playing === 'song' && counting ? 1 : null} onEdit=${patEdit ? (i) => editPat(i, song.pattern[i] === 'D' || song.pattern[i] === 'X' || (song.pattern[i] === '-' && i % 2 === 0)) : null} />`}
         <div className="pat-presets">
           <span className="sk-lab">Mönster</span>
           ${[['Pop-tjack', ['D', '-', 'X', 'U', 'D', '-', 'X', 'U']], ['Bara ner', ['D', '-', 'D', '-', 'D', '-', 'D', '-']], ['Folk', P_FOLK], ['Ballad', P_BALLAD], ['Skank', P_SKANK]].map(([l, pt]) =>
@@ -3633,7 +3516,7 @@ function App() {
         </div>
         <div className="row" style=${{ gap: 8 }}>
           <button className=${'chip' + (patEdit ? ' on' : '')} onClick=${() => setPatEdit(!patEdit)}>${patEdit ? 'Klar med slagmönstret' : 'Ändra slagmönster'}</button>
-          ${patEdit ? html`<span className="muted" style=${{ fontSize: 12 }}>Tryck på en prick i vågen: ner → tjack → luft, eller upp → luft</span>` : null}
+          ${patEdit ? html`<span className="muted" style=${{ fontSize: 12 }}>Tryck på en ruta för att ändra den: ner → tjack → paus, eller upp → paus</span>` : null}
           ${patOv[song0.id] ? html`<button className="chip" onClick=${resetPat}>Återställ</button>` : null}
           ${capoN ? html`<button className=${'chip' + (capoOn ? ' on' : '')} onClick=${toggleCapo} title=${'Sätt capo på band ' + capoN + ' så låter det som originalet'}>Originaltonart · capo ${capoN} ${capoOn ? 'på' : 'av'}</button>` : null}
         </div>
@@ -3745,8 +3628,8 @@ function App() {
       <h2 className="page" style=${{ marginTop: 4 }}>${tjLv.t}</h2>
       <p className="lead" style=${{ marginTop: 6 }}>${tjLv.d}</p>
     </section>
-    <${WaveView} pattern=${tjLv.pat} chordAt=${tjChordAt} playing=${playing === 'tjack'} easy=${easy} demoBpm=${36}
-      full=${waveFull} setFull=${setWaveFull} onStop=${stopAll} idleText="" />
+    <${RhythmCard} pattern=${tjLv.pat} step=${playing === 'tjack' ? pos.step : -1} counting=${playing === 'tjack' && pos.bar < 0}
+      chord=${tjChordAt(Math.max(0, pos.bar) * 8)} easy=${easy} note="Tjack = handkanten landar på strängarna så att det blir ett kort, dovt slag." />
     <section className="card sk-ctl" style=${{ borderTop: 0, paddingTop: 16 }}>
       ${playBtn('Starta')}
       <div className="sk-opt"><span className="sk-lab">Tempo</span>
@@ -3762,13 +3645,13 @@ function App() {
         <button className=${'chip' + (tjDrums ? ' on' : '')} onClick=${() => setTjDrums(!tjDrums)}>Trummor ${tjDrums ? 'på' : 'av'}</button>
         ${tjLv.loop ? html`<button className=${'chip' + (tjMute ? ' on' : '')} onClick=${() => setTjMute(!tjMute)}>Dämpat ${tjMute ? 'på' : 'av'}</button>` : null}
       </div>
-      <p className="muted sk-tip">Klara 8 takter så bockas nivån av. Vrid telefonen på sidan för stor vy.</p>
+      <p className="muted sk-tip">Klara 8 takter så bockas nivån av.</p>
     </section>
     <section className="card" style=${{ display: 'grid', gap: 10 }}>
       <div className="sk-lab">Nivåer</div>
       <div className="tjl-list">
         ${TJ_LEVELS.map((l) => html`<button key=${l.id} className=${'tjl' + (tjDone.includes(l.id) ? ' done' : '') + (l.id === tjRec ? ' rec' : '')} aria-pressed=${l.id === tjLevel} onClick=${() => pickTj(l.id)}>
-          <${MiniWave} pat=${l.pat} chords=${l.loop} />
+          <span className="mini-pat" aria-hidden="true">${l.pat.map((d, i) => html`<i key=${i} className=${d === 'X' ? 'x' : d === '-' ? 'r' : ''}>${d === 'D' ? '↓' : d === 'U' ? '↑' : d === 'X' ? '×' : '·'}</i>`)}</span>
           <span><b>${l.id} · ${l.t}</b><small>${tjDone.includes(l.id) ? 'Klar' : l.id === tjRec ? 'Rekommenderad nästa' : 'Prova när du vill'}</small></span>
         </button>`)}
         <button className="tjl" onClick=${() => { const so = songs.find((x) => x.id === 'ca-reste-la'); if (so) { goTab('spela'); pickSong(so); } }}>
@@ -3792,11 +3675,11 @@ function App() {
     <section className="card sk-intro">
       <div className="label" style=${{ color: 'var(--leaf)' }}>Skank-skolan</div>
       <h2 className="page" style=${{ marginTop: 4 }}>Slå bara på &</h2>
-      <p className="lead" style=${{ marginTop: 6 }}>Räkna <b>1 & 2 & 3 & 4 &</b>. Handen går upp och ner hela tiden. På siffrorna går den förbi i luften, på varje <b>&</b> slår den ett kort ackord neråt.</p>
+      <p className="lead" style=${{ marginTop: 6 }}>Räkna <b>1 & 2 & 3 & 4 &</b>. På siffrorna vilar du. På varje <b>&</b> slår du ett kort ackord neråt.</p>
     </section>
 
-    <${WaveView} pattern=${P_SKANK} chordAt=${(k) => (skLevel === 1 ? null : skLevel === 3 ? (Math.floor(k / 8) % 2 ? 'Em' : 'Am') : skChord)} playing=${playing === 'skank'} easy=${easy} demoBpm=${36}
-      full=${waveFull} setFull=${setWaveFull} onStop=${stopAll} />
+    <${RhythmCard} pattern=${P_SKANK} step=${playing === 'skank' ? pos.step : -1} counting=${playing === 'skank' && pos.bar < 0}
+      chord=${skLevel === 1 ? null : skShown} easy=${easy} note="Vila på siffrorna, slå ett kort ackord neråt på varje &." />
     <section className="card">
       <div className="sk-ctl" style=${{ borderTop: 0, paddingTop: 0 }}>
         ${playBtn('Starta')}
