@@ -538,6 +538,7 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 .mini-pat i{font-style:normal}
 .mini-pat i.x{color:#ff9a4a}
 .mini-pat i.r{color:var(--faint)}
+.song.can{border-color:color-mix(in oklab,var(--leaf) 40%,transparent)}
 /* Teman */
 .skins{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .skin{text-align:left;border-radius:14px;padding:12px;border:2px solid transparent;display:grid;gap:8px;color:#fff}
@@ -1109,6 +1110,14 @@ const INITIAL_SONGS = [
     pattern: P_SKANK_UP, accents: [],
     tip: 'Originalet går i Bm och F#m. Med capo 2 blir det Am och Em, alltså bara två ackord. Släpp trycket i vänsterhanden direkt efter varje slag så att tonen blir kort.',
     form: [{ part: 'Refräng', bars: ['Am', 'Em', 'Am', 'Em', 'Am', 'Em', 'Am', 'Em'] }, { part: 'Vers', bars: ['Am', 'Am', 'Am', 'Em', 'Am', 'Am', 'Am', 'Em'] }] },
+  { id: 'eleanor-rigby', title: 'Eleanor Rigby', artist: 'The Beatles', feel: 'acoustic', level: 'Superlätt', bpm: 137, startBpm: 70,
+    pattern: ['D', '-', 'D', '-', 'D', '-', 'D', '-'], accents: [0, 4],
+    tip: 'Nybörjarversionen med bara C och Em. Låten börjar med "Ah, look at all the lonely people". Originalet går fort, så börja långsamt och höj tempot när bytet sitter.',
+    form: [{ part: 'Intro', bars: ['C', 'C', 'Em', 'Em', 'C', 'C', 'Em', 'Em'] }, { part: 'Vers', bars: ['Em', 'Em', 'Em', 'C', ['C', 'Em']] }, { part: 'Refräng', bars: ['Em', 'Em', 'Em', 'Em', 'Em', 'Em', 'Em', 'Em'] }] },
+  { id: 'whats-up', title: "What's Up", artist: '4 Non Blondes', feel: 'acoustic', level: 'Lätt', capo: 'Capo 2 för originaltonarten', bpm: 135, startBpm: 70,
+    pattern: P_FOLK, accents: [0, 6],
+    tip: 'Samma fyra takter genom hela låten: G, Am, C, G. Originalet går i A, och med capo 2 spelar du det med G-, Am- och C-greppen. Börja långsamt.',
+    form: [{ part: 'Hela låten', bars: ['G', 'Am', 'C', 'G', 'G', 'Am', 'C', 'G'] }] },
   { id: 'rivers-of-babylon', title: 'Rivers of Babylon', artist: 'The Melodians', feel: 'reggae', level: 'Lätt', bpm: 75,
     pattern: P_SKANK, accents: [],
     tip: 'Allt går i G med D och C. Versen ligger kvar länge på G, så du har gott om tid att förbereda bytet.',
@@ -1633,18 +1642,18 @@ const DAILY_GOAL = 60;
 const addTag = (n, t) => { n.daily = n.daily || {}; const d = today(); n.daily[d] = [...new Set([...(n.daily[d] || []), t])]; };
 // Tvåveckorsplanen: från första ackordet till hela låtar. Varje dag 3–4 steg.
 const PLAN = [
-  { t: 'Första ackorden', steps: [{ k: 'tune' }, { k: 'chord', c: 'Em' }, { k: 'chord', c: 'Am' }, { k: 'chal', p: ['Am', 'Em'], n: 8 }] },
-  { t: 'C-dur och första låten', steps: [{ k: 'tune' }, { k: 'chord', c: 'C' }, { k: 'chal', p: ['Am', 'C'], n: 8 }, { k: 'song', s: 'get-up-stand-up' }] },
-  { t: 'G-dur och reggae-skank', steps: [{ k: 'chord', c: 'G' }, { k: 'chal', p: ['C', 'G'], n: 8 }, { k: 'skank' }] },
+  { t: 'Första ackorden', steps: [{ k: 'tune' }, { k: 'chord', c: 'Em' }, { k: 'chord', c: 'Am' }, { k: 'chal', p: ['Am', 'Em'], n: 8 }, { k: 'song', s: 'get-up-stand-up' }] },
+  { t: 'C-dur och Eleanor Rigby', steps: [{ k: 'tune' }, { k: 'chord', c: 'C' }, { k: 'chal', p: ['Em', 'C'], n: 8 }, { k: 'song', s: 'eleanor-rigby' }] },
+  { t: 'G-dur och What\'s Up', steps: [{ k: 'chord', c: 'G' }, { k: 'chal', p: ['C', 'G'], n: 8 }, { k: 'song', s: 'whats-up' }, { k: 'skank' }] },
   { t: 'D-dur och Dylan', steps: [{ k: 'chord', c: 'D' }, { k: 'chal', p: ['G', 'D'], n: 10 }, { k: 'song', s: 'knockin' }] },
-  { t: 'Fyra ackord i följd', steps: [{ k: 'tune' }, { k: 'chal', p: ['Em', 'G'], n: 12 }, { k: 'song', s: 'zombie' }] },
+  { t: 'Fyra ackord i följd', steps: [{ k: 'tune' }, { k: 'chal', p: ['Em', 'G'], n: 12 }, { k: 'song', s: 'zombie' }, { k: 'song', s: 'ca-reste-la' }] },
   { t: 'F utan barré', steps: [{ k: 'chord', c: 'Fmaj7' }, { k: 'chal', p: ['C', 'Fmaj7'], n: 8 }, { k: 'song', s: 'no-woman-no-cry' }] },
   { t: 'Lugnt akustiskt', steps: [{ k: 'chal', p: ['Am', 'C'], n: 15 }, { k: 'song', s: 'july' }, { k: 'skank' }] },
   { t: 'A och E', steps: [{ k: 'tune' }, { k: 'chord', c: 'A' }, { k: 'chord', c: 'E' }, { k: 'song', s: 'three-little-birds' }] },
   { t: 'Snabbare byten', steps: [{ k: 'chal', p: ['D', 'A'], n: 12 }, { k: 'chal', p: ['Am', 'E'], n: 10 }, { k: 'song', s: 'stand-by-me' }] },
   { t: 'Rockgreppen', steps: [{ k: 'chord', c: 'Em7' }, { k: 'chal', p: ['Em7', 'Cadd9'], n: 15 }, { k: 'song', s: 'wonderwall' }] },
   { t: 'Byten mitt i takten', steps: [{ k: 'tune' }, { k: 'chal', p: ['G', 'D'], n: 15 }, { k: 'song', s: 'redemption-song' }] },
-  { t: 'Litet barré', steps: [{ k: 'chord', c: 'F' }, { k: 'chal', p: ['F', 'C'], n: 8 }, { k: 'song', s: 'red-red-wine' }] },
+  { t: 'Litet barré', steps: [{ k: 'chord', c: 'F' }, { k: 'chal', p: ['F', 'C'], n: 8 }, { k: 'song', s: 'red-red-wine' }, { k: 'song', s: 'jag-ar-storre-nu' }] },
   { t: 'Wonderwall på riktigt', steps: [{ k: 'chal', p: ['C', 'G'], n: 20 }, { k: 'stars', s: 'wonderwall', n: 3 }] },
   { t: 'Spela själv', steps: [{ k: 'tune' }, { k: 'solo' }, { k: 'stars', s: 'any', n: 3 }] },
 ];
@@ -1756,7 +1765,7 @@ function Quiz({ easy, onAnswer, record }) {
   </section>`;
 }
 
-const PAIRS = [['Am', 'Em'], ['Em', 'G'], ['Am', 'C'], ['C', 'G'], ['G', 'D'], ['D', 'A'], ['Am', 'E'], ['C', 'Fmaj7'], ['Em7', 'Cadd9'], ['Dsus4', 'A7sus4'], ['F', 'C'], ['Dm', 'E']];
+const PAIRS = [['Am', 'Em'], ['Em', 'C'], ['Em', 'G'], ['Am', 'C'], ['C', 'G'], ['G', 'D'], ['D', 'A'], ['Am', 'E'], ['C', 'Fmaj7'], ['Em7', 'Cadd9'], ['Dsus4', 'A7sus4'], ['F', 'C'], ['Dm', 'E']];
 function Challenge({ easy, pair, setPair, best, onFinish, fixed = false }) {
   const [phase, setPhase] = useState('idle');
   const [cd, setCd] = useState(3);
@@ -3268,6 +3277,9 @@ function App() {
 
   const barIdx = playing === 'song' && pos.bar >= 0 ? (startBar + pos.bar) % bars.length : startBar;
   const counting = playing && pos.bar < 0 && pos.step >= 0;
+  const songChords = (s) => [...new Set(s.form.flatMap((p) => p.bars.flat()))];
+  const known = new Set(prog.chordsOk || []);
+  const canPlay = known.size >= 2 ? songs.filter((s) => songChords(s).every((k) => known.has(k))) : [];
   const songChordAt = (k) => { const b = bars[(startBar + Math.floor(k / 8)) % bars.length]; return b ? chordAt(b, k % 8) : null; };
   const songCur = chordAt(bars[barIdx] || bars[0], playing === 'song' && pos.step >= 0 && pos.bar >= 0 ? pos.step : 0);
 
@@ -3429,7 +3441,7 @@ function App() {
   };
   const pickSong = (s) => {
     if (playing) stopAll();
-    setSongId(s.id); setBpm(ladderOn ? Math.round((s.bpm * ladderPct(s.id)) / 100) : s.bpm); setStartBar(0); setPicking(false); setLoop(null);
+    setSongId(s.id); setBpm(ladderOn ? Math.round((s.bpm * ladderPct(s.id)) / 100) : s.startBpm || s.bpm); setStartBar(0); setPicking(false); setLoop(null);
     setSelChord([].concat(s.form[0].bars[0])[0]); setStyle(s.feel === 'reggae' ? 'reggae' : 'acoustic');
   };
   const setMix = (k, v) => { engine.setMix(k, v); setMixState((m) => ({ ...m, [k]: v })); };
@@ -3456,6 +3468,9 @@ function App() {
   const SpelaTab = html`<div className=${'desk' + (picking ? ' picking' : '')}>
     <nav className="songs" aria-label="Låtar">
       <div className="sheet-head"><h3>Välj låt</h3><button className="btn" onClick=${() => setPicking(false)}>Stäng</button></div>
+      ${canPlay.length ? html`<div className="label tierhead" style=${{ color: 'var(--leaf)' }}>Du kan spela nu</div>
+        ${canPlay.map((s) => html`<button key=${'cp' + s.id} className=${'song can' + (s.id === song.id ? ' sel' : '')} onClick=${() => pickSong(s)}>
+          <b>${s.title}</b><i>${s.artist}</i><span className="chords">${songChords(s).map((k) => CHORD_DB[k].name).join(' · ')}</span></button>`)}` : null}
       ${songs.flatMap((s, i) => [i === 0 || TIER_OF(songs[i - 1]) !== TIER_OF(s) ? html`<div key=${'h' + i} className="label tierhead">${TIER_OF(s)}</div>` : null,
         html`<div key=${s.id} style=${{ position: 'relative' }}>
         <button className=${'song' + (s.id === song.id ? ' sel' : '')} onClick=${() => pickSong(s)}>
