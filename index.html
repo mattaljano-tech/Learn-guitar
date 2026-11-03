@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="Öva gitarr med kompband, Guitar Hero-läge, skank-skola och stämmare.">
-<meta name="theme-color" content="#0c0a1a">
+<meta name="theme-color" content="#100e0c">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -28,7 +28,7 @@ input,select,textarea{font-size:16px}
 }
 </style>
 <title>NylonGitarr Studio</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap">
 <style>
 /* Layout: sticky stage header over a two-column practice desk (song list | instrument), stacking to one column on phones */
 :root{
@@ -46,6 +46,20 @@ input,select,textarea{font-size:16px}
   --f-mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
   --r:16px;
   color-scheme:dark;
+}
+:root[data-skin="kvall"]{
+  /* Kväll (standard): varmt mörkt som en gitarrkropp i lampljus, mässing och salvia */
+  --bg:#100e0c; --surface:#181513; --surface-2:#221e1a; --surface-3:#2c2722; --line:#342e28;
+  --text:#f3ede3; --muted:#b3a99b; --faint:#81786c;
+  --brass:#d9a95f; --brass-2:#d9a95f; --brass-ink:#1d1406;
+  --leaf:#a3c9a6; --leaf-2:#a3c9a6; --leaf-ink:#0f1b11;
+  --ember:#e08562; --ember-ink:#200d05; --sky:#93b6da;
+  --f1:#93b6da; --f2:#a3c9a6; --f3:#e6c375; --f4:#dc9a85;
+  --glow-1:#d9a95f; --glow-2:#a3c9a6;
+  --f-display:"Fraunces",Georgia,"Times New Roman",serif;
+  --f-body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"Inter",system-ui,sans-serif;
+  --r:14px;
 }
 :root[data-skin="riddim"]{
   --bg:#08130d; --surface:#0f1e16; --surface-2:#16291f; --surface-3:#1f3729; --line:#2a4734;
@@ -539,6 +553,27 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 .mini-pat i.x{color:#ff9a4a}
 .mini-pat i.r{color:var(--faint)}
 .song.can{border-color:color-mix(in oklab,var(--leaf) 40%,transparent)}
+/* Kväll: lugnare och mer exklusivt. Platta ytor, inga neonglöd, serif i rubrikerna */
+:root[data-skin="kvall"] body{background:radial-gradient(1100px 600px at 50% -20%,rgba(217,169,95,.07),transparent 70%),var(--bg)}
+:root[data-skin="kvall"] h1,:root[data-skin="kvall"] h2,:root[data-skin="kvall"] h3,
+:root[data-skin="kvall"] .home-h1,:root[data-skin="kvall"] .ls-h1{font-weight:600;letter-spacing:-.015em}
+:root[data-skin="kvall"] .card{background:var(--surface);border-color:var(--line)}
+:root[data-skin="kvall"] .play,:root[data-skin="kvall"] .fab,:root[data-skin="kvall"] .ls-btn,:root[data-skin="kvall"] .ls-back{box-shadow:none}
+:root[data-skin="kvall"] .play{font-weight:600}
+:root[data-skin="kvall"] .ls-btn{font-weight:600;letter-spacing:.005em}
+:root[data-skin="kvall"] .label,:root[data-skin="kvall"] .ls-kicker,:root[data-skin="kvall"] .sk-lab{letter-spacing:.12em;font-weight:600}
+:root[data-skin="kvall"] .chip{border-radius:10px}
+:root[data-skin="kvall"] .mono{font-variant-numeric:tabular-nums;letter-spacing:0}
+:root[data-skin="kvall"] .tabs button[aria-selected="true"]{background:var(--surface-3);color:var(--text)}
+:root[data-skin="kvall"] .bottomnav button[aria-current="page"]{color:var(--brass);background:transparent}
+:root[data-skin="kvall"] .beat.cur{transform:none}
+:root[data-skin="kvall"] .rc-word.tj,:root[data-skin="kvall"] .beat.tj .a{color:var(--ember)}
+:root[data-skin="kvall"] .beat.tj.cur{background:var(--ember);color:var(--ember-ink)}
+:root[data-skin="kvall"] .home-steps{background:transparent;border-color:var(--line)}
+:root[data-skin="kvall"] .ls-stars{fill:var(--brass)}
+:root[data-skin="kvall"] .pa{background:var(--surface)}
+:root[data-skin="kvall"] .gh-launch{background:var(--surface-2);color:var(--text);border:1px solid var(--line);box-shadow:none;font-weight:600}
+:root[data-skin="kvall"] .gh-launch svg{color:var(--brass)}
 /* Teman */
 .skins{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .skin{text-align:left;border-radius:14px;padding:12px;border:2px solid transparent;display:grid;gap:8px;color:#fff}
@@ -870,7 +905,7 @@ details.tp-grid>.mixer{margin-top:14px}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
 <script>
 const { useState, useEffect, useRef, useMemo } = React;
-try { document.documentElement.setAttribute('data-skin', localStorage.getItem('ng-skin') || 'neon'); } catch (e) {}
+try { const sk = localStorage.getItem('ng-skin2') || 'kvall'; document.documentElement.setAttribute('data-skin', sk); } catch (e) { document.documentElement.setAttribute('data-skin', 'kvall'); }
 /* Inbyggd mallmotor (ersätter htm-biblioteket, inga externa beroenden) */
 const html = (() => {
   const P = '', cache = new WeakMap(), VOID = { input: 1, br: 1, img: 1, hr: 1, meta: 1, link: 1 };
@@ -1854,6 +1889,7 @@ function Challenge({ easy, pair, setPair, best, onFinish, fixed = false }) {
 
 
 const SKINS = [
+  { id: 'kvall', name: 'Kväll', sub: 'Varmt mörkt, mässing och salvia', bg: '#181513', fg: '#f3ede3', sw: ['#d9a95f', '#a3c9a6', '#e08562'] },
   { id: 'neon', name: 'Neon Night', sub: 'Rosa, mint och nattblått', bg: '#15122a', fg: '#f4f1ff', sw: ['#ff5ca8', '#ff9a5c', '#2ee6b8'] },
   { id: 'riddim', name: 'Riddim', sub: 'Guld, grönt och rött', bg: '#0f1e16', fg: '#effaf1', sw: ['#ffcc1f', '#22d36b', '#ff4b3e'] },
   { id: 'ocean', name: 'Ocean', sub: 'Cyan, lime och djuphav', bg: '#0b1c2e', fg: '#eef7ff', sw: ['#36d6ff', '#7d8bff', '#b6f24a'] },
@@ -3172,7 +3208,7 @@ function App() {
   const [tableChord, setTableChord] = useState('C');
   const [modal, setModal] = useState(false);
   const [picking, setPicking] = useState(false);
-  const [skin, setSkinState] = useState(() => { try { return localStorage.getItem('ng-skin') || 'neon'; } catch (e) { return 'neon'; } });
+  const [skin, setSkinState] = useState(() => { try { return localStorage.getItem('ng-skin2') || 'kvall'; } catch (e) { return 'kvall'; } });
   const [skinOpen, setSkinOpen] = useState(false);
   const [ghOpen, setGhOpen] = useState(false);
   const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : v; } catch (e) { return d; } };
@@ -3209,7 +3245,7 @@ function App() {
     if (typeof d.lefty === 'boolean') setLefty(d.lefty);
     setCodeAsk(null); setCodeIn(''); setCodeMsg('Klart! Dina framsteg är flyttade hit.');
   };
-  useEffect(() => { document.documentElement.setAttribute('data-skin', skin); try { localStorage.setItem('ng-skin', skin); } catch (e) {} }, [skin]);
+  useEffect(() => { document.documentElement.setAttribute('data-skin', skin); try { localStorage.setItem('ng-skin2', skin); } catch (e) {} }, [skin]);
   const narrowM = useNarrow('(max-width: 760px)');
 
   const S = useRef({});
