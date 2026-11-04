@@ -1887,6 +1887,209 @@ function Challenge({ easy, pair, setPair, best, onFinish, fixed = false }) {
   </section>`;
 }
 
+/* Fri träning: appen lyssnar medan du byter i din egen takt och ger feedback efteråt */
+const fmtSec = (ms) => (ms / 1000).toFixed(1).replace('.', ',') + ' s';
+function summarizePractice(recs, pair) {
+  const times = recs.filter((r) => r.ms > 0 && r.ms < 8000); // längre uppehåll räknas som paus
+  const mean = (l) => l.reduce((s, r) => s + r.ms, 0) / l.length;
+  const dirs = [[pair[0], pair[1]], [pair[1], pair[0]]].map(([from, to]) => {
+    const l = times.filter((r) => r.from === from && r.to === to);
+    return { from, to, n: l.length, avg: l.length ? mean(l) : 0 };
+  }).filter((d) => d.n > 0);
+  const judged = recs.filter((r) => r.ok !== null), clean = judged.filter((r) => r.ok).length;
+  const tipCount = {};
+  judged.forEach((r) => r.tips.forEach((t) => { tipCount[t] = (tipCount[t] || 0) + 1; }));
+  const tips = Object.entries(tipCount).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([text, n]) => ({ text, n }));
+  const slow = dirs.length === 2 && Math.abs(dirs[0].avg - dirs[1].avg) > 150 ? (dirs[0].avg > dirs[1].avg ? dirs[0] : dirs[1]) : null;
+  return { hits: recs.length, changes: times.length, avg: times.length ? mean(times) : 0, best: times.length ? Math.min(...times.map((r) => r.ms)) : 0, dirs, judged: judged.length, clean, tips, slow };
+}
+function PracticeCoach({ easy, pair, setPair, onFinish }) {
+  const [phase, setPhase] = useState('idle');
+  const [live, setLive] = useState({ n: 0, ms: 0, ok: null, msg: '' });
+  const [sum, setSum] = useState(null);
+  const [micErr, setMicErr] = useState(false);
+  const micR = useRef(null), rafR = useRef(0), lvl = useRef(null), stateR = useRef(null);
+  const stopMic = () => { cancelAnimationFrame(rafR.current); if (micR.current) micR.current.stop(); micR.current = null; };
+  useEffect(() => stopMic, []);
+  const judgeJob = (S) => {
+    const j = S.job; if (!j) return; S.job = null;
+    if (j.frames < 3) return; // för kort anslag för att bedöma
+    const out = judgeChord(j.k, easy, j.acc);
+    j.rec.ok = out.ok; j.rec.tips = out.tips;
+    setLive((l) => ({ ...l, ok: out.ok, msg: out.ok ? 'Rent ackord!' : out.tips[0] }));
+  };
+  const start = async () => {
+    setMicErr(false); setSum(null); setLive({ n: 0, ms: 0, ok: null, msg: '' });
+    const m = new Mic();
+    try { await m.start({ aec: false }); } catch (e) { setMicErr(true); return; }
+    micR.current = m; setPhase('run');
+    const cal = micCal(), S = { n: 0, lastHit: 0, chk: 0, streak: 0, job: null, recs: [] };
+    stateR.current = S;
+    const share = (ch, tot, k) => { const ps = chordPcs(k, easy); let v = 0; ch.forEach((x, pc) => { if (ps.has(pc)) v += x; }); return v / tot; };
+    const loop = (t) => {
+      rafR.current = requestAnimationFrame(loop); m.read(); const r = m.rms();
+      if (lvl.current) lvl.current.style.width = Math.min(100, r * 600) + '%';
+      if (S.job) {
+        const age = t - S.job.t;
+        if (age > 120 && age < 800) { m.notes(S.job.acc); S.job.frames++; }
+        if (age >= 800) judgeJob(S);
+      }
+      if (t - S.chk < 70) return; S.chk = t;
+      if (r < cal.gate * 2) { S.streak = 0; return; }
+      const { ch, tot } = m.chroma(); if (tot <= 0) return;
+      const want = pair[S.n % 2], other = pair[(S.n + 1) % 2];
+      const a = share(ch, tot, want), b = share(ch, tot, other), need = 0.25 + chordPcs(want, easy).size * 0.07;
+      S.streak = a >= need && a > b + 0.05 ? S.streak + 1 : 0;
+      if (S.streak >= 2 && t - S.lastHit > 300) {
+        judgeJob(S);
+        const ms = S.lastHit ? t - S.lastHit : 0, rec = { from: other, to: want, ms, ok: null, tips: [] };
+        S.recs.push(rec); S.job = { t, k: want, acc: new Array(128).fill(0), frames: 0, rec };
+        S.lastHit = t; S.streak = 0; S.n++;
+        setLive((l) => ({ ...l, n: S.n, ms, ok: null, msg: '' }));
+      }
+    };
+    rafR.current = requestAnimationFrame(loop);
+  };
+  const finish = () => {
+    const S = stateR.current; judgeJob(S); stopMic();
+    const out = summarizePractice(S.recs, pair), key = 'ng-coach-' + pair.join('-');
+    try { out.prev = Number(localStorage.getItem(key)) || 0; if (out.avg) localStorage.setItem(key, String(Math.round(out.avg))); } catch (e) { out.prev = 0; }
+    setSum(out); setPhase('done');
+    if (out.changes > 0) onFinish(out, pair);
+  };
+  const next = pair[live.n % 2];
+  return html`<section className="card" style=${{ display: 'grid', gap: 18 }}>
+    ${phase !== 'run' ? html`<div className="row" style=${{ gap: 6 }}>
+      ${PAIRS.map((p) => html`<button key=${p.join()} className=${'chip' + (p[0] === pair[0] && p[1] === pair[1] ? ' on' : '')} onClick=${() => setPair(p)}>${p[0]} ↔ ${p[1]}</button>`)}
+    </div>` : null}
+    ${micErr ? MIC_BLOCKED : null}
+    <div className="chal">
+      <div className="pair"><span className=${phase === 'run' && next === pair[0] ? 'on' : ''}>${CHORD_DB[pair[0]].name}</span><span style=${{ padding: 0 }}>↔</span><span className=${phase === 'run' && next === pair[1] ? 'on' : ''}>${CHORD_DB[pair[1]].name}</span></div>
+      ${phase === 'idle' ? html`<p className="lead">Byt mellan ackorden i din egen takt, utan klocka. Appen lyssnar, mäter hur lång tid bytena tar och hör vilka strängar som inte klingar.</p>
+        <button className="play" onClick=${start}>${I.play}Börja lyssna</button>` : null}
+      ${phase === 'run' ? html`<div className="count">${live.n}</div>
+        <div className="chal-mic"><b>Slå an ${CHORD_DB[next].name}</b><div className="gh-lvl cc-lvl" style=${{ width: '100%' }}><i ref=${lvl}></i></div>
+          <small className="muted" aria-live="polite" style=${{ minHeight: 40 }}>${live.ms ? 'Bytet tog ' + fmtSec(live.ms) + '. ' : ''}${live.msg || (live.n ? '' : 'Vänta tills appen hör ackordet innan du byter.')}</small></div>
+        <button className="chip warn" onClick=${finish}>Klar, visa feedback</button>` : null}
+      ${phase === 'done' && sum ? html`<div style=${{ display: 'grid', gap: 10, width: '100%', textAlign: 'left' }}>
+        ${sum.hits === 0 ? html`<p className="lead">Appen hörde inga ackord. Kontrollera att mikrofonen får lyssna och kalibrera den under Stämning.</p>` : html`
+          <div className="coach"><span className="big">${sum.changes}</span><div><b>byten</b><br />${sum.changes ? 'Snitt ' + fmtSec(sum.avg) + ', snabbast ' + fmtSec(sum.best) + '.' : 'Spela minst två ackord för att mäta ett byte.'}${sum.prev && sum.avg ? (sum.avg < sum.prev ? ' Snabbare än förra gången (' + fmtSec(sum.prev) + ').' : ' Förra gången: ' + fmtSec(sum.prev) + '.') : ''}</div></div>
+          ${sum.judged ? html`<div className="coach"><span className="big">${sum.clean}/${sum.judged}</span><div><b>rena ackord</b>${sum.tips.map((t) => html`<br key=${t.text} />`)}${sum.tips.map((t) => html`<span key=${'t' + t.text} style=${{ display: 'block' }}>${t.text} (${t.n} ggr)</span>`)}</div></div>` : null}
+          ${sum.slow ? html`<p className="lead">Öva extra på <strong>${CHORD_DB[sum.slow.from].name} → ${CHORD_DB[sum.slow.to].name}</strong>. Det bytet tar längst, ${fmtSec(sum.slow.avg)} i snitt.</p>` : null}`}
+        <button className="play" style=${{ justifySelf: 'center' }} onClick=${start}>${I.play}Träna igen</button></div>` : null}
+    </div>
+    <div className="diagrams" style=${{ maxWidth: 320, margin: '0 auto', width: '100%', gridTemplateColumns: '1fr 1fr' }}>
+      ${pair.map((k, i) => html`<${Diagram} key=${k + i} k=${k} easy=${easy} selected=${phase === 'run' && next === k} onClick=${() => engine.playChord(voicing(k, easy).frets)} />`)}
+    </div>
+  </section>`;
+}
+
+/* Fritt spel: spela vad du vill. Appen känner igen ackorden, hör rytmen och ger feedback efteråt */
+const FREE_CHORDS = ['C', 'D', 'Dm', 'E', 'Em', 'F', 'G', 'Gm', 'A', 'Am', 'Bm', 'Bb', 'C#m', 'F#m', 'C7', 'D7', 'E7', 'G7', 'A7', 'B7', 'Am7', 'Em7', 'Dm7'];
+const KEY_CHORDS = { G: ['G', 'C', 'D', 'Em', 'Am', 'Bm'], C: ['C', 'F', 'G', 'Am', 'Dm', 'Em'], D: ['D', 'G', 'A', 'Bm', 'Em', 'F#m'], A: ['A', 'D', 'E', 'F#m', 'Bm', 'C#m'], E: ['E', 'A', 'B', 'C#m', 'F#m', 'G#m'], F: ['F', 'Bb', 'C', 'Dm', 'Gm', 'Am'] };
+function guessChord(ch, easy) {
+  const norm = Math.sqrt(ch.reduce((s, x) => s + x * x, 0)) || 1;
+  let best = null, score = 0, second = 0;
+  FREE_CHORDS.forEach((k) => {
+    const ps = chordPcs(k, easy); let v = 0;
+    ch.forEach((x, pc) => { if (ps.has(pc)) v += x; });
+    const s = v / (norm * Math.sqrt(ps.size));
+    if (s > score) { second = score; score = s; best = k; } else if (s > second) second = s;
+  });
+  return score > 0.62 && score > second + 0.01 ? best : null;
+}
+function summarizeFree(segs, onsets) {
+  const merged = [];
+  segs.filter((s) => s.ms >= 300).forEach((s) => {
+    const l = merged[merged.length - 1];
+    if (l && l.k === s.k) l.ms += s.ms; else merged.push({ ...s });
+  });
+  const time = {}; merged.forEach((s) => { time[s.k] = (time[s.k] || 0) + s.ms; });
+  const chords = Object.entries(time).sort((a, b) => b[1] - a[1]).map(([k]) => k);
+  const moves = {};
+  merged.forEach((s, i) => { if (i) { const m = merged[i - 1].k + ' → ' + s.k; moves[m] = (moves[m] || 0) + 1; } });
+  const topMoves = Object.entries(moves).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const total = Object.values(time).reduce((a, b) => a + b, 0) || 1;
+  const base = (k) => k.replace(/7$/, '');
+  const keyScores = Object.entries(KEY_CHORDS).map(([key, list]) => {
+    let v = 0; Object.entries(time).forEach(([k, ms]) => { if (list.includes(base(k))) v += ms; });
+    return { key, share: v / total, home: time[key] || 0 };
+  }).sort((a, b) => b.share - a.share || b.home - a.home);
+  const key = chords.length ? keyScores[0] : null;
+  const fresh = key ? KEY_CHORDS[key.key].filter((k) => !time[k] && CHORD_DB[k]).slice(0, 2) : [];
+  const gaps = onsets.slice(1).map((t, i) => t - onsets[i]).filter((g) => g > 120 && g < 2500);
+  let bpm = 0, steady = 0;
+  if (gaps.length >= 6) {
+    const mid = [...gaps].sort((a, b) => a - b)[Math.floor(gaps.length / 2)];
+    bpm = 60000 / mid; while (bpm < 60) bpm *= 2; while (bpm > 170) bpm /= 2;
+    const fits = gaps.filter((g) => [0.5, 1, 1.5, 2].some((x) => Math.abs(g - mid * x) <= mid * x * 0.15));
+    steady = Math.round((fits.length / gaps.length) * 100);
+  }
+  return { chords, changes: Math.max(0, merged.length - 1), topMoves, key, fresh, bpm: Math.round(bpm), steady, strums: onsets.length, trail: merged.slice(-24).map((s) => s.k) };
+}
+function FreePlay({ easy, onFinish }) {
+  const [phase, setPhase] = useState('idle');
+  const [now, setNow] = useState(null);
+  const [trail, setTrail] = useState([]);
+  const [sum, setSum] = useState(null);
+  const [micErr, setMicErr] = useState(false);
+  const micR = useRef(null), rafR = useRef(0), lvl = useRef(null), stateR = useRef(null);
+  const stopMic = () => { cancelAnimationFrame(rafR.current); if (micR.current) micR.current.stop(); micR.current = null; };
+  useEffect(() => stopMic, []);
+  const closeSeg = (S) => { if (S.cur) S.segs.push({ k: S.cur, ms: Math.max(0, S.sound - S.since) }); };
+  const start = async () => {
+    setMicErr(false); setSum(null); setNow(null); setTrail([]);
+    const m = new Mic();
+    try { await m.start({ aec: false }); } catch (e) { setMicErr(true); return; }
+    micR.current = m; setPhase('run');
+    const cal = micCal(), S = { cur: null, since: 0, sound: 0, cand: null, n: 0, chk: 0, env: 0.01, lastOn: -1e9, onsets: [], segs: [] };
+    stateR.current = S;
+    const loop = (t) => {
+      rafR.current = requestAnimationFrame(loop); m.read(); const r = m.rms();
+      if (lvl.current) lvl.current.style.width = Math.min(100, r * 600) + '%';
+      if (r > cal.onset && r > S.env * 2 && t - S.lastOn > 120) { S.lastOn = t; S.onsets.push(t); }
+      S.env = S.env * 0.9 + r * 0.1;
+      if (t - S.chk < 70) return; S.chk = t;
+      if (r < cal.gate * 2) { S.cand = null; return; }
+      S.sound = t;
+      const { ch, tot } = m.chroma(); if (tot <= 0) return;
+      const g = guessChord(ch, easy);
+      if (!g) { S.cand = null; return; }
+      S.n = g === S.cand ? S.n + 1 : 1; S.cand = g;
+      if (S.n >= 3 && g !== S.cur) {
+        closeSeg(S); S.cur = g; S.since = t; setNow(g);
+        setTrail((l) => [...l, g].slice(-8));
+      }
+    };
+    rafR.current = requestAnimationFrame(loop);
+  };
+  const finish = () => {
+    const S = stateR.current; closeSeg(S); stopMic();
+    const out = summarizeFree(S.segs, S.onsets);
+    setSum(out); setPhase('done');
+    if (out.chords.length) onFinish(out);
+  };
+  const feel = (s) => (s >= 80 ? 'Stadigt, rytmen sitter.' : s >= 60 ? 'Ganska jämnt, med lite gung.' : 'Tempot vandrar. Prova att räkna 1, 2, 3, 4 i huvudet.');
+  return html`<section className="card" style=${{ display: 'grid', gap: 18 }}>
+    ${micErr ? MIC_BLOCKED : null}
+    <div className="chal">
+      ${phase === 'idle' ? html`<p className="lead">Spela vad du känner för, i vilken rytm du vill. Appen känner igen ackorden, hör tempot och berättar sedan vad du faktiskt spelade.</p>
+        <button className="play" onClick=${start}>${I.play}Börja spela</button>` : null}
+      ${phase === 'run' ? html`<div className="count">${now ? CHORD_DB[now].name : '…'}</div>
+        <div className="chal-mic"><div className="gh-lvl cc-lvl" style=${{ width: '100%' }}><i ref=${lvl}></i></div>
+          <small className="muted" style=${{ minHeight: 20 }}>${trail.length ? trail.map((k) => CHORD_DB[k].name).join(' · ') : 'Appen lyssnar. Spela på.'}</small></div>
+        <button className="chip warn" onClick=${finish}>Klar, visa feedback</button>` : null}
+      ${phase === 'done' && sum ? html`<div style=${{ display: 'grid', gap: 10, width: '100%', textAlign: 'left' }}>
+        ${!sum.chords.length ? html`<p className="lead">Appen kände inte igen några ackord den här gången. Spela lite längre på varje ackord, eller kalibrera mikrofonen under Stämning.</p>` : html`
+          <div className="coach"><span className="big">${sum.chords.length}</span><div><b>ackord</b><br />${sum.chords.slice(0, 8).map((k) => CHORD_DB[k].name).join(', ')}. ${sum.changes} byten.</div></div>
+          ${sum.bpm ? html`<div className="coach"><span className="big">${sum.bpm}</span><div><b>slag per minut</b><br />${feel(sum.steady)} Jämnhet ${sum.steady} %.</div></div>` : html`<p className="muted">Spela lite fler slag så kan appen mäta tempot.</p>`}
+          ${sum.key ? html`<p className="lead">${sum.key.share >= 0.7 ? 'Det du spelade hör hemma i tonarten ' + sum.key.key + '.' : 'Du rörde dig över flera tonarter, närmast ' + sum.key.key + '.'}${sum.topMoves.length ? ' Din vanligaste rörelse var ' + sum.topMoves[0][0] + ' (' + sum.topMoves[0][1] + ' ggr).' : ''}</p>` : null}
+          ${sum.fresh.length ? html`<p className="lead">Prova att lägga till <strong>${sum.fresh.map((k) => CHORD_DB[k].name).join(' eller ')}</strong> nästa gång. ${sum.fresh.length > 1 ? 'De passar' : 'Det passar'} med det du spelade.</p>` : null}`}
+        <button className="play" style=${{ justifySelf: 'center' }} onClick=${start}>${I.play}Spela igen</button></div>` : null}
+    </div>
+  </section>`;
+}
+
 
 const SKINS = [
   { id: 'kvall', name: 'Kväll', sub: 'Varmt mörkt, mässing och salvia', bg: '#181513', fg: '#f3ede3', sw: ['#d9a95f', '#a3c9a6', '#e08562'] },
@@ -4036,10 +4239,15 @@ function App() {
     <div className="games" role="group" aria-label="Välj spel">
       <button className="game" aria-pressed=${game === 'quiz'} onClick=${() => setGame('quiz')}><b>Ackordquiz</b><span>Känn igen greppet på bild eller ljud. Rätt i rad ger combo-bonus.</span></button>
       <button className="game" aria-pressed=${game === 'chal'} onClick=${() => setGame('chal')}><b>1-minutsutmaningen</b><span>Hur många byten hinner du på 60 sekunder? Slå ditt eget rekord varje dag.</span></button>
+      <button className="game" aria-pressed=${game === 'coach'} onClick=${() => setGame('coach')}><b>Lyssnande träning</b><span>Byt i din egen takt. Appen lyssnar och säger vad du ska öva på.</span></button>
+      <button className="game" aria-pressed=${game === 'free'} onClick=${() => setGame('free')}><b>Fritt spel</b><span>Spela vad du vill. Appen hör ackord och rytm och ger feedback efteråt.</span></button>
     </div>
     ${game === 'quiz' ? html`<${Quiz} easy=${easy} record=${prog.quizCombo} onAnswer=${(ok, combo) => {
         if (!ok) return 0; const xp = 5 + Math.min(combo, 10);
         award(xp, '', (n) => { n.quizRight++; n.quizCombo = Math.max(n.quizCombo, combo); }, true); return xp; }} />`
+      : game === 'free' ? html`<${FreePlay} easy=${easy} onFinish=${(s) => award(Math.min(30, 5 + s.changes), s.chords.length + ' ackord i fritt spel', (n) => addTag(n, 'free'))} />`
+      : game === 'coach' ? html`<${PracticeCoach} easy=${easy} pair=${chPair} setPair=${setChPair}
+        onFinish=${(s, pair) => award(Math.min(30, s.changes + s.clean), s.changes + ' byten i lyssnande träning', (n) => addTag(n, 'coach:' + pair.join('-')))} />`
       : html`<${Challenge} easy=${easy} pair=${chPair} setPair=${setChPair} best=${prog.best}
         onFinish=${(cnt, pair) => { const k = pair[0] + '-' + pair[1], rec = cnt > (P.current.best[k] || 0) && cnt > 0;
           award(cnt * 2 + (rec ? 20 : 0), rec ? 'Nytt rekord: ' + cnt + ' byten!' : cnt + ' byten på en minut', (n) => { n.best[k] = Math.max(n.best[k] || 0, cnt); addTag(n, 'chal:' + k + ':' + cnt); }); }} />`}

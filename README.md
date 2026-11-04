@@ -2,7 +2,7 @@
 
 Här ska jag lära mig spela gitarr.
 
-Övningsapp för nylongitarr: kompband med reggae och akustiskt groove, Guitar Hero-läge, skank-skola, ackordtabell, ackordbyten, stämmare och en nybörjarväg med XP, nivåer och märken.
+Övningsapp för nylongitarr: kompband med reggae och akustiskt groove, Guitar Hero-läge, skank-skola, ackordtabell, ackordbyten, lyssnande träning, stämmare och en nybörjarväg med XP, nivåer och märken.
 
 Appen är en installerbar webbapp (PWA). Den fungerar offline efter första besöket och sparar dina framsteg på telefonen.
 
