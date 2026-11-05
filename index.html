@@ -577,28 +577,16 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 :root[data-skin="salvia"] .play,:root[data-skin="salvia"] .fab,:root[data-skin="salvia"] .ls-btn,:root[data-skin="salvia"] .ls-back,:root[data-skin="salvia"] .gh-launch{box-shadow:none}
 :root[data-skin="salvia"] .play{border-radius:999px;font-weight:600}
 :root[data-skin="salvia"] .ls-btn:not(.ghost){background:#2e4136;color:#f5efe3}
-:root[data-skin="salvia"] .home-day,:root[data-skin="salvia"] .free-cover{position:relative;overflow:hidden;isolation:isolate;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;background:#4c6655;color:#f5efe3;border-radius:16px;padding:24px}
-:root[data-skin="salvia"] .home-day{min-height:330px}
-:root[data-skin="salvia"] .free-cover{min-height:190px;text-align:left}
-:root[data-skin="salvia"] .home-day::before,:root[data-skin="salvia"] .free-cover::before{content:"";position:absolute;z-index:-2;right:-50px;top:-50px;width:260px;height:260px;border-radius:50%;background:conic-gradient(rgba(255,255,255,.08) 0 5%,transparent 13% 50%,rgba(255,255,255,.08) 50% 55%,transparent 63%),repeating-radial-gradient(circle,#232c27 0 2px,#303d35 2px 4px);animation:vinyl-spin 20s linear infinite}
-.vinyl-label,.vinyl-arm{display:none}
-:root[data-skin="salvia"] .vinyl-arm{display:block;position:absolute;right:170px;top:12px;width:130px;height:130px;pointer-events:none}
-:root[data-skin="salvia"] .free-cover .vinyl-arm{right:90px;top:3px;width:80px;height:80px}
-:root[data-skin="salvia"] .vinyl-label{display:block;position:absolute;z-index:-1;right:2px;top:2px;width:76px;height:76px;border-radius:50%;box-sizing:border-box;color:#2e4136;background:radial-gradient(circle,#f3ede1 0 4px,#edb99f 5px);animation:vinyl-spin 20s linear infinite}
-:root[data-skin="salvia"] .vinyl-label.full{right:15px;top:15px;width:130px;height:130px;background:radial-gradient(circle,#f3ede1 0 5px,#edb99f 6px)}
-:root[data-skin="salvia"] .vl-top{position:absolute;left:0;right:0;bottom:50%;padding-bottom:8px;display:grid;justify-items:center;gap:1px;line-height:1}
-:root[data-skin="salvia"] .vl-top small{font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
-:root[data-skin="salvia"] .vl-top b{font-family:var(--f-display);font-size:15px;font-weight:700}
-:root[data-skin="salvia"] .vinyl-label:not(.full) .vl-top small{display:none}
-:root[data-skin="salvia"] .full .vl-top{padding-bottom:10px}
-:root[data-skin="salvia"] .full .vl-top b{font-size:24px}
-:root[data-skin="salvia"] .vl-tracks{position:absolute;left:14px;right:14px;top:50%;padding-top:9px;display:grid;justify-items:center;gap:1px;font-size:9px;font-weight:600;line-height:11px}
-:root[data-skin="salvia"] .vl-tracks span{max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-:root[data-skin="salvia"] .free-cover::before{right:-55px;top:-55px;width:180px;height:180px}
+:root[data-skin="salvia"] .home-day,:root[data-skin="salvia"] .free-cover{position:relative;overflow:hidden;isolation:isolate;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;background:#4c6655;color:#f5efe3;border-radius:12px;padding:16px;box-shadow:inset 0 -6px 0 #3d5546}
+.vinyl-deck{display:none}
+:root[data-skin="salvia"] .vinyl-deck{display:block;width:100%;height:auto;margin-bottom:10px;font-family:var(--f-body)}
+:root[data-skin="salvia"] .vd-spin{transform-origin:129px 129px;animation:vinyl-spin 20s linear infinite}
+:root[data-skin="salvia"] .free-cover{min-height:210px}
+:root[data-skin="salvia"] .free-cover .vinyl-deck{position:absolute;right:12px;top:12px;width:150px;margin:0}
+@media (prefers-reduced-motion:reduce){:root[data-skin="salvia"] .vd-spin{animation:none}}
 @keyframes vinyl-spin{to{transform:rotate(360deg)}}
-@media (prefers-reduced-motion:reduce){:root[data-skin="salvia"] .home-day::before,:root[data-skin="salvia"] .free-cover::before,:root[data-skin="salvia"] .vinyl-label{animation:none}}
 :root[data-skin="salvia"] .home-day .ls-kicker,:root[data-skin="salvia"] .free-cover .ls-kicker,:root[data-skin="salvia"] .home-day .ls-lead{color:#f5efe3}
-:root[data-skin="salvia"] .home-day .home-h1{font-size:clamp(54px,14vw,72px);line-height:.95;color:#f5efe3}
+:root[data-skin="salvia"] .home-day .home-h1{font-size:clamp(40px,11vw,56px);line-height:1;color:#f5efe3}
 :root[data-skin="salvia"] .free-cover .home-h1{font-size:46px;line-height:.95;color:#f5efe3;max-width:9em}
 :root[data-skin="salvia"] .bottomnav button[aria-current="page"]{color:var(--brass);background:transparent}
 :root[data-skin="kvall"] body{background:radial-gradient(1100px 600px at 50% -20%,rgba(217,169,95,.07),transparent 70%),var(--bg)}
@@ -1723,18 +1711,34 @@ function saveCustom(list) { try { localStorage.setItem('ng-songs', JSON.stringif
 
 /* ---------------------------------------------------------------- gamification */
 const TITLES = ['Nybörjare', 'Strängletare', 'Lägereldsspelare', 'Ackordsamlare', 'Groovebyggare', 'Skankare', 'Riddim-kapten', 'Studiomästare'];
-const VinylArm = html`<svg className="vinyl-arm" viewBox="0 0 130 130" fill="none" strokeLinecap="round" aria-hidden="true">
-  <path d="M40 18 L28 4" stroke="#2e4136" strokeWidth="7" />
-  <path d="M40 18 L96 84 L115 105" stroke="#f3ede1" strokeWidth="3.5" strokeLinejoin="round" />
-  <path d="M112 102 L122 113" stroke="#edb99f" strokeWidth="8" />
-  <path d="M122 113 L125 117" stroke="#2e4136" strokeWidth="2" />
-  <circle cx="40" cy="18" r="13" fill="#2e4136" />
-  <circle cx="40" cy="18" r="5" fill="#edb99f" />
+const clip = (t) => (t.length > 18 ? t.slice(0, 17) + '…' : t);
+const GROOVES = Array.from({ length: 12 }, (_, i) => 60 + i * 4);
+const VinylDeck = ({ vol, tracks = null }) => html`<svg className="vinyl-deck" viewBox="0 0 348 258" role="img" aria-label=${'Skivspelare, nivå ' + vol}>
+  <rect x="1" y="1" width="346" height="256" rx="8" fill="#3f5748" stroke="#2e4136" strokeWidth="2" />
+  <circle cx="129" cy="129" r="116" fill="#232c27" />
+  <circle cx="129" cy="129" r="114" fill="none" stroke="#9db0a1" strokeWidth="3" strokeDasharray="2 5" />
+  <g className="vd-spin">
+    <circle cx="129" cy="129" r="108" fill="#1d2420" />
+    ${GROOVES.map((r) => html`<circle key=${r} cx="129" cy="129" r=${r} fill="none" stroke="#35433a" strokeWidth="0.8" />`)}
+    <path d="M129 129 L225 80 A108 108 0 0 1 235 112 Z" fill="#fff" opacity=".07" />
+    <path d="M129 129 L33 178 A108 108 0 0 1 23 146 Z" fill="#fff" opacity=".07" />
+    <circle cx="129" cy="129" r="54" fill="#edb99f" />
+    ${tracks ? html`<text x="129" y="98" textAnchor="middle" fontSize="8" fontWeight="600" letterSpacing="1" fill="#2e4136">NYLONGITARR</text>` : null}
+    <text x="129" y=${tracks ? 118 : 112} textAnchor="middle" fontSize=${tracks ? 21 : 26} fontWeight="700" fill="#2e4136" style=${{ fontFamily: 'var(--f-display)' }}>Vol. ${vol}</text>
+    ${tracks ? (tracks.length ? tracks : ['Inga låtar än']).map((t, i) => html`<text key=${t} x="129" y=${147 + i * 11} textAnchor="middle" fontSize="9" fontWeight="600" fill="#2e4136">${tracks.length ? (i + 1) + '. ' : ''}${clip(t)}</text>`) : null}
+    <circle cx="129" cy="129" r="4" fill="#f3ede1" />
+  </g>
+  <path d="M300 40 L303 12" stroke="#2e4136" strokeWidth="10" strokeLinecap="round" />
+  <circle cx="300" cy="40" r="22" fill="#2e4136" />
+  <circle cx="300" cy="40" r="15" fill="none" stroke="#edb99f" strokeWidth="1.5" />
+  <path d="M300 40 L296 120 L224 167" fill="none" stroke="#f3ede1" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+  <path d="M224 167 L213 176" stroke="#edb99f" strokeWidth="9" strokeLinecap="round" />
+  <circle cx="300" cy="40" r="6" fill="#edb99f" />
+  <rect x="258" y="218" width="30" height="18" rx="3" fill="#edb99f" />
+  <text x="273" y="231" textAnchor="middle" fontSize="11" fontWeight="700" fill="#2e4136">33</text>
+  <circle cx="318" cy="227" r="13" fill="#2e4136" />
+  <path d="M318 227 L318 217" stroke="#edb99f" strokeWidth="2.5" strokeLinecap="round" />
 </svg>`;
-const VinylLabel = ({ vol, tracks = null }) => html`<span className=${'vinyl-label' + (tracks ? ' full' : '')} aria-label=${'Nivå ' + vol}>
-  <span className="vl-top"><small>NylonGitarr</small><b>Vol. ${vol}</b></span>
-  ${tracks ? html`<span className="vl-tracks">${tracks.length ? tracks.map((t, i) => html`<span key=${t}>${i + 1}. ${t}</span>`) : html`<span>Inga låtar än</span>`}</span>` : null}
-</span>`;
 const levelOf = (xp) => { let l = 1; while (xp >= 30 * l * (l + 1)) l++; return l; };
 const lvlFloor = (l) => 30 * (l - 1) * l;
 const today = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
@@ -2155,7 +2159,7 @@ function FreePlay({ easy, vol, onFinish }) {
           <small className="muted" style=${{ minHeight: 20 }}>${trail.length ? trail.map((k) => CHORD_DB[k].name).join(' · ') : 'Appen lyssnar. Spela på.'}</small></div>
         <button className="chip warn" onClick=${finish}>Klar, visa feedback</button>` : null}
       ${phase === 'done' && sum ? html`<div style=${{ display: 'grid', gap: 10, width: '100%', textAlign: 'left' }}>
-        <div className="free-cover"><${VinylLabel} vol=${vol} />${VinylArm}<span className="ls-kicker">Fritt spel</span><h2 className="home-h1">Det här spelade du</h2></div>
+        <div className="free-cover"><${VinylDeck} vol=${vol} /><span className="ls-kicker">Fritt spel</span><h2 className="home-h1">Det här spelade du</h2></div>
         ${!sum.chords.length ? html`<p className="lead">Appen kände inte igen några ackord den här gången. Spela lite längre på varje ackord, eller kalibrera mikrofonen under Stämning.</p>` : html`
           <div className="coach"><span className="big">${sum.chords.length}</span><div><b>ackord</b><br />${sum.chords.slice(0, 8).map((k) => CHORD_DB[k].name).join(', ')}. ${sum.changes} byten.</div></div>
           ${sum.bpm ? html`<div className="coach"><span className="big">${sum.bpm}</span><div><b>slag per minut</b><br />${feel(sum.steady)} Jämnhet ${sum.steady} %.</div></div>` : html`<p className="muted">Spela lite fler slag så kan appen mäta tempot.</p>`}
@@ -4232,7 +4236,7 @@ function App() {
   const topSongs = [...prog.songs].reverse().sort((a, b) => ((prog.plays || {})[b] || 0) - ((prog.plays || {})[a] || 0)).slice(0, 3).map(songTitle);
   const HomeTab = () => html`<div className="home">
     <div className="home-day">
-      <${VinylLabel} vol=${levelOf(prog.xp)} tracks=${topSongs} />${VinylArm}
+      <${VinylDeck} vol=${levelOf(prog.xp)} tracks=${topSongs} />
       <span className="ls-kicker">${(prog.planDay || 0) >= PLAN.length ? 'Alla 14 dagar klara' : 'Dag ' + lessonDay + ' av ' + PLAN.length}</span>
       <h1 className="home-h1">${(prog.planDay || 0) >= PLAN.length ? 'Spela dina låtar' : lp.t}</h1>
       <p className="ls-lead">${lSteps.length} korta steg. Ha gitarren i knät.</p>
