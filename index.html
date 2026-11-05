@@ -66,23 +66,22 @@ input,select,textarea{font-size:16px}
   --vd-label:#edb99f; --vd-ink:#2e4136; --vd-arm:#f3ede1; --vd-head:#edb99f; --vd-hole:#f3ede1; --vd-ring:transparent; --vd-ring-2:transparent; --vd-rays:transparent;
 }
 :root[data-skin="riddim"]{
-  /* Riddim: en skön strandbar i skymningen, sand, djuphav, mango och korall */
-  --bg:#f5ead6; --surface:#fdf8ee; --surface-2:#ecdfc6; --surface-3:#e0d0b1; --line:#d3c09c;
-  --text:#17474b; --muted:#42646a; --faint:#587679;
-  --brass:#ad4228; --brass-2:#ad4228; --brass-ink:#fff7ea;
-  --leaf:#1f6f73; --leaf-2:#185a5e; --leaf-ink:#f5fbf8;
-  --ember:#c24f30; --ember-ink:#fff7ea; --sky:#2f7f9c;
-  --f1:#2f7f9c; --f2:#1f6f73; --f3:#a8741a; --f4:#ad4228;
-  --glow-1:#f4b95a; --glow-2:#1f6f73;
+  /* Riddim: en strandbar i skymningen, djupgrönt, guld och rött */
+  --bg:#0e1f17; --surface:#14291f; --surface-2:#1b3528; --surface-3:#254535; --line:#2f5140;
+  --text:#fbf2dc; --muted:#c3cdb9; --faint:#93a596;
+  --brass:#f2c230; --brass-2:#f2c230; --brass-ink:#1a1405;
+  --leaf:#4fb477; --leaf-2:#7fd09e; --leaf-ink:#06170d;
+  --ember:#e2563f; --ember-ink:#fff4e4; --sky:#7fc4d6;
+  --f1:#7fc4d6; --f2:#4fb477; --f3:#f2c230; --f4:#e2563f;
+  --glow-1:#f2c230; --glow-2:#4fb477;
   --f-display:"Archivo Narrow","Arial Narrow",system-ui,sans-serif;
   --f-body:"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-mono:"Archivo",system-ui,sans-serif;
   --r:14px;
-  color-scheme:light;
-  --wv-band:#ecdfc6;
-  --cv-bg:#1f6f73; --cv-text:#fff7ea; --cv-btn:#17474b; --cv-btn-text:#fff7ea;
-  --vd-plate:#1a5f63; --vd-line:#17474b; --vd-rim:#10292b; --vd-dots:#f3dfb6; --vd-disc:#132a2c; --vd-groove:#2a4547;
-  --vd-label:#f4b95a; --vd-ink:#17393c; --vd-arm:#fff1d6; --vd-head:#f4b95a; --vd-hole:#fff1d6; --vd-ring:#d9603f; --vd-ring-2:transparent; --vd-rays:#f7e3b5;
+  --wv-band:#1b3528;
+  --cv-bg:#17442f; --cv-text:#fbf2dc; --cv-btn:#f2c230; --cv-btn-text:#1a1405;
+  --vd-plate:#113524; --vd-line:#0a2015; --vd-rim:#0b0e0b; --vd-dots:#f2c230; --vd-disc:#0a0c0a; --vd-groove:#262a26;
+  --vd-label:#f2c230; --vd-ink:#1a1405; --vd-arm:#fbf2dc; --vd-head:#e2563f; --vd-hole:#fbf2dc; --vd-ring:#c93a2b; --vd-ring-2:#1f8a4c; --vd-rays:#f2c230;
 }
 html,body{background:var(--bg);color:var(--text)}
 body{background:radial-gradient(900px 520px at 85% -8%,color-mix(in oklab,var(--glow-1) 16%,transparent),transparent 65%),radial-gradient(800px 520px at -10% 30%,color-mix(in oklab,var(--glow-2) 10%,transparent),transparent 60%),var(--bg);background-attachment:fixed;min-height:100%}
@@ -2145,7 +2144,7 @@ function FreePlay({ easy, vol, onFinish }) {
 
 const SKINS = [
   { id: 'salvia', name: 'Salvia och persika', sub: 'Ljust papper, dämpat grönt, som ett skivomslag', bg: '#f3ede1', fg: '#2e4136', sw: ['#4c6655', '#edb99f', '#96472e'] },
-  { id: 'riddim', name: 'Riddim', sub: 'Sand, djuphav och mango, som en strandbar i skymningen', bg: '#f5ead6', fg: '#17474b', sw: ['#1f6f73', '#f4b95a', '#d9603f'] },
+  { id: 'riddim', name: 'Riddim', sub: 'Djupgrönt, guld och rött, som en strandbar i skymningen', bg: '#0e1f17', fg: '#fbf2dc', sw: ['#f2c230', '#1f8a4c', '#c93a2b'] },
 ];
 
 /* ---------------------------------------------------------------- klocka och spela-med */
