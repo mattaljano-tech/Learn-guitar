@@ -558,28 +558,22 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 :root:is([data-skin="salvia"],[data-skin="riddim"]) .free-cover{position:relative;overflow:hidden;isolation:isolate;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;background:var(--cv-bg);color:var(--cv-text);border-radius:14px;padding:24px 28px}
 .vinyl-deck{display:none}
 .home-day{display:block;margin-top:8px;border-radius:14px;overflow:hidden;background:var(--cv-bg)}
-.sleeve-deck{display:block;width:100%;height:auto}
-.sleeve-deck .vd-spin{animation-play-state:paused}
-.sd-disc{transform:translateY(16px);transition:transform .8s cubic-bezier(.3,.7,.2,1)}
-.sd-platter{opacity:0;transition:opacity .5s ease .25s}
-.sd-shade{transition:opacity .4s ease}
-.sd-arm{transform-origin:344px 34px;transform:rotate(-24deg);transition:transform .7s ease-in-out}
-.home.launch-1 .sd-disc{transform:none}
-.home.launch-1 .sd-platter{opacity:1}
-.home.launch-1 .sd-shade{opacity:0}
-.home.launch-1 .sleeve{transform:translateY(110%)}
-.home.launch-1 .launch-note{opacity:1;transition-delay:.45s}
-.home.launch-2 .sd-arm{transform:none}
-.home.launch-3 .sleeve-deck .vd-spin{animation-play-state:running;animation-duration:9s}
+.scene{position:relative;aspect-ratio:1/.8;overflow:hidden;background:#2a2014}
+.scene-inner{position:absolute;left:0;right:0;top:0;aspect-ratio:600/1166;transform:translateY(-23.5%)}
+.scene-inner img{display:block;width:100%;height:100%}
+.scene-motes{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.scene-vol{position:absolute;left:36.5%;top:61.2%;font-family:var(--f-body);font-size:clamp(7px,2vw,10px);font-weight:600;color:#f3e4c0;opacity:.85}
+.scene-play{position:fixed;inset:0;z-index:64;background:#17110b;animation:scene-in .35s ease}
+.scene-play video{width:100%;height:100%;object-fit:cover;display:block}
+.scene-skip{position:absolute;right:max(14px,env(safe-area-inset-right));top:max(14px,env(safe-area-inset-top));height:44px;padding:0 16px;border:0;border-radius:22px;background:rgba(0,0,0,.45);color:#fff3df;font:600 14px var(--f-body)}
+@keyframes scene-in{from{opacity:0}to{opacity:1}}
 .home-day{position:relative}
-.launch-note{position:absolute;left:0;right:0;bottom:64px;display:grid;justify-items:center;gap:4px;text-align:center;color:var(--cv-text);opacity:0;transition:opacity .4s ease;pointer-events:none}
-.launch-note .ls-kicker{color:var(--cv-text)}
-.launch-note b{font-family:var(--f-display);font-size:44px;line-height:1}
 :root.ls-rise .ls{animation:ls-rise .7s cubic-bezier(.2,.8,.2,1)}
 @keyframes ls-rise{from{transform:translateY(100%)}to{transform:none}}
-.sleeve{position:relative;display:grid;gap:12px;margin-top:-20%;padding:18px 20px 22px;transition:transform .75s cubic-bezier(.5,0,.2,1);background:var(--surface);border-top:1px solid color-mix(in oklab,var(--surface) 70%,#fff);box-shadow:0 -14px 22px -2px rgba(0,0,0,.55),0 -3px 6px rgba(0,0,0,.4)}
+.sleeve{position:relative;display:grid;gap:12px;padding:14px 20px 18px;background:var(--surface);border-top:1px solid color-mix(in oklab,var(--surface) 70%,#fff);box-shadow:0 -8px 16px rgba(0,0,0,.35)}
 .sleeve .home-h1{font-size:clamp(38px,10vw,48px);line-height:1}
-.sleeve .home-steps{padding:0;background:transparent;border:0;gap:10px}
+.sleeve .home-steps{padding:0;background:transparent;border:0;gap:6px}
+.sleeve .home-steps li{font-size:15px}
 .sleeve .ls-btn.big{margin-top:2px}
 :root:is([data-skin="salvia"],[data-skin="riddim"]) .vinyl-deck{display:block;position:absolute;z-index:-1;right:0;top:0;width:380px;height:auto;font-family:var(--f-body)}
 :root:is([data-skin="salvia"],[data-skin="riddim"]) .vd-spin{transform-origin:129px 129px;animation:vinyl-spin 20s linear infinite}
@@ -1727,39 +1721,34 @@ const VinylDeck = ({ vol, tracks = null }) => html`<svg className="vinyl-deck" v
   <path d="M196 122 L207 131" stroke="var(--vd-head)" strokeWidth="9" strokeLinecap="round" />
   <circle cx="132" cy="34" r="5" fill="var(--vd-label)" />
 </svg>`;
-const SleeveDeck = ({ vol, tracks }) => html`<svg className="sleeve-deck" viewBox="0 0 380 290" role="img" aria-label=${'Skiva på väg ner i fodralet, nivå ' + vol}>
-  <defs>
-    <clipPath id="sd-clip"><circle cx="190" cy="136" r="124" /></clipPath>
-    <linearGradient id="sd-shade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#000" stopOpacity="0" /><stop offset="1" stopColor="#000" stopOpacity=".7" /></linearGradient>
-  </defs>
-  <rect width="380" height="290" fill="var(--vd-plate)" />
-  ${RAYS.map((a) => html`<path key=${a} d=${'M190 136 L' + (190 + 460 * Math.cos(a)).toFixed(0) + ' ' + (136 + 460 * Math.sin(a)).toFixed(0) + ' L' + (190 + 460 * Math.cos(a + 0.12)).toFixed(0) + ' ' + (136 + 460 * Math.sin(a + 0.12)).toFixed(0) + ' Z'} fill="var(--vd-rays)" opacity=".09" />`)}
-  <g className="sd-platter"><circle cx="190" cy="136" r="136" fill="var(--vd-rim)" /><circle cx="190" cy="136" r="133" fill="none" stroke="var(--vd-dots)" strokeWidth="3" strokeDasharray="2 5" /></g>
-  <g className="sd-disc"><g transform="translate(190 136) scale(1.148) translate(-129 -129)">
-    <g className="vd-spin">
-      <circle cx="129" cy="129" r="108" fill="var(--vd-disc)" />
-      ${GROOVES.map((r) => html`<circle key=${r} cx="129" cy="129" r=${r} fill="none" stroke="var(--vd-groove)" strokeWidth="0.7" />`)}
-      <path d="M129 129 L225 80 A108 108 0 0 1 235 112 Z" fill="#fff" opacity=".07" />
-      <path d="M129 129 L33 178 A108 108 0 0 1 23 146 Z" fill="#fff" opacity=".07" />
-      <circle cx="129" cy="129" r="54" fill="var(--vd-label)" />
-      <circle cx="129" cy="129" r="51.5" fill="none" stroke="var(--vd-ring)" strokeWidth="4" />
-      <circle cx="129" cy="129" r="48" fill="none" stroke="var(--vd-ring-2)" strokeWidth="2" />
-      <text x="129" y="98" textAnchor="middle" fontSize="8" fontWeight="600" letterSpacing="1" fill="var(--vd-ink)">NYLONGITARR</text>
-      <text x="129" y="118" textAnchor="middle" fontSize="21" fontWeight="700" fill="var(--vd-ink)" style=${{ fontFamily: 'var(--f-display)' }}>Vol. ${vol}</text>
-      ${(tracks.length ? tracks : ['Inga låtar än']).map((t, i) => html`<text key=${t} x="129" y=${147 + i * 11} textAnchor="middle" fontSize="9" fontWeight="600" fill="var(--vd-ink)">${tracks.length ? (i + 1) + '. ' : ''}${clip(t)}</text>`)}
-      <circle cx="129" cy="129" r="4" fill="var(--vd-hole)" />
-    </g>
-  </g>
-  <rect className="sd-shade" x="0" y="130" width="380" height="86" fill="url(#sd-shade)" /></g>
-  <rect x="24" y="22" width="30" height="18" rx="3" fill="var(--vd-label)" />
-  <text x="39" y="35" textAnchor="middle" fontSize="11" fontWeight="700" fill="var(--vd-ink)">33</text>
-  <g className="sd-arm"><path d="M344 34 L350 16" stroke="var(--vd-line)" strokeWidth="9" strokeLinecap="round" />
-  <circle cx="344" cy="34" r="17" fill="var(--vd-line)" />
-  <circle cx="344" cy="34" r="11" fill="none" stroke="var(--vd-label)" strokeWidth="1.5" />
-  <path d="M344 34 L340 96 L290 130" fill="none" stroke="var(--vd-arm)" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
-  <path d="M290 130 L280 138" stroke="var(--vd-head)" strokeWidth="9" strokeLinecap="round" /></g>
-  <circle cx="344" cy="34" r="5" fill="var(--vd-label)" />
-</svg>`;
+let sceneBlob = null;
+const loadSceneVideo = () => { if (sceneBlob) return; try { fetch('video/start.mp4').then((r) => (r.ok ? r.blob() : null)).then((b) => { if (b) sceneBlob = URL.createObjectURL(b); }).catch(() => {}); } catch (e) {} };
+// Levande dammkorn i lampans sken: tätast nära lampan, glesare längre bort
+function SceneMotes() {
+  const ref = useRef(null);
+  useEffect(() => {
+    const c = ref.current, x = c.getContext('2d'); let raf = 0;
+    let calm = false; try { calm = matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+    const fit = () => { const r = c.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1); c.width = r.width * d; c.height = r.height * d; };
+    fit(); addEventListener('resize', fit);
+    const P = Array.from({ length: 46 }, () => ({ x: .5 + Math.random() * .48, y: .18 + Math.random() * .5, s: .5 + Math.random() * 1.1, v: 2e-5 + Math.random() * 5e-5, p: Math.random() * 7 }));
+    const loop = (t) => {
+      x.clearRect(0, 0, c.width, c.height);
+      P.forEach((m) => {
+        const y = ((m.y - t * m.v * .3 - .15) % .55 + .55) % .55 + .15, X = m.x + Math.sin(t * .0003 + m.p) * .012;
+        const dist = Math.hypot(X - .93, y - .24), a = Math.max(0, 1 - dist / .62) * (.5 + .5 * Math.sin(t * .001 + m.p));
+        x.fillStyle = `rgba(255,232,190,${a * .85})`; x.beginPath(); x.arc(X * c.width, y * c.height, m.s * (c.width / 400), 0, 7); x.fill();
+      });
+      if (!calm) raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => { cancelAnimationFrame(raf); removeEventListener('resize', fit); };
+  }, []);
+  return html`<canvas ref=${ref} className="scene-motes" aria-hidden="true"></canvas>`;
+}
+const SceneView = ({ vol }) => html`<div className="scene" role="img" aria-label=${'Ett varmt rum med skivhylla, tavla och en gitarr i hörnet. Du är på nivå ' + vol}>
+  <div className="scene-inner"><img src="video/scene.jpg" alt="" /><${SceneMotes} /><span className="scene-vol">vol. ${vol}</span></div>
+</div>`;
 const levelOf = (xp) => { let l = 1; while (xp >= 30 * l * (l + 1)) l++; return l; };
 const lvlFloor = (l) => 30 * (l - 1) * l;
 const today = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
@@ -4252,22 +4241,29 @@ function App() {
     : st.k === 'song' ? songTitle(st.s) : st.k === 'solo' ? 'Spela en hel låt själv' : st.n + ' stjärnor i ' + (st.s === 'any' ? 'valfri låt' : songTitle(st.s));
   const topSongs = [...prog.songs].reverse().sort((a, b) => ((prog.plays || {})[b] || 0) - ((prog.plays || {})[a] || 0)).slice(0, 3).map(songTitle);
   const launchTimers = useRef([]);
+  useEffect(() => { loadSceneVideo(); return () => launchTimers.current.forEach(clearTimeout); }, []);
   const launchLesson = () => {
-    const home = document.querySelector('.home'), root = document.documentElement;
+    const root = document.documentElement;
     let calm = false; try { calm = matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
-    if (calm || !home || home.classList.contains('launch-1')) { if (calm || !home) openLesson(); return; }
-    const at = (ms, fn) => launchTimers.current.push(setTimeout(fn, ms));
-    home.classList.add('launch-1');
-    at(800, () => home.classList.add('launch-2'));
-    at(1500, () => home.classList.add('launch-3'));
-    at(2500, () => { root.classList.add('ls-rise'); openLesson(); });
-    at(3300, () => { root.classList.remove('ls-rise'); home.classList.remove('launch-1', 'launch-2', 'launch-3'); });
+    if (calm || !sceneBlob || document.querySelector('.scene-play')) { if (!document.querySelector('.scene-play')) openLesson(); return; }
+    const box = document.createElement('div'); box.className = 'scene-play';
+    const v = document.createElement('video'); v.src = sceneBlob; v.muted = true; v.playsInline = true; v.setAttribute('playsinline', '');
+    const b = document.createElement('button'); b.className = 'scene-skip'; b.textContent = 'Hoppa över';
+    box.append(v, b); document.body.append(box);
+    let done = false;
+    const finish = () => {
+      if (done) return; done = true; launchTimers.current.forEach(clearTimeout);
+      root.classList.add('ls-rise'); openLesson();
+      launchTimers.current.push(setTimeout(() => { root.classList.remove('ls-rise'); box.remove(); }, 800));
+    };
+    v.addEventListener('ended', () => launchTimers.current.push(setTimeout(finish, 700)));
+    b.addEventListener('click', finish);
+    v.play().catch(finish);
+    launchTimers.current.push(setTimeout(finish, 11000));
   };
-  useEffect(() => () => launchTimers.current.forEach(clearTimeout), []);
   const HomeTab = () => html`<div className="home">
     <div className="home-day">
-      <${SleeveDeck} vol=${levelOf(prog.xp)} tracks=${topSongs} />
-      <div className="launch-note"><span className="ls-kicker">Dagens pass</span><b>Nu spelar vi</b></div>
+      <${SceneView} vol=${levelOf(prog.xp)} />
       <div className="sleeve">
         <span className="ls-kicker">${(prog.planDay || 0) >= PLAN.length ? 'Alla 14 dagar klara' : 'Dag ' + lessonDay + ' av ' + PLAN.length}</span>
         <h1 className="home-h1">${(prog.planDay || 0) >= PLAN.length ? 'Spela dina låtar' : lp.t}</h1>
