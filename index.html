@@ -32,7 +32,7 @@ input,select,textarea{font-size:16px}
 <style>
 /* Layout: sticky stage header over a two-column practice desk (song list | instrument), stacking to one column on phones */
 :root{
-  /* Neon Night (standard) */
+  /* Grundvärden, temana nedan skriver över dem */
   --bg:#0c0a1a; --surface:#15122a; --surface-2:#1e1a3a; --surface-3:#29234c; --line:#332c5c;
   --text:#f4f1ff; --muted:#aba4d4; --faint:#706aa3;
   --brass:#ff5ca8; --brass-2:#ff9a5c; --brass-ink:#2a0418;
@@ -46,20 +46,6 @@ input,select,textarea{font-size:16px}
   --f-mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
   --r:16px;
   color-scheme:dark;
-}
-:root[data-skin="kvall"]{
-  /* Kväll (standard): varmt mörkt som en gitarrkropp i lampljus, mässing och salvia */
-  --bg:#100e0c; --surface:#181513; --surface-2:#221e1a; --surface-3:#2c2722; --line:#342e28;
-  --text:#f3ede3; --muted:#b3a99b; --faint:#81786c;
-  --brass:#d9a95f; --brass-2:#d9a95f; --brass-ink:#1d1406;
-  --leaf:#a3c9a6; --leaf-2:#a3c9a6; --leaf-ink:#0f1b11;
-  --ember:#e08562; --ember-ink:#200d05; --sky:#93b6da;
-  --f1:#93b6da; --f2:#a3c9a6; --f3:#e6c375; --f4:#dc9a85;
-  --glow-1:#d9a95f; --glow-2:#a3c9a6;
-  --f-display:"Fraunces",Georgia,"Times New Roman",serif;
-  --f-body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --f-mono:"Inter",system-ui,sans-serif;
-  --r:14px;
 }
 :root[data-skin="salvia"]{
   /* Salvia och persika: ljust papper, dämpat grönt och persika, som ett skivomslag */
@@ -75,34 +61,28 @@ input,select,textarea{font-size:16px}
   --f-mono:"Archivo",system-ui,sans-serif;
   --r:14px;
   color-scheme:light;
+  --cv-bg:#4c6655; --cv-text:#f5efe3; --cv-btn:#2e4136; --cv-btn-text:#f5efe3;
+  --vd-plate:#3f5748; --vd-line:#2e4136; --vd-rim:#232c27; --vd-dots:#9db0a1; --vd-disc:#1d2420; --vd-groove:#35433a;
+  --vd-label:#edb99f; --vd-ink:#2e4136; --vd-arm:#f3ede1; --vd-head:#edb99f; --vd-hole:#f3ede1; --vd-ring:transparent; --vd-ring-2:transparent; --vd-rays:transparent;
 }
 :root[data-skin="riddim"]{
-  --bg:#08130d; --surface:#0f1e16; --surface-2:#16291f; --surface-3:#1f3729; --line:#2a4734;
-  --text:#effaf1; --muted:#a0bfa8; --faint:#66876e;
-  --brass:#ffcc1f; --brass-2:#ffe46b; --brass-ink:#231a00;
-  --leaf:#22d36b; --leaf-2:#8cf2b0; --leaf-ink:#02180a;
-  --ember:#ff4b3e; --ember-ink:#2a0502; --sky:#52c7ff;
-  --f1:#52c7ff; --f2:#22d36b; --f3:#ffcc1f; --f4:#ff4b3e;
-  --glow-1:#22d36b; --glow-2:#ffcc1f;
-}
-:root[data-skin="ocean"]{
-  --bg:#05111d; --surface:#0b1c2e; --surface-2:#11273d; --surface-3:#19334e; --line:#234363;
-  --text:#eef7ff; --muted:#97b2cf; --faint:#5f7b9b;
-  --brass:#36d6ff; --brass-2:#7d8bff; --brass-ink:#001824;
-  --leaf:#b6f24a; --leaf-2:#e1ff8f; --leaf-ink:#162600;
-  --ember:#ff6b8b; --ember-ink:#2a0410; --sky:#8ab4ff;
-  --f1:#8ab4ff; --f2:#b6f24a; --f3:#ffd23f; --f4:#ff6b8b;
-  --glow-1:#36d6ff; --glow-2:#7d8bff;
-}
-:root[data-skin="ljus"]{
-  --bg:#f5f4fb; --surface:#ffffff; --surface-2:#eeecf7; --surface-3:#e2def2; --line:#d9d4ea;
-  --text:#191530; --muted:#5d5878; --faint:#958fb0;
-  --brass:#6d4bff; --brass-2:#ff4f9a; --brass-ink:#ffffff;
-  --leaf:#0eb37b; --leaf-2:#21cf95; --leaf-ink:#ffffff;
-  --ember:#e5484d; --ember-ink:#ffffff; --sky:#2f80ed;
-  --f1:#2f80ed; --f2:#0eb37b; --f3:#f5a300; --f4:#ef4473;
-  --glow-1:#6d4bff; --glow-2:#ff4f9a;
+  /* Riddim: en skön strandbar i skymningen, sand, djuphav, mango och korall */
+  --bg:#f5ead6; --surface:#fdf8ee; --surface-2:#ecdfc6; --surface-3:#e0d0b1; --line:#d3c09c;
+  --text:#17474b; --muted:#42646a; --faint:#587679;
+  --brass:#ad4228; --brass-2:#ad4228; --brass-ink:#fff7ea;
+  --leaf:#1f6f73; --leaf-2:#185a5e; --leaf-ink:#f5fbf8;
+  --ember:#c24f30; --ember-ink:#fff7ea; --sky:#2f7f9c;
+  --f1:#2f7f9c; --f2:#1f6f73; --f3:#a8741a; --f4:#ad4228;
+  --glow-1:#f4b95a; --glow-2:#1f6f73;
+  --f-display:"Archivo Narrow","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"Archivo",system-ui,sans-serif;
+  --r:14px;
   color-scheme:light;
+  --wv-band:#ecdfc6;
+  --cv-bg:#1f6f73; --cv-text:#fff7ea; --cv-btn:#17474b; --cv-btn-text:#fff7ea;
+  --vd-plate:#1a5f63; --vd-line:#17474b; --vd-rim:#10292b; --vd-dots:#f3dfb6; --vd-disc:#132a2c; --vd-groove:#2a4547;
+  --vd-label:#f4b95a; --vd-ink:#17393c; --vd-arm:#fff1d6; --vd-head:#f4b95a; --vd-hole:#fff1d6; --vd-ring:#d9603f; --vd-ring-2:transparent; --vd-rays:#f7e3b5;
 }
 html,body{background:var(--bg);color:var(--text)}
 body{background:radial-gradient(900px 520px at 85% -8%,color-mix(in oklab,var(--glow-1) 16%,transparent),transparent 65%),radial-gradient(800px 520px at -10% 30%,color-mix(in oklab,var(--glow-2) 10%,transparent),transparent 60%),var(--bg);background-attachment:fixed;min-height:100%}
@@ -460,7 +440,6 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 .tj-how p{margin:0;font-size:14px;line-height:1.45}
 
 :root{--wv-band:#2b2348}
-:root[data-skin="ljus"]{--wv-band:#ece8fb}
 :root[data-skin="salvia"]{--wv-band:#e9dfce}
 .tjl-list{display:grid;gap:8px}
 .tjl{display:flex;align-items:center;gap:12px;text-align:left;padding:10px 12px;border-radius:16px;border:1px solid var(--line);background:var(--surface);color:var(--text)}
@@ -570,47 +549,27 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 .mini-pat i.r{color:var(--faint)}
 .song.can{border-color:color-mix(in oklab,var(--leaf) 40%,transparent)}
 /* Kväll: lugnare och mer exklusivt. Platta ytor, inga neonglöd, serif i rubrikerna */
-:root[data-skin="salvia"] body{background:var(--bg)}
-:root[data-skin="salvia"] h1,:root[data-skin="salvia"] h2,:root[data-skin="salvia"] h3,
-:root[data-skin="salvia"] .home-h1,:root[data-skin="salvia"] .ls-h1{font-weight:700;letter-spacing:-.01em}
-:root[data-skin="salvia"] .card{background:var(--surface);border-color:var(--line)}
-:root[data-skin="salvia"] .play,:root[data-skin="salvia"] .fab,:root[data-skin="salvia"] .ls-btn,:root[data-skin="salvia"] .ls-back,:root[data-skin="salvia"] .gh-launch{box-shadow:none}
-:root[data-skin="salvia"] .play{border-radius:999px;font-weight:600}
-:root[data-skin="salvia"] .ls-btn:not(.ghost){background:#2e4136;color:#f5efe3}
-:root[data-skin="salvia"] .home-day,:root[data-skin="salvia"] .free-cover{position:relative;overflow:hidden;isolation:isolate;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;background:#4c6655;color:#f5efe3;border-radius:14px;padding:24px 28px}
+:root:is([data-skin="salvia"],[data-skin="riddim"]) body{background:var(--bg)}
+:root:is([data-skin="salvia"],[data-skin="riddim"]) h1,:root:is([data-skin="salvia"],[data-skin="riddim"]) h2,:root:is([data-skin="salvia"],[data-skin="riddim"]) h3,
+:root:is([data-skin="salvia"],[data-skin="riddim"]) .home-h1,:root:is([data-skin="salvia"],[data-skin="riddim"]) .ls-h1{font-weight:700;letter-spacing:-.01em}
+:root:is([data-skin="salvia"],[data-skin="riddim"]) .card{background:var(--surface);border-color:var(--line)}
+:root:is([data-skin="salvia"],[data-skin="riddim"]) .play,:root:is([data-skin="salvia"],[data-skin="riddim"]) .fab,:root:is([data-skin="salvia"],[data-skin="riddim"]) .ls-btn,:root:is([data-skin="salvia"],[data-skin="riddim"]) .ls-back,:root:is([data-skin="salvia"],[data-skin="riddim"]) .gh-launch{box-shadow:none}
+:root:is([data-skin="salvia"],[data-skin="riddim"]) .play{border-radius:999px;font-weight:600}
+:root:is([data-skin="salvia"],[data-skin="riddim"]) .ls-btn:not(.ghost){background:var(--cv-btn);color:var(--cv-btn-text)}
+:root:is([data-skin="salvia"],[data-skin="riddim"]) .home-day,:root:is([data-skin="salvia"],[data-skin="riddim"]) .free-cover{position:relative;overflow:hidden;isolation:isolate;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;background:var(--cv-bg);color:var(--cv-text);border-radius:14px;padding:24px 28px}
 .vinyl-deck{display:none}
-:root[data-skin="salvia"] .vinyl-deck{display:block;position:absolute;z-index:-1;right:0;top:0;width:380px;height:auto;font-family:var(--f-body)}
-:root[data-skin="salvia"] .home-day{min-height:330px}
-:root[data-skin="salvia"] .vd-spin{transform-origin:129px 129px;animation:vinyl-spin 20s linear infinite}
-:root[data-skin="salvia"] .free-cover{min-height:210px}
-:root[data-skin="salvia"] .free-cover .vinyl-deck{width:260px}
-:root[data-skin="salvia"] .free-cover .vd-plate{display:none}
-@media (prefers-reduced-motion:reduce){:root[data-skin="salvia"] .vd-spin{animation:none}}
+:root:is([data-skin="salvia"],[data-skin="riddim"]) .vinyl-deck{display:block;position:absolute;z-index:-1;right:0;top:0;width:380px;height:auto;font-family:var(--f-body)}
+:root:is([data-skin="salvia"],[data-skin="riddim"]) .home-day{min-height:330px}
+:root:is([data-skin="salvia"],[data-skin="riddim"]) .vd-spin{transform-origin:129px 129px;animation:vinyl-spin 20s linear infinite}
+:root:is([data-skin="salvia"],[data-skin="riddim"]) .free-cover{min-height:210px}
+:root:is([data-skin="salvia"],[data-skin="riddim"]) .free-cover .vinyl-deck{width:260px}
+:root:is([data-skin="salvia"],[data-skin="riddim"]) .free-cover .vd-plate{display:none}
+@media (prefers-reduced-motion:reduce){:root:is([data-skin="salvia"],[data-skin="riddim"]) .vd-spin{animation:none}}
 @keyframes vinyl-spin{to{transform:rotate(360deg)}}
-:root[data-skin="salvia"] .home-day .ls-kicker,:root[data-skin="salvia"] .free-cover .ls-kicker,:root[data-skin="salvia"] .home-day .ls-lead{color:#f5efe3}
-:root[data-skin="salvia"] .home-day .home-h1{font-size:clamp(54px,14vw,72px);line-height:.95;color:#f5efe3}
-:root[data-skin="salvia"] .free-cover .home-h1{font-size:46px;line-height:.95;color:#f5efe3;max-width:9em}
-:root[data-skin="salvia"] .bottomnav button[aria-current="page"]{color:var(--brass);background:transparent}
-:root[data-skin="kvall"] body{background:radial-gradient(1100px 600px at 50% -20%,rgba(217,169,95,.07),transparent 70%),var(--bg)}
-:root[data-skin="kvall"] h1,:root[data-skin="kvall"] h2,:root[data-skin="kvall"] h3,
-:root[data-skin="kvall"] .home-h1,:root[data-skin="kvall"] .ls-h1{font-weight:600;letter-spacing:-.015em}
-:root[data-skin="kvall"] .card{background:var(--surface);border-color:var(--line)}
-:root[data-skin="kvall"] .play,:root[data-skin="kvall"] .fab,:root[data-skin="kvall"] .ls-btn,:root[data-skin="kvall"] .ls-back{box-shadow:none}
-:root[data-skin="kvall"] .play{font-weight:600}
-:root[data-skin="kvall"] .ls-btn{font-weight:600;letter-spacing:.005em}
-:root[data-skin="kvall"] .label,:root[data-skin="kvall"] .ls-kicker,:root[data-skin="kvall"] .sk-lab{letter-spacing:.12em;font-weight:600}
-:root[data-skin="kvall"] .chip{border-radius:10px}
-:root[data-skin="kvall"] .mono{font-variant-numeric:tabular-nums;letter-spacing:0}
-:root[data-skin="kvall"] .tabs button[aria-selected="true"]{background:var(--surface-3);color:var(--text)}
-:root[data-skin="kvall"] .bottomnav button[aria-current="page"]{color:var(--brass);background:transparent}
-:root[data-skin="kvall"] .beat.cur{transform:none}
-:root[data-skin="kvall"] .rc-word.tj,:root[data-skin="kvall"] .beat.tj .a{color:var(--ember)}
-:root[data-skin="kvall"] .beat.tj.cur{background:var(--ember);color:var(--ember-ink)}
-:root[data-skin="kvall"] .home-steps{background:transparent;border-color:var(--line)}
-:root[data-skin="kvall"] .ls-stars{fill:var(--brass)}
-:root[data-skin="kvall"] .pa{background:var(--surface)}
-:root[data-skin="kvall"] .gh-launch{background:var(--surface-2);color:var(--text);border:1px solid var(--line);box-shadow:none;font-weight:600}
-:root[data-skin="kvall"] .gh-launch svg{color:var(--brass)}
+:root:is([data-skin="salvia"],[data-skin="riddim"]) .home-day .ls-kicker,:root:is([data-skin="salvia"],[data-skin="riddim"]) .free-cover .ls-kicker,:root:is([data-skin="salvia"],[data-skin="riddim"]) .home-day .ls-lead{color:var(--cv-text)}
+:root:is([data-skin="salvia"],[data-skin="riddim"]) .home-day .home-h1{font-size:clamp(54px,14vw,72px);line-height:.95;color:var(--cv-text)}
+:root:is([data-skin="salvia"],[data-skin="riddim"]) .free-cover .home-h1{font-size:46px;line-height:.95;color:var(--cv-text);max-width:9em}
+:root:is([data-skin="salvia"],[data-skin="riddim"]) .bottomnav button[aria-current="page"]{color:var(--brass);background:transparent}
 /* Teman */
 .skins{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .skin{text-align:left;border-radius:14px;padding:12px;border:2px solid transparent;display:grid;gap:8px;color:#fff}
@@ -942,7 +901,7 @@ details.tp-grid>.mixer{margin-top:14px}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
 <script>
 const { useState, useEffect, useRef, useMemo } = React;
-try { const sk = localStorage.getItem('ng-skin2') || 'kvall'; document.documentElement.setAttribute('data-skin', sk); } catch (e) { document.documentElement.setAttribute('data-skin', 'kvall'); }
+try { const sk = localStorage.getItem('ng-skin2'); document.documentElement.setAttribute('data-skin', sk === 'riddim' ? 'riddim' : 'salvia'); } catch (e) { document.documentElement.setAttribute('data-skin', 'salvia'); }
 /* Inbyggd mallmotor (ersätter htm-biblioteket, inga externa beroenden) */
 const html = (() => {
   const P = '', cache = new WeakMap(), VOID = { input: 1, br: 1, img: 1, hr: 1, meta: 1, link: 1 };
@@ -1715,33 +1674,37 @@ function saveCustom(list) { try { localStorage.setItem('ng-songs', JSON.stringif
 const TITLES = ['Nybörjare', 'Strängletare', 'Lägereldsspelare', 'Ackordsamlare', 'Groovebyggare', 'Skankare', 'Riddim-kapten', 'Studiomästare'];
 const clip = (t) => (t.length > 18 ? t.slice(0, 17) + '…' : t);
 const GROOVES = Array.from({ length: 12 }, (_, i) => 60 + i * 4);
+const RAYS = Array.from({ length: 13 }, (_, i) => i * 0.2417);
 const VinylDeck = ({ vol, tracks = null }) => html`<svg className="vinyl-deck" viewBox="0 0 380 330" role="img" aria-label=${'Skivspelare, nivå ' + vol}>
-  <rect className="vd-plate" x="12" y="12" width="500" height="400" rx="10" fill="#3f5748" stroke="#2e4136" strokeWidth="2" />
-  <circle cx="300" cy="80" r="142" fill="#232c27" />
-  <circle cx="300" cy="80" r="139" fill="none" stroke="#9db0a1" strokeWidth="3" strokeDasharray="2 5" />
+  <rect className="vd-plate" x="12" y="12" width="500" height="400" rx="10" fill="var(--vd-plate)" stroke="var(--vd-line)" strokeWidth="2" />
+  ${RAYS.map((a) => html`<path key=${a} d=${'M300 80 L' + (300 + 460 * Math.cos(a)).toFixed(0) + ' ' + (80 + 460 * Math.sin(a)).toFixed(0) + ' L' + (300 + 460 * Math.cos(a + 0.12)).toFixed(0) + ' ' + (80 + 460 * Math.sin(a + 0.12)).toFixed(0) + ' Z'} fill="var(--vd-rays)" opacity=".09" />`)}
+  <circle cx="300" cy="80" r="142" fill="var(--vd-rim)" />
+  <circle cx="300" cy="80" r="139" fill="none" stroke="var(--vd-dots)" strokeWidth="3" strokeDasharray="2 5" />
   <g transform="translate(300 80) scale(1.204) translate(-129 -129)">
     <g className="vd-spin">
-      <circle cx="129" cy="129" r="108" fill="#1d2420" />
-      ${GROOVES.map((r) => html`<circle key=${r} cx="129" cy="129" r=${r} fill="none" stroke="#35433a" strokeWidth="0.7" />`)}
+      <circle cx="129" cy="129" r="108" fill="var(--vd-disc)" />
+      ${GROOVES.map((r) => html`<circle key=${r} cx="129" cy="129" r=${r} fill="none" stroke="var(--vd-groove)" strokeWidth="0.7" />`)}
       <path d="M129 129 L225 80 A108 108 0 0 1 235 112 Z" fill="#fff" opacity=".07" />
       <path d="M129 129 L33 178 A108 108 0 0 1 23 146 Z" fill="#fff" opacity=".07" />
-      <circle cx="129" cy="129" r="54" fill="#edb99f" />
-      ${tracks ? html`<text x="129" y="98" textAnchor="middle" fontSize="8" fontWeight="600" letterSpacing="1" fill="#2e4136">NYLONGITARR</text>` : null}
-      <text x="129" y=${tracks ? 118 : 112} textAnchor="middle" fontSize=${tracks ? 21 : 26} fontWeight="700" fill="#2e4136" style=${{ fontFamily: 'var(--f-display)' }}>Vol. ${vol}</text>
-      ${tracks ? (tracks.length ? tracks : ['Inga låtar än']).map((t, i) => html`<text key=${t} x="129" y=${147 + i * 11} textAnchor="middle" fontSize="9" fontWeight="600" fill="#2e4136">${tracks.length ? (i + 1) + '. ' : ''}${clip(t)}</text>`) : null}
-      <circle cx="129" cy="129" r="4" fill="#f3ede1" />
+      <circle cx="129" cy="129" r="54" fill="var(--vd-label)" />
+      <circle cx="129" cy="129" r="51.5" fill="none" stroke="var(--vd-ring)" strokeWidth="4" />
+      <circle cx="129" cy="129" r="48" fill="none" stroke="var(--vd-ring-2)" strokeWidth="2" />
+      ${tracks ? html`<text x="129" y="98" textAnchor="middle" fontSize="8" fontWeight="600" letterSpacing="1" fill="var(--vd-ink)">NYLONGITARR</text>` : null}
+      <text x="129" y=${tracks ? 118 : 112} textAnchor="middle" fontSize=${tracks ? 21 : 26} fontWeight="700" fill="var(--vd-ink)" style=${{ fontFamily: 'var(--f-display)' }}>Vol. ${vol}</text>
+      ${tracks ? (tracks.length ? tracks : ['Inga låtar än']).map((t, i) => html`<text key=${t} x="129" y=${147 + i * 11} textAnchor="middle" fontSize="9" fontWeight="600" fill="var(--vd-ink)">${tracks.length ? (i + 1) + '. ' : ''}${clip(t)}</text>`) : null}
+      <circle cx="129" cy="129" r="4" fill="var(--vd-hole)" />
     </g>
   </g>
-  <rect x="28" y="28" width="30" height="18" rx="3" fill="#edb99f" />
-  <text x="43" y="41" textAnchor="middle" fontSize="11" fontWeight="700" fill="#2e4136">33</text>
-  <circle cx="84" cy="37" r="11" fill="#2e4136" />
-  <path d="M84 37 L84 29" stroke="#edb99f" strokeWidth="2.5" strokeLinecap="round" />
-  <path d="M132 34 L146 20" stroke="#2e4136" strokeWidth="9" strokeLinecap="round" />
-  <circle cx="132" cy="34" r="17" fill="#2e4136" />
-  <circle cx="132" cy="34" r="11" fill="none" stroke="#edb99f" strokeWidth="1.5" />
-  <path d="M132 34 L150 92 L196 122" fill="none" stroke="#f3ede1" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
-  <path d="M196 122 L207 131" stroke="#edb99f" strokeWidth="9" strokeLinecap="round" />
-  <circle cx="132" cy="34" r="5" fill="#edb99f" />
+  <rect x="28" y="28" width="30" height="18" rx="3" fill="var(--vd-label)" />
+  <text x="43" y="41" textAnchor="middle" fontSize="11" fontWeight="700" fill="var(--vd-ink)">33</text>
+  <circle cx="84" cy="37" r="11" fill="var(--vd-ink)" />
+  <path d="M84 37 L84 29" stroke="var(--vd-label)" strokeWidth="2.5" strokeLinecap="round" />
+  <path d="M132 34 L146 20" stroke="var(--vd-ink)" strokeWidth="9" strokeLinecap="round" />
+  <circle cx="132" cy="34" r="17" fill="var(--vd-ink)" />
+  <circle cx="132" cy="34" r="11" fill="none" stroke="var(--vd-label)" strokeWidth="1.5" />
+  <path d="M132 34 L150 92 L196 122" fill="none" stroke="var(--vd-arm)" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+  <path d="M196 122 L207 131" stroke="var(--vd-head)" strokeWidth="9" strokeLinecap="round" />
+  <circle cx="132" cy="34" r="5" fill="var(--vd-label)" />
 </svg>`;
 const levelOf = (xp) => { let l = 1; while (xp >= 30 * l * (l + 1)) l++; return l; };
 const lvlFloor = (l) => 30 * (l - 1) * l;
@@ -2182,11 +2145,7 @@ function FreePlay({ easy, vol, onFinish }) {
 
 const SKINS = [
   { id: 'salvia', name: 'Salvia och persika', sub: 'Ljust papper, dämpat grönt, som ett skivomslag', bg: '#f3ede1', fg: '#2e4136', sw: ['#4c6655', '#edb99f', '#96472e'] },
-  { id: 'kvall', name: 'Kväll', sub: 'Varmt mörkt, mässing och salvia', bg: '#181513', fg: '#f3ede3', sw: ['#d9a95f', '#a3c9a6', '#e08562'] },
-  { id: 'neon', name: 'Neon Night', sub: 'Rosa, mint och nattblått', bg: '#15122a', fg: '#f4f1ff', sw: ['#ff5ca8', '#ff9a5c', '#2ee6b8'] },
-  { id: 'riddim', name: 'Riddim', sub: 'Guld, grönt och rött', bg: '#0f1e16', fg: '#effaf1', sw: ['#ffcc1f', '#22d36b', '#ff4b3e'] },
-  { id: 'ocean', name: 'Ocean', sub: 'Cyan, lime och djuphav', bg: '#0b1c2e', fg: '#eef7ff', sw: ['#36d6ff', '#7d8bff', '#b6f24a'] },
-  { id: 'ljus', name: 'Ljus', sub: 'Vitt med lila och rosa', bg: '#ffffff', fg: '#191530', sw: ['#6d4bff', '#ff4f9a', '#0eb37b'] },
+  { id: 'riddim', name: 'Riddim', sub: 'Sand, djuphav och mango, som en strandbar i skymningen', bg: '#f5ead6', fg: '#17474b', sw: ['#1f6f73', '#f4b95a', '#d9603f'] },
 ];
 
 /* ---------------------------------------------------------------- klocka och spela-med */
@@ -3501,7 +3460,7 @@ function App() {
   const [tableChord, setTableChord] = useState('C');
   const [modal, setModal] = useState(false);
   const [picking, setPicking] = useState(false);
-  const [skin, setSkinState] = useState(() => { try { return localStorage.getItem('ng-skin2') || 'kvall'; } catch (e) { return 'kvall'; } });
+  const [skin, setSkinState] = useState(() => { try { return localStorage.getItem('ng-skin2') === 'riddim' ? 'riddim' : 'salvia'; } catch (e) { return 'salvia'; } });
   const [skinOpen, setSkinOpen] = useState(false);
   const [ghOpen, setGhOpen] = useState(false);
   const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : v; } catch (e) { return d; } };
