@@ -1,12 +1,12 @@
 /* NylonGitarr Studio – service worker
    Höj VERSION när appen uppdateras, så hämtar telefonen den nya versionen. */
-const VERSION = 'v37';
+const VERSION = 'v38';
 const CACHE = 'nylongitarr-' + VERSION;
 const SHELL = ['./', 'index.html', 'video/scene.jpg', 'video/start.mp4', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png', 'icons/apple-touch-icon.png'];
 const CDN = ['cdnjs.cloudflare.com', 'fonts.googleapis.com', 'fonts.gstatic.com'];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL.map((u) => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (e) => {

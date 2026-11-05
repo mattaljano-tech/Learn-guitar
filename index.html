@@ -4349,7 +4349,7 @@ function App() {
       <div className="badges">${BADGES.map((b) => { const got = prog.badges.includes(b.id);
         return html`<div key=${b.id} className=${'badge-c' + (got ? ' got' : '')}><span className="ring">${b.ch}</span><b>${b.title}</b><span>${b.desc}</span></div>`; })}</div>
     </section>
-    <p className="muted" style=${{ fontSize: 12 }}>Dina framsteg sparas i den här webbläsaren på den här enheten.</p>
+    <p className="muted" style=${{ fontSize: 12 }}>Dina framsteg sparas i den här webbläsaren på den här enheten. Version 38.</p>
   </div>`;
 
   const SpelTab = html`<div style=${{ display: 'grid', gap: 18 }}>
@@ -4574,6 +4574,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(html`<${App} />`);
 /* Offline och installation */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+  var hadSW = !!navigator.serviceWorker.controller, swReloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', function () { if (!hadSW || swReloaded || document.querySelector('.ls,.scene-play')) return; swReloaded = true; location.reload(); });
 }
 </script>
 </body>
