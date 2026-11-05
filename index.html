@@ -581,11 +581,12 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 :root[data-skin="salvia"] .home-day{min-height:300px}
 :root[data-skin="salvia"] .free-cover{min-height:190px;text-align:left}
 :root[data-skin="salvia"] .home-day::before,:root[data-skin="salvia"] .free-cover::before{content:"";position:absolute;z-index:-2;right:-70px;top:-70px;width:240px;height:240px;border-radius:50%;background:conic-gradient(rgba(255,255,255,.08) 0 5%,transparent 13% 50%,rgba(255,255,255,.08) 50% 55%,transparent 63%),repeating-radial-gradient(circle,#232c27 0 2px,#303d35 2px 4px);animation:vinyl-spin 20s linear infinite}
-:root[data-skin="salvia"] .home-day::after,:root[data-skin="salvia"] .free-cover::after{content:"";position:absolute;z-index:-1;right:5px;top:5px;width:90px;height:90px;border-radius:50%;background:radial-gradient(circle,#f3ede1 0 5px,transparent 6px),conic-gradient(#96472e 0 14%,#edb99f 14%);animation:vinyl-spin 20s linear infinite}
+.vinyl-label{display:none}
+:root[data-skin="salvia"] .vinyl-label{position:absolute;z-index:-1;right:5px;top:5px;width:90px;height:90px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;font-family:var(--f-display);font-weight:700;font-size:15px;line-height:1;letter-spacing:.04em;color:#2e4136;background:radial-gradient(circle,#f3ede1 0 5px,#edb99f 6px);animation:vinyl-spin 20s linear infinite}
 :root[data-skin="salvia"] .free-cover::before{right:-55px;top:-55px;width:180px;height:180px}
-:root[data-skin="salvia"] .free-cover::after{right:2px;top:2px;width:66px;height:66px}
+:root[data-skin="salvia"] .free-cover .vinyl-label{right:2px;top:2px;width:66px;height:66px;gap:8px;font-size:12px}
 @keyframes vinyl-spin{to{transform:rotate(360deg)}}
-@media (prefers-reduced-motion:reduce){:root[data-skin="salvia"] .home-day::before,:root[data-skin="salvia"] .home-day::after,:root[data-skin="salvia"] .free-cover::before,:root[data-skin="salvia"] .free-cover::after{animation:none}}
+@media (prefers-reduced-motion:reduce){:root[data-skin="salvia"] .home-day::before,:root[data-skin="salvia"] .free-cover::before,:root[data-skin="salvia"] .vinyl-label{animation:none}}
 :root[data-skin="salvia"] .home-day .ls-kicker,:root[data-skin="salvia"] .free-cover .ls-kicker,:root[data-skin="salvia"] .home-day .ls-lead{color:#f5efe3}
 :root[data-skin="salvia"] .home-day .home-h1{font-size:clamp(54px,14vw,72px);line-height:.95;color:#f5efe3}
 :root[data-skin="salvia"] .free-cover .home-h1{font-size:46px;line-height:.95;color:#f5efe3;max-width:9em}
@@ -1712,6 +1713,7 @@ function saveCustom(list) { try { localStorage.setItem('ng-songs', JSON.stringif
 
 /* ---------------------------------------------------------------- gamification */
 const TITLES = ['Nybörjare', 'Strängletare', 'Lägereldsspelare', 'Ackordsamlare', 'Groovebyggare', 'Skankare', 'Riddim-kapten', 'Studiomästare'];
+const VinylLabel = ({ vol }) => html`<span className="vinyl-label" aria-label=${'Nivå ' + vol}><span>VOL</span><span>${String(vol).padStart(2, '0')}</span></span>`;
 const levelOf = (xp) => { let l = 1; while (xp >= 30 * l * (l + 1)) l++; return l; };
 const lvlFloor = (l) => 30 * (l - 1) * l;
 const today = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
@@ -2078,7 +2080,7 @@ function summarizeFree(segs, onsets) {
   }
   return { chords, changes: Math.max(0, merged.length - 1), topMoves, key, fresh, nextUp, bpm: Math.round(bpm), steady, strums: onsets.length, trail: merged.slice(-24).map((s) => s.k) };
 }
-function FreePlay({ easy, onFinish }) {
+function FreePlay({ easy, vol, onFinish }) {
   const [phase, setPhase] = useState('idle');
   const [now, setNow] = useState(null);
   const [trail, setTrail] = useState([]);
@@ -2132,7 +2134,7 @@ function FreePlay({ easy, onFinish }) {
           <small className="muted" style=${{ minHeight: 20 }}>${trail.length ? trail.map((k) => CHORD_DB[k].name).join(' · ') : 'Appen lyssnar. Spela på.'}</small></div>
         <button className="chip warn" onClick=${finish}>Klar, visa feedback</button>` : null}
       ${phase === 'done' && sum ? html`<div style=${{ display: 'grid', gap: 10, width: '100%', textAlign: 'left' }}>
-        <div className="free-cover"><span className="ls-kicker">Fritt spel</span><h2 className="home-h1">Det här spelade du</h2></div>
+        <div className="free-cover"><${VinylLabel} vol=${vol} /><span className="ls-kicker">Fritt spel</span><h2 className="home-h1">Det här spelade du</h2></div>
         ${!sum.chords.length ? html`<p className="lead">Appen kände inte igen några ackord den här gången. Spela lite längre på varje ackord, eller kalibrera mikrofonen under Stämning.</p>` : html`
           <div className="coach"><span className="big">${sum.chords.length}</span><div><b>ackord</b><br />${sum.chords.slice(0, 8).map((k) => CHORD_DB[k].name).join(', ')}. ${sum.changes} byten.</div></div>
           ${sum.bpm ? html`<div className="coach"><span className="big">${sum.bpm}</span><div><b>slag per minut</b><br />${feel(sum.steady)} Jämnhet ${sum.steady} %.</div></div>` : html`<p className="muted">Spela lite fler slag så kan appen mäta tempot.</p>`}
@@ -4208,6 +4210,7 @@ function App() {
     : st.k === 'song' ? songTitle(st.s) : st.k === 'solo' ? 'Spela en hel låt själv' : st.n + ' stjärnor i ' + (st.s === 'any' ? 'valfri låt' : songTitle(st.s));
   const HomeTab = () => html`<div className="home">
     <div className="home-day">
+      <${VinylLabel} vol=${levelOf(prog.xp)} />
       <span className="ls-kicker">${(prog.planDay || 0) >= PLAN.length ? 'Alla 14 dagar klara' : 'Dag ' + lessonDay + ' av ' + PLAN.length}</span>
       <h1 className="home-h1">${(prog.planDay || 0) >= PLAN.length ? 'Spela dina låtar' : lp.t}</h1>
       <p className="ls-lead">${lSteps.length} korta steg. Ha gitarren i knät.</p>
@@ -4305,7 +4308,7 @@ function App() {
     ${game === 'quiz' ? html`<${Quiz} easy=${easy} record=${prog.quizCombo} onAnswer=${(ok, combo) => {
         if (!ok) return 0; const xp = 5 + Math.min(combo, 10);
         award(xp, '', (n) => { n.quizRight++; n.quizCombo = Math.max(n.quizCombo, combo); }, true); return xp; }} />`
-      : game === 'free' ? html`<${FreePlay} easy=${easy} onFinish=${(s) => award(Math.min(30, 5 + s.changes), s.chords.length + ' ackord i fritt spel', (n) => addTag(n, 'free'))} />`
+      : game === 'free' ? html`<${FreePlay} easy=${easy} vol=${levelOf(prog.xp)} onFinish=${(s) => award(Math.min(30, 5 + s.changes), s.chords.length + ' ackord i fritt spel', (n) => addTag(n, 'free'))} />`
       : game === 'coach' ? html`<${PracticeCoach} easy=${easy} pair=${chPair} setPair=${setChPair}
         onFinish=${(s, pair) => award(Math.min(30, s.changes + s.clean), s.changes + ' byten i lyssnande träning', (n) => addTag(n, 'coach:' + pair.join('-')))} />`
       : html`<${Challenge} easy=${easy} pair=${chPair} setPair=${setChPair} best=${prog.best}
