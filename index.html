@@ -577,6 +577,16 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 :root[data-skin="salvia"] .play,:root[data-skin="salvia"] .fab,:root[data-skin="salvia"] .ls-btn,:root[data-skin="salvia"] .ls-back,:root[data-skin="salvia"] .gh-launch{box-shadow:none}
 :root[data-skin="salvia"] .play{border-radius:999px;font-weight:600}
 :root[data-skin="salvia"] .ls-btn:not(.ghost){background:#2e4136;color:#f5efe3}
+:root[data-skin="salvia"] .home-day,:root[data-skin="salvia"] .free-cover{position:relative;overflow:hidden;isolation:isolate;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;background:#4c6655;color:#f5efe3;border-radius:16px;padding:24px}
+:root[data-skin="salvia"] .home-day{min-height:300px}
+:root[data-skin="salvia"] .free-cover{min-height:190px;text-align:left}
+:root[data-skin="salvia"] .home-day::before,:root[data-skin="salvia"] .free-cover::before{content:"";position:absolute;z-index:-2;right:-60px;top:-50px;width:220px;height:220px;border-radius:50%;background:#edb99f}
+:root[data-skin="salvia"] .home-day::after,:root[data-skin="salvia"] .free-cover::after{content:"";position:absolute;z-index:-1;right:-15px;top:-5px;width:130px;height:130px;border-radius:50%;background:#4c6655}
+:root[data-skin="salvia"] .free-cover::before{right:-50px;top:-50px;width:170px;height:170px}
+:root[data-skin="salvia"] .free-cover::after{right:-15px;top:-15px;width:100px;height:100px}
+:root[data-skin="salvia"] .home-day .ls-kicker,:root[data-skin="salvia"] .free-cover .ls-kicker,:root[data-skin="salvia"] .home-day .ls-lead{color:#f5efe3}
+:root[data-skin="salvia"] .home-day .home-h1{font-size:clamp(54px,14vw,72px);line-height:.95;color:#f5efe3}
+:root[data-skin="salvia"] .free-cover .home-h1{font-size:46px;line-height:.95;color:#f5efe3;max-width:9em}
 :root[data-skin="salvia"] .bottomnav button[aria-current="page"]{color:var(--brass);background:transparent}
 :root[data-skin="kvall"] body{background:radial-gradient(1100px 600px at 50% -20%,rgba(217,169,95,.07),transparent 70%),var(--bg)}
 :root[data-skin="kvall"] h1,:root[data-skin="kvall"] h2,:root[data-skin="kvall"] h3,
@@ -2120,6 +2130,7 @@ function FreePlay({ easy, onFinish }) {
           <small className="muted" style=${{ minHeight: 20 }}>${trail.length ? trail.map((k) => CHORD_DB[k].name).join(' · ') : 'Appen lyssnar. Spela på.'}</small></div>
         <button className="chip warn" onClick=${finish}>Klar, visa feedback</button>` : null}
       ${phase === 'done' && sum ? html`<div style=${{ display: 'grid', gap: 10, width: '100%', textAlign: 'left' }}>
+        <div className="free-cover"><span className="ls-kicker">Fritt spel</span><h2 className="home-h1">Det här spelade du</h2></div>
         ${!sum.chords.length ? html`<p className="lead">Appen kände inte igen några ackord den här gången. Spela lite längre på varje ackord, eller kalibrera mikrofonen under Stämning.</p>` : html`
           <div className="coach"><span className="big">${sum.chords.length}</span><div><b>ackord</b><br />${sum.chords.slice(0, 8).map((k) => CHORD_DB[k].name).join(', ')}. ${sum.changes} byten.</div></div>
           ${sum.bpm ? html`<div className="coach"><span className="big">${sum.bpm}</span><div><b>slag per minut</b><br />${feel(sum.steady)} Jämnhet ${sum.steady} %.</div></div>` : html`<p className="muted">Spela lite fler slag så kan appen mäta tempot.</p>`}
