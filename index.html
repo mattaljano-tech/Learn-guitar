@@ -578,13 +578,20 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 :root[data-skin="salvia"] .play{border-radius:999px;font-weight:600}
 :root[data-skin="salvia"] .ls-btn:not(.ghost){background:#2e4136;color:#f5efe3}
 :root[data-skin="salvia"] .home-day,:root[data-skin="salvia"] .free-cover{position:relative;overflow:hidden;isolation:isolate;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;background:#4c6655;color:#f5efe3;border-radius:16px;padding:24px}
-:root[data-skin="salvia"] .home-day{min-height:300px}
+:root[data-skin="salvia"] .home-day{min-height:330px}
 :root[data-skin="salvia"] .free-cover{min-height:190px;text-align:left}
-:root[data-skin="salvia"] .home-day::before,:root[data-skin="salvia"] .free-cover::before{content:"";position:absolute;z-index:-2;right:-70px;top:-70px;width:240px;height:240px;border-radius:50%;background:conic-gradient(rgba(255,255,255,.08) 0 5%,transparent 13% 50%,rgba(255,255,255,.08) 50% 55%,transparent 63%),repeating-radial-gradient(circle,#232c27 0 2px,#303d35 2px 4px);animation:vinyl-spin 20s linear infinite}
+:root[data-skin="salvia"] .home-day::before,:root[data-skin="salvia"] .free-cover::before{content:"";position:absolute;z-index:-2;right:-50px;top:-50px;width:260px;height:260px;border-radius:50%;background:conic-gradient(rgba(255,255,255,.08) 0 5%,transparent 13% 50%,rgba(255,255,255,.08) 50% 55%,transparent 63%),repeating-radial-gradient(circle,#232c27 0 2px,#303d35 2px 4px);animation:vinyl-spin 20s linear infinite}
 .vinyl-label{display:none}
-:root[data-skin="salvia"] .vinyl-label{position:absolute;z-index:-1;right:5px;top:5px;width:90px;height:90px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;font-family:var(--f-display);font-weight:700;font-size:15px;line-height:1;letter-spacing:.04em;color:#2e4136;background:radial-gradient(circle,#f3ede1 0 5px,#edb99f 6px);animation:vinyl-spin 20s linear infinite}
+:root[data-skin="salvia"] .vinyl-label{display:block;position:absolute;z-index:-1;right:2px;top:2px;width:76px;height:76px;border-radius:50%;box-sizing:border-box;color:#2e4136;background:radial-gradient(circle,#f3ede1 0 4px,#edb99f 5px);animation:vinyl-spin 20s linear infinite}
+:root[data-skin="salvia"] .vinyl-label.full{right:15px;top:15px;width:130px;height:130px;background:radial-gradient(circle,#f3ede1 0 5px,#edb99f 6px)}
+:root[data-skin="salvia"] .vl-top{position:absolute;left:0;right:0;bottom:50%;padding-bottom:8px;display:grid;justify-items:center;gap:1px;line-height:1}
+:root[data-skin="salvia"] .vl-top small{font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+:root[data-skin="salvia"] .vl-top b{font-family:var(--f-display);font-size:15px;font-weight:700}
+:root[data-skin="salvia"] .full .vl-top{padding-bottom:10px}
+:root[data-skin="salvia"] .full .vl-top b{font-size:24px}
+:root[data-skin="salvia"] .vl-tracks{position:absolute;left:14px;right:14px;top:50%;padding-top:9px;display:grid;justify-items:center;gap:1px;font-size:9px;font-weight:600;line-height:11px}
+:root[data-skin="salvia"] .vl-tracks span{max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 :root[data-skin="salvia"] .free-cover::before{right:-55px;top:-55px;width:180px;height:180px}
-:root[data-skin="salvia"] .free-cover .vinyl-label{right:2px;top:2px;width:66px;height:66px;gap:8px;font-size:12px}
 @keyframes vinyl-spin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){:root[data-skin="salvia"] .home-day::before,:root[data-skin="salvia"] .free-cover::before,:root[data-skin="salvia"] .vinyl-label{animation:none}}
 :root[data-skin="salvia"] .home-day .ls-kicker,:root[data-skin="salvia"] .free-cover .ls-kicker,:root[data-skin="salvia"] .home-day .ls-lead{color:#f5efe3}
@@ -1713,7 +1720,10 @@ function saveCustom(list) { try { localStorage.setItem('ng-songs', JSON.stringif
 
 /* ---------------------------------------------------------------- gamification */
 const TITLES = ['Nybörjare', 'Strängletare', 'Lägereldsspelare', 'Ackordsamlare', 'Groovebyggare', 'Skankare', 'Riddim-kapten', 'Studiomästare'];
-const VinylLabel = ({ vol }) => html`<span className="vinyl-label" aria-label=${'Nivå ' + vol}><span>VOL</span><span>${String(vol).padStart(2, '0')}</span></span>`;
+const VinylLabel = ({ vol, tracks = null }) => html`<span className=${'vinyl-label' + (tracks ? ' full' : '')} aria-label=${'Nivå ' + vol}>
+  <span className="vl-top"><small>NylonGitarr</small><b>Vol. ${vol}</b></span>
+  ${tracks ? html`<span className="vl-tracks">${tracks.length ? tracks.map((t, i) => html`<span key=${t}>${i + 1}. ${t}</span>`) : html`<span>Inga låtar än</span>`}</span>` : null}
+</span>`;
 const levelOf = (xp) => { let l = 1; while (xp >= 30 * l * (l + 1)) l++; return l; };
 const lvlFloor = (l) => 30 * (l - 1) * l;
 const today = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
@@ -3553,7 +3563,7 @@ function App() {
     }
     if (playing === 'song' && !loop && pos.bar === bars.length && !doneRef.current[key]) {
       doneRef.current[key] = 1; const solo = !autoGuitar;
-      award(solo ? 60 : 40, 'Låt genomspelad: ' + song.title, (n) => { if (!n.songs.includes(song.id)) n.songs.push(song.id); if (solo) { n.solo = true; addTag(n, 'solo'); } addTag(n, 'song:' + song.id); });
+      award(solo ? 60 : 40, 'Låt genomspelad: ' + song.title, (n) => { if (!n.songs.includes(song.id)) n.songs.push(song.id); n.plays = n.plays || {}; n.plays[song.id] = (n.plays[song.id] || 0) + 1; if (solo) { n.solo = true; addTag(n, 'solo'); } addTag(n, 'song:' + song.id); });
     }
     if (playing === 'skank' && pos.bar === 8 && !doneRef.current[key]) { doneRef.current[key] = 1; award(30, '8 takter skank', (n) => { n.skank8 = true; addTag(n, 'skank'); }); }
     if (playing === 'tjack' && pos.bar === 8 && !doneRef.current[key]) {
@@ -3642,7 +3652,7 @@ function App() {
     AUDIO_SYNC = { src, g, base, beats: a.beats, starts: aud.starts, ibi: aud.ibi, from: fromBar };
     src.onended = () => {
       if (!AUDIO_SYNC || AUDIO_SYNC.src !== src) return;
-      award(40, 'Låt genomspelad: ' + song.title, (n) => { if (!n.songs.includes(song.id)) n.songs.push(song.id); addTag(n, 'song:' + song.id); });
+      award(40, 'Låt genomspelad: ' + song.title, (n) => { if (!n.songs.includes(song.id)) n.songs.push(song.id); n.plays = n.plays || {}; n.plays[song.id] = (n.plays[song.id] || 0) + 1; addTag(n, 'song:' + song.id); });
       AUDIO_SYNC = null; engine.stop(); setPlaying(null); setPos({ step: -1, bar: -1 }); setStartBar(0);
     };
     setStartBar(fromBar); S.current.startBar = fromBar;
@@ -4208,9 +4218,10 @@ function App() {
   const stepShort = (st) => st.k === 'tune' ? 'Stäm gitarren' : st.k === 'chord' ? 'Lär dig ' + CHORD_DB[st.c].name
     : st.k === 'chal' ? 'Byt mellan ' + CHORD_DB[st.p[0]].name + ' och ' + CHORD_DB[st.p[1]].name : st.k === 'skank' ? 'Reggae-skank'
     : st.k === 'song' ? songTitle(st.s) : st.k === 'solo' ? 'Spela en hel låt själv' : st.n + ' stjärnor i ' + (st.s === 'any' ? 'valfri låt' : songTitle(st.s));
+  const topSongs = [...prog.songs].reverse().sort((a, b) => ((prog.plays || {})[b] || 0) - ((prog.plays || {})[a] || 0)).slice(0, 3).map(songTitle);
   const HomeTab = () => html`<div className="home">
     <div className="home-day">
-      <${VinylLabel} vol=${levelOf(prog.xp)} />
+      <${VinylLabel} vol=${levelOf(prog.xp)} tracks=${topSongs} />
       <span className="ls-kicker">${(prog.planDay || 0) >= PLAN.length ? 'Alla 14 dagar klara' : 'Dag ' + lessonDay + ' av ' + PLAN.length}</span>
       <h1 className="home-h1">${(prog.planDay || 0) >= PLAN.length ? 'Spela dina låtar' : lp.t}</h1>
       <p className="ls-lead">${lSteps.length} korta steg. Ha gitarren i knät.</p>
