@@ -1731,13 +1731,13 @@ function SceneMotes() {
     let calm = false; try { calm = matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
     const fit = () => { const r = c.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1); c.width = r.width * d; c.height = r.height * d; };
     fit(); addEventListener('resize', fit);
-    const P = Array.from({ length: 46 }, () => ({ x: .5 + Math.random() * .48, y: .18 + Math.random() * .5, s: .5 + Math.random() * 1.1, v: 2e-5 + Math.random() * 5e-5, p: Math.random() * 7 }));
+    const P = Array.from({ length: 22 }, () => ({ x: .68 + Math.random() * .3, y: .2 + Math.random() * .34, s: .5 + Math.random() * 1.1, v: 2e-5 + Math.random() * 5e-5, p: Math.random() * 7 }));
     const loop = (t) => {
       x.clearRect(0, 0, c.width, c.height);
       P.forEach((m) => {
         const y = ((m.y - t * m.v * .3 - .15) % .55 + .55) % .55 + .15, X = m.x + Math.sin(t * .0003 + m.p) * .012;
-        const dist = Math.hypot(X - .93, y - .24), a = Math.max(0, 1 - dist / .62) * (.5 + .5 * Math.sin(t * .001 + m.p));
-        x.fillStyle = `rgba(255,232,190,${a * .85})`; x.beginPath(); x.arc(X * c.width, y * c.height, m.s * (c.width / 400), 0, 7); x.fill();
+        const dist = Math.hypot(X - .93, y - .24), a = Math.pow(Math.max(0, 1 - dist / .4), 2) * (.5 + .5 * Math.sin(t * .001 + m.p));
+        x.fillStyle = `rgba(255,232,190,${a * .6})`; x.beginPath(); x.arc(X * c.width, y * c.height, m.s * (c.width / 520), 0, 7); x.fill();
       });
       if (!calm) raf = requestAnimationFrame(loop);
     };
