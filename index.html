@@ -524,6 +524,17 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 .ls-back{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom));z-index:45;display:inline-flex;align-items:center;gap:8px;height:50px;padding:0 20px;border-radius:25px;border:0;background:linear-gradient(135deg,var(--brass),var(--brass-2));color:var(--brass-ink);font-weight:800;box-shadow:0 10px 30px -8px rgba(0,0,0,.7)}
 .ls-back svg{width:16px;height:16px}
 @media (max-width:760px){.ls-back{bottom:calc(150px + env(safe-area-inset-bottom))}}
+.gd-six{grid-template-columns:repeat(3,minmax(0,1fr))}
+.gd-deg{display:grid;gap:4px;text-align:center}.gd-deg small{color:var(--muted);font-size:12px;font-weight:600}
+.gd-chip{display:grid;place-items:center;align-content:center;gap:4px;min-height:120px;border:1px dashed var(--line);border-radius:12px;font-family:var(--f-display);font-size:26px;font-weight:700}.gd-chip small{font-family:var(--f-body);font-size:11px;font-weight:500;color:var(--muted)}
+.gd-prog{display:grid;gap:8px;padding-top:12px;border-top:1px solid var(--line)}
+.gd-next{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.gd-next>b{min-width:40px;font-family:var(--f-display);font-size:22px}
+.gd-beats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.gd-beats div{display:grid;justify-items:center;padding:10px 0;border:2px solid var(--leaf);border-radius:10px;font-size:13px;font-weight:600}.gd-beats div b{font-family:var(--f-display);font-size:26px}.gd-beats div.on{background:var(--leaf);color:var(--leaf-ink)}
+.rtab{display:grid;gap:2px;overflow-x:auto;font-variant-numeric:tabular-nums}
+.rtab-row{display:flex;align-items:center;min-width:max-content;background:linear-gradient(var(--faint),var(--faint)) center/100% 1px no-repeat}
+.rtab-row b{width:20px;flex:none;font-size:12px;color:var(--muted);background:var(--surface)}
+.rtab-row span{width:34px;flex:none;display:grid;place-items:center;height:22px}
+.rtab-row i{font-style:normal;font-weight:700;font-size:13px;width:22px;height:22px;line-height:22px;text-align:center;border-radius:11px;background:var(--brass);color:var(--brass-ink)}
 .bib{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
 .bib-c{display:grid;gap:6px;justify-items:start;text-align:left;padding:18px;border-radius:20px;background:var(--surface);border:1px solid var(--line);color:var(--text);min-height:130px}
 .bib-c svg{width:28px;height:28px}
@@ -2065,6 +2076,49 @@ function PracticeCoach({ easy, pair, setPair, onFinish }) {
 }
 
 /* Fritt spel: spela vad du vill. Appen känner igen ackorden, hör rytmen och ger feedback efteråt */
+/* Följder och riff: innehållet från A3-arken */
+const GUIDE_KEYS = { G: ['G', 'C', 'D', 'Em', 'Am', 'Bm'], C: ['C', 'F', 'G', 'Am', 'Dm', 'Em'], D: ['D', 'G', 'A', 'Bm', 'Em', 'F#m'], A: ['A', 'D', 'E', 'F#m', 'Bm', 'C#m'], F: ['F', 'Bb', 'C', 'Dm', 'Gm', 'Am'] };
+const GUIDE_DEG = [['I', 'Hemma'], ['IV', 'Ut på tur'], ['V', 'Vill hem'], ['vi', 'Vemod'], ['ii', 'Mjuk väg'], ['iii', 'Krydda']];
+const GUIDE_IDX = { I: 0, IV: 1, V: 2, vi: 3, ii: 4, iii: 5 };
+const GUIDE_PROGS = [['Poppens klassiker', 'I V vi IV'], ['Melankolisk pop', 'vi IV I V'], ['Rock, country och blues', 'I IV V'], ['50-talsballad', 'I vi IV V'], ['Ljust och lyftande', 'I IV vi V'], ['Mörkt driv', 'vi IV V'], ['Mjukt avslut', 'ii V I']];
+const GUIDE_NEXT = [['I', 'IV V vi ii'], ['IV', 'V I ii vi'], ['V', 'I vi IV'], ['vi', 'IV V ii'], ['ii', 'V IV'], ['iii', 'vi IV']];
+const REGGAE_PROGS = [['Tvåackordsgung, två takter på varje', 'Am D'], ['Glad rootsreggae', 'G C D C'], ['Mollgung', 'Em D C D'], ['Solskensreggae', 'G Em C D']];
+const RIFFS = [
+  ['Blues', 'Huvudriffet', 'E-blues', 'E0 E3 A0 A1 A2 E3 E0', 'Gör det två gånger. A-strängens band 1 är bluesnoten.'],
+  ['Blues', 'Nedgången', 'E-blues', 'D2 D0 A2 A0 E3 E0', 'Avslutet efter huvudriffet. Låt öppna E klinga ut.'],
+  ['Blues', 'Boogiegång', 'E-blues', 'E0 E4 A2 A4 D0 A4 A2 E4', 'Jämnt och gungande. Lillfingret tar band 4.'],
+  ['Blues', 'Samma blues, ljusare', 'A-blues', 'A0 A3 D0 D1 D2 A3 A0', 'Huvudriffet flyttat en sträng upp.'],
+  ['Blues', 'Ljus nedgång', 'A-blues', 'G2 G0 D2 D0 A3 A0', 'Avslutet till riffet ovanför.'],
+  ['Plock', 'Am-plock', 'A-moll', 'A0 D2 G2 B1 G2 D2', 'Håll Am-greppet och plocka en sträng i taget.'],
+  ['Plock', 'Em-plock', 'E-moll', 'E0 A2 D2 G0 B0 G0 D2 A2', 'Håll Em-greppet hela tiden. Mjukt och drömskt.'],
+  ['Melodi', 'Promenad till C', 'G-dur', 'E3 A0 A2 A3 A2 A0 E3', 'Från G upp till C och tillbaka.'],
+  ['Melodi', 'Spansk känsla', 'E-frygisk', 'e0 e1 e3 e1 e0 B3 B1 B0', 'Långsamt och med eftertryck.'],
+  ['Melodi', 'Ljus slinga', 'E-moll', 'B0 B3 e0 e3 e0 B3 B0 G2', 'Upp och ner på de tunna strängarna. Solo över Em.'],
+  ['Reggae', 'Basgång i Am', 'Am', 'A0 A0 E3 A0 A3 A0', 'Låt pauserna höras.'],
+  ['Reggae', 'Från Am till D', 'Am och D', 'A0 A2 A3 D0 D4 D2 D0', 'Passar tvåackordsgunget.'],
+  ['Reggae', 'Basgång i G', 'G-dur', 'E3 E3 A2 D0 D0 A2 E3', 'Studsigt och lugnt.'],
+  ['Reggae', 'Em-gung', 'Em', 'E0 E3 A0 A2 D0 A2 E3', 'Mörkt och mjukt.'],
+  ['Reggae', 'Ljus melodi i Am', 'Am', 'B1 B3 e0 B3 B1 G2', 'Spela mellan sångraderna.'],
+  ['Reggae', 'Solskensmelodi', 'G-dur', 'e3 e0 B3 B0 B3 e0 e3', 'Lätt och glatt.'],
+];
+const TAB_STR = ['e', 'B', 'G', 'D', 'A', 'E'];
+const TAB_IDX = { E: 0, A: 1, D: 2, G: 3, B: 4, e: 5 };
+function playRiff(tab) {
+  const t0 = engine.now() + 0.05;
+  tab.split(' ').forEach((n, i) => { const si = TAB_IDX[n[0]], m = OPEN_MIDI[si] + Number(n.slice(1)); engine.note(440 * Math.pow(2, (m - 69) / 12), t0 + i * 0.36, { vel: 0.9, wound: si < 3 }); });
+}
+function playProg(list, easy, reggae) {
+  const t0 = engine.now() + 0.05;
+  list.forEach((k, i) => { if (!CHORD_DB[k]) return; const f = voicing(k, easy).frets;
+    if (reggae) [0.4, 1.2, 2.0, 2.8].forEach((b) => engine.strum(f, t0 + i * 3.2 + b, 'D', { vel: 0.9, stagger: 0.006, strings: [3, 4, 5], dur: 0.1 }));
+    else engine.strum(f, t0 + i * 1.2, 'D', { vel: 0.85 }); });
+}
+function RiffTab({ tab }) {
+  const notes = tab.split(' ');
+  return html`<div className="rtab" role="img" aria-label=${'Tabulatur: ' + tab}>
+    ${TAB_STR.map((s) => html`<div key=${s} className="rtab-row"><b>${s}</b>${notes.map((n, i) => html`<span key=${i}>${n[0] === s ? html`<i>${n.slice(1)}</i>` : null}</span>`)}</div>`)}
+  </div>`;
+}
 const FREE_CHORDS = ['C', 'D', 'Dm', 'E', 'Em', 'F', 'G', 'Gm', 'A', 'Am', 'Bm', 'Bb', 'C#m', 'F#m', 'C7', 'D7', 'E7', 'G7', 'A7', 'B7', 'Am7', 'Em7', 'Dm7'];
 const KEY_CHORDS = { G: ['G', 'C', 'D', 'Em', 'Am', 'Bm'], C: ['C', 'F', 'G', 'Am', 'Dm', 'Em'], D: ['D', 'G', 'A', 'Bm', 'Em', 'F#m'], A: ['A', 'D', 'E', 'F#m', 'Bm', 'C#m'], E: ['E', 'A', 'B', 'C#m', 'F#m', 'G#m'], F: ['F', 'Bb', 'C', 'Dm', 'Gm', 'Am'] };
 function guessChord(ch, easy) {
@@ -3436,6 +3490,8 @@ function App() {
   const P = useRef(prog);
   const [toasts, setToasts] = useState([]);
   const [game, setGame] = useState('quiz');
+  const [gKey, setGKey] = useState('G');
+  const [gPart, setGPart] = useState('foljder');
   const [chPair, setChPair] = useState(['Am', 'Em']);
   const [easy, setEasy] = useState(false);
   const [muted, setMuted] = useState(false);
@@ -4280,7 +4336,51 @@ function App() {
   </div>`;
 
   const BIB = [['spela', 'Låtar', 'Alla låtar och dina egna', 'var(--brass)'], ['skank', 'Rytm', 'Skank och tjack med vågen', 'var(--leaf)'], ['ackord', 'Ackord', 'Alla grepp med ljud', 'var(--f1)'],
-    ['byten', 'Ackordbyten', 'Öva två ackord', 'var(--ember)'], ['spel', 'Spel', 'Quiz och 1-minutsutmaningen', '#c07bff'], ['stam', 'Stämmare', 'Lyssnar på gitarren', 'var(--f3)']];
+    ['byten', 'Ackordbyten', 'Öva två ackord', 'var(--ember)'], ['spel', 'Spel', 'Quiz och 1-minutsutmaningen', '#c07bff'], ['stam', 'Stämmare', 'Lyssnar på gitarren', 'var(--f3)'], ['guide', 'Följder och riff', 'Ackord som passar ihop', 'var(--brass)']];
+  const chordCard = (k, i) => CHORD_DB[k] ? html`<${Diagram} key=${k + i} k=${k} easy=${easy} onClick=${() => engine.playChord(voicing(k, easy).frets)} />`
+    : html`<div key=${k + i} className="gd-chip">${k}<small>barré, finns ej i tabellen</small></div>`;
+  const inKey = (steps) => steps.split(' ').map((d) => GUIDE_KEYS[gKey][GUIDE_IDX[d]]);
+  const GuideTab = html`<div style=${{ display: 'grid', gap: 18 }}>
+    <div><h2 className="page">Följder och riff</h2><p className="lead">Ackord som passar ihop, färdiga följder och riff att spela en sträng i taget. Tryck på ett grepp för att höra det.</p></div>
+    <div className="seg" role="group" aria-label="Del">${[['foljder', 'Följder'], ['reggae', 'Reggae'], ['riff', 'Riff']].map(([id, l]) => html`<button key=${id} aria-pressed=${gPart === id} onClick=${() => setGPart(id)}>${l}</button>`)}</div>
+    ${gPart === 'foljder' ? html`
+      <section className="card" style=${{ display: 'grid', gap: 12 }}>
+        <div className="row between"><h3 style=${{ margin: 0 }}>Välj tonart</h3>
+          <div className="row" style=${{ gap: 6 }}>${Object.keys(GUIDE_KEYS).map((k) => html`<button key=${k} className=${'chip' + (k === gKey ? ' on' : '')} onClick=${() => setGKey(k)}>${k}</button>`)}</div></div>
+        <p className="muted" style=${{ margin: 0 }}>Alla sex ackord hör ihop. Börja med G eller C, där finns alla greppen utan barré.</p>
+        <div className="diagrams gd-six">${GUIDE_KEYS[gKey].map((k, i) => html`<div key=${k} className="gd-deg"><small>${GUIDE_DEG[i][0]} · ${GUIDE_DEG[i][1]}</small>${chordCard(k, i)}</div>`)}</div>
+      </section>
+      <section className="card" style=${{ display: 'grid', gap: 14 }}>
+        <h3 style=${{ margin: 0 }}>Färdiga följder i ${gKey}</h3>
+        ${GUIDE_PROGS.map(([t, st]) => { const list = inKey(st); return html`<div key=${t} className="gd-prog">
+          <div className="row between"><div><b>${t}</b> <span className="muted">${st.split(' ').join('–')}</span></div><button className="chip" onClick=${() => playProg(list, easy)}>Lyssna</button></div>
+          <div className="diagrams" style=${{ gridTemplateColumns: `repeat(${list.length}, minmax(0, 1fr))` }}>${list.map(chordCard)}</div></div>`; })}
+      </section>
+      <section className="card" style=${{ display: 'grid', gap: 10 }}>
+        <h3 style=${{ margin: 0 }}>Vart går jag härnäst?</h3>
+        ${GUIDE_NEXT.map(([d, to]) => html`<div key=${d} className="gd-next"><b>${GUIDE_KEYS[gKey][GUIDE_IDX[d]]}</b><span>→</span>${inKey(to).map((k, i) => html`<button key=${i} className="chip" onClick=${() => CHORD_DB[k] && engine.playChord(voicing(k, easy).frets)}>${k}</button>`)}</div>`)}
+        <p className="muted" style=${{ margin: 0 }}>Först i raden låter mest naturligt. Byt gärna V mot V7 inför steget hem.</p>
+      </section>` : null}
+    ${gPart === 'reggae' ? html`
+      <section className="card" style=${{ display: 'grid', gap: 12 }}>
+        <h3 style=${{ margin: 0 }}>Reggaerytmen</h3>
+        <div className="gd-beats">${['Tyst', 'Slag', 'Tyst', 'Slag'].map((l, i) => html`<div key=${i} className=${l === 'Slag' ? 'on' : ''}><b>${i + 1}</b>${l}</div>`)}</div>
+        <p className="muted" style=${{ margin: 0 }}>Ett kort slag nedåt på de tre tunnaste strängarna på 2 och 4. Släpp greppet lite direkt efter, så blir det tjack.</p>
+      </section>
+      <section className="card" style=${{ display: 'grid', gap: 14 }}>
+        <h3 style=${{ margin: 0 }}>Reggaeföljder</h3>
+        ${REGGAE_PROGS.map(([t, st]) => { const list = st.split(' '); return html`<div key=${t} className="gd-prog">
+          <div className="row between"><b>${t}</b><button className="chip" onClick=${() => playProg(list, easy, true)}>Lyssna</button></div>
+          <div className="diagrams" style=${{ gridTemplateColumns: `repeat(${list.length}, minmax(0, 1fr))` }}>${list.map(chordCard)}</div></div>`; })}
+      </section>` : null}
+    ${gPart === 'riff' || gPart === 'reggae' ? html`
+      <section className="card" style=${{ display: 'grid', gap: 14 }}>
+        <div><h3 style=${{ margin: 0 }}>${gPart === 'reggae' ? 'Reggaeriff' : 'Sköna riff'}</h3><p className="muted" style=${{ margin: '4px 0 0' }}>Varje rad är en sträng, tunnaste överst. Siffran är bandet, 0 är öppen sträng.</p></div>
+        ${RIFFS.filter((r) => (gPart === 'reggae') === (r[0] === 'Reggae')).map(([cat, t, key, tab, tip]) => html`<div key=${t} className="gd-prog">
+          <div className="row between"><div><b>${t}</b> <span className="muted">${key}</span></div><button className="chip" onClick=${() => playRiff(tab)}>Lyssna</button></div>
+          <${RiffTab} tab=${tab} /><p className="muted" style=${{ margin: 0 }}>${tip}</p></div>`)}
+      </section>` : null}
+  </div>`;
   const BibTab = () => html`<div style=${{ display: 'grid', gap: 18 }}>
     <h2 className="page">Bibliotek</h2>
     <div className="bib">${BIB.map(([id, t, d, c]) => html`<button key=${id} className="bib-c" onClick=${() => goTab(id)}>
@@ -4349,7 +4449,7 @@ function App() {
       <div className="badges">${BADGES.map((b) => { const got = prog.badges.includes(b.id);
         return html`<div key=${b.id} className=${'badge-c' + (got ? ' got' : '')}><span className="ring">${b.ch}</span><b>${b.title}</b><span>${b.desc}</span></div>`; })}</div>
     </section>
-    <p className="muted" style=${{ fontSize: 12 }}>Dina framsteg sparas i den här webbläsaren på den här enheten. Version 39.</p>
+    <p className="muted" style=${{ fontSize: 12 }}>Dina framsteg sparas i den här webbläsaren på den här enheten. Version 40.</p>
   </div>`;
 
   const SpelTab = html`<div style=${{ display: 'grid', gap: 18 }}>
@@ -4372,12 +4472,12 @@ function App() {
 
   const TABS = [['vag', 'Min väg', 'Väg'], ['spela', 'Spela låtar', 'Låtar'], ['spel', 'Spel', 'Spel'], ['skank', 'Skank-skola', 'Skank'], ['ackord', 'Ackordtabell', 'Ackord'], ['byten', 'Ackordbyten', 'Byten'], ['stam', 'Stämning', 'Stäm']];
   const NAV = [['vag', 'Idag', 'Idag'], ['spela', 'Låtar', 'Låtar'], ['skank', 'Rytm', 'Rytm'], ['bib', 'Bibliotek', 'Bibliotek']];
-  const navOn = (id) => tab === id || (id === 'bib' && ['ackord', 'byten', 'spel', 'stam'].includes(tab));
+  const navOn = (id) => tab === id || (id === 'bib' && ['ackord', 'byten', 'spel', 'stam', 'guide'].includes(tab));
   const TabIcon = {
     bib: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',
     vag: 'M5 19c3-1 3-6 7-7s4-6 7-7', spela: 'M9 18V6l10-2v12M9 18a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0zM19 16a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z',
     spel: 'M6 9h12a3 3 0 0 1 3 3v2a3 3 0 0 1-5 2l-1-1H9l-1 1a3 3 0 0 1-5-2v-2a3 3 0 0 1 3-3zM8 11v3M6.5 12.5h3M16 12h.01', skank: 'M4 12h3l2-6 4 12 2-6h5',
-    ackord: 'M6 4v16M10 4v16M14 4v16M18 4v16M4 8h16M4 13h16', byten: 'M4 8h13l-3-3M20 16H7l3 3', stam: 'M12 3v10M8 7l4-4 4 4M5 20a7 7 0 0 1 14 0',
+    ackord: 'M6 4v16M10 4v16M14 4v16M18 4v16M4 8h16M4 13h16', guide: 'M4 17h4l3-10 3 10h6M4 7h3M17 7h3', byten: 'M4 8h13l-3-3M20 16H7l3 3', stam: 'M12 3v10M8 7l4-4 4 4M5 20a7 7 0 0 1 14 0',
   };
 
   return html`<div className="app">
@@ -4398,7 +4498,7 @@ function App() {
       </div>
     </div></header>
     <main className="wrap">
-      ${tab === 'vag' ? HomeTab() : tab === 'bib' ? BibTab() : tab === 'spel' ? SpelTab : tab === 'spela' ? SpelaTab : tab === 'ackord' ? AckordTab : tab === 'skank' ? SkankTab : tab === 'byten' ? BytenTab : StamTab}
+      ${tab === 'vag' ? HomeTab() : tab === 'bib' ? BibTab() : tab === 'spel' ? SpelTab : tab === 'spela' ? SpelaTab : tab === 'ackord' ? AckordTab : tab === 'guide' ? GuideTab : tab === 'skank' ? SkankTab : tab === 'byten' ? BytenTab : StamTab}
       ${['spela', 'skank', 'byten'].includes(tab) ? html`<p className="muted desk-only" style=${{ fontSize: 12 }}>Tryck <span className="kbd">mellanslag</span> för att starta och stoppa.</p>` : null}
     </main>
     ${['spela', 'skank', 'byten'].includes(tab) ? html`<div className="mbar">
