@@ -1283,8 +1283,8 @@ class Engine {
     this.dSend = c.createGain(); this.dSend.gain.value = 0.22; this.dSend.connect(this.verb);
     // gitarrkropp: varm resonans + mjuk diskant
     this.body = c.createBiquadFilter(); this.body.type = 'peaking'; this.body.frequency.value = 200; this.body.Q.value = 1.2; this.body.gain.value = 4.5;
-    const mid = c.createBiquadFilter(); mid.type = 'peaking'; mid.frequency.value = 2400; mid.Q.value = 0.9; mid.gain.value = 2;
-    const air = c.createBiquadFilter(); air.type = 'lowpass'; air.frequency.value = 5200; air.Q.value = 0.4;
+    const mid = c.createBiquadFilter(); mid.type = 'peaking'; mid.frequency.value = 2400; mid.Q.value = 0.9; mid.gain.value = -2;
+    const air = c.createBiquadFilter(); air.type = 'lowpass'; air.frequency.value = 3800; air.Q.value = 0.4;
     this.body.connect(mid); mid.connect(air); air.connect(this.bus.g);
     this.noise = this.makeNoise(2);
     this.shaper = c.createWaveShaper();
@@ -1314,20 +1314,20 @@ class Engine {
   ks(freq, wound) {
     const key = Math.round(freq * 10) + (wound ? 'w' : 'n');
     if (this.cache.has(key)) return this.cache.get(key);
-    const sr = this.ctx.sampleRate, N = Math.max(4, Math.floor(sr / freq - 0.5)), f0 = sr / (N + 0.5);
-    const secs = 3.4, len = Math.floor(secs * sr), out = new Float32Array(len), buf = new Float32Array(N);
-    const soft = wound ? 0.42 : 0.6; // nylon: mjukare anslag
+    const LK = 0.72, sr = this.ctx.sampleRate, N = Math.max(4, Math.floor(sr / freq - 0.5 - (1 - LK) / LK)), f0 = sr / (N + 0.5 + (1 - LK) / LK);
+    const secs = 2.6, len = Math.floor(secs * sr), out = new Float32Array(len), buf = new Float32Array(N);
+    const soft = wound ? 0.8 : 0.86; // nylon: fingertoppen ger ett mjukt, mörkt anslag
     let prev = 0, mean = 0;
     for (let i = 0; i < N; i++) { prev += (Math.random() * 2 - 1 - prev) * (1 - soft); buf[i] = prev; mean += prev; }
     mean /= N;
-    const tmp = Float32Array.from(buf, (v) => v - mean), p = Math.max(1, Math.floor(N * 0.14));
+    const tmp = Float32Array.from(buf, (v) => v - mean), p = Math.max(1, Math.floor(N * 0.2));
     for (let i = 0; i < N; i++) buf[i] = tmp[i] - 0.7 * tmp[(i - p + N) % N];
-    const t60 = wound ? 3.4 : 2.8, decay = Math.pow(0.001, 1 / (t60 * sr));
-    let idx = 0, peak = 0;
+    const t60 = wound ? 1.8 : 1.4, decay = Math.pow(0.001, 1 / (t60 * sr));
+    let idx = 0, peak = 0, lp = 0;
     for (let i = 0; i < len; i++) {
       const a = buf[idx], n = idx + 1 === N ? 0 : idx + 1;
       out[i] = a; if (Math.abs(a) > peak) peak = Math.abs(a);
-      buf[idx] = decay * 0.5 * (a + buf[n]); idx = n;
+      lp += LK * (0.5 * (a + buf[n]) - lp); buf[idx] = decay * lp; idx = n; // extra dämpning av diskanten, som nylon
     }
     const fade = Math.floor(0.05 * sr);
     for (let i = 0; i < len; i++) { out[i] = (out[i] / (peak || 1)) * 0.5; if (i > len - fade) out[i] *= (len - i) / fade; }
@@ -4449,7 +4449,7 @@ function App() {
       <div className="badges">${BADGES.map((b) => { const got = prog.badges.includes(b.id);
         return html`<div key=${b.id} className=${'badge-c' + (got ? ' got' : '')}><span className="ring">${b.ch}</span><b>${b.title}</b><span>${b.desc}</span></div>`; })}</div>
     </section>
-    <p className="muted" style=${{ fontSize: 12 }}>Dina framsteg sparas i den här webbläsaren på den här enheten. Version 40.</p>
+    <p className="muted" style=${{ fontSize: 12 }}>Dina framsteg sparas i den här webbläsaren på den här enheten. Version 41.</p>
   </div>`;
 
   const SpelTab = html`<div style=${{ display: 'grid', gap: 18 }}>
