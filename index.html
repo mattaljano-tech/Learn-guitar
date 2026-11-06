@@ -4259,7 +4259,7 @@ function App() {
     v.addEventListener('ended', () => launchTimers.current.push(setTimeout(finish, 700)));
     b.addEventListener('click', finish);
     v.play().catch(finish);
-    launchTimers.current.push(setTimeout(finish, 11000));
+    launchTimers.current.push(setTimeout(finish, 12000));
   };
   const HomeTab = () => html`<div className="home">
     <div className="home-day">
@@ -4349,7 +4349,7 @@ function App() {
       <div className="badges">${BADGES.map((b) => { const got = prog.badges.includes(b.id);
         return html`<div key=${b.id} className=${'badge-c' + (got ? ' got' : '')}><span className="ring">${b.ch}</span><b>${b.title}</b><span>${b.desc}</span></div>`; })}</div>
     </section>
-    <p className="muted" style=${{ fontSize: 12 }}>Dina framsteg sparas i den här webbläsaren på den här enheten. Version 38.</p>
+    <p className="muted" style=${{ fontSize: 12 }}>Dina framsteg sparas i den här webbläsaren på den här enheten. Version 39.</p>
   </div>`;
 
   const SpelTab = html`<div style=${{ display: 'grid', gap: 18 }}>
