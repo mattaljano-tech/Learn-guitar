@@ -911,7 +911,7 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 .beatcard .beat.tj.cur{background:color-mix(in oklab,#ff9a4a 28%,var(--surface))}
 @media (max-width:760px){.viewbar{gap:6px 10px}.vb-chip{padding:5px 9px;font-size:12px}}
 .h3-cap{align-items:center;justify-content:center;gap:14px;padding:10px 14px 12px}
-.h3-mini{display:grid;justify-items:center;gap:2px;width:80px}
+.h3-mini{display:grid;justify-items:center;gap:2px;width:84px;min-width:0}
 .h3-mini b{font-family:var(--f-display);font-size:16px;font-weight:800;line-height:1;color:var(--text)}
 .h3-mini.nxt{opacity:.55}
 .h3-mini .dg{background:transparent;border:0;padding:0;width:74px;max-width:74px}
@@ -925,7 +925,8 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 .beatcard .beat.cur{background:color-mix(in oklab,var(--brass) 12%,var(--surface));box-shadow:inset 0 0 0 1.5px color-mix(in oklab,var(--brass) 35%,transparent)}
 .beatcard .beat.cur *{color:color-mix(in oklab,var(--text) 80%,transparent)!important}
 .beatcard .beat.tj.cur{background:color-mix(in oklab,#ff9a4a 14%,var(--surface))}
-.h3-cap{display:grid;grid-template-columns:auto 1fr auto;justify-items:center;gap:12px}
+.h3-cap{display:grid;grid-template-columns:84px minmax(0,1fr) 84px;justify-items:center;gap:12px}
+.h3-mini>*{min-width:0}
 .h3-gauge{display:grid;justify-self:stretch;align-self:stretch;align-content:center;width:100%;min-width:70px;padding-top:18px}
 .h3-gauge .hp-meter{position:relative;right:auto;top:auto;bottom:auto;width:100%;height:14px}
 .h3-gauge .hp-fill{transform-origin:0 50%;transform:scaleX(0);background:linear-gradient(90deg,color-mix(in oklab,var(--leaf) 55%,transparent),var(--leaf))}
@@ -2499,7 +2500,7 @@ function Hand3D({ cur, next, upcoming, playing, stepSec, chords, pulse, easy }) 
         onLoadedData=${() => { if (!active && cur && restPair(cur, next) && restPair(cur, next).join('>') === id) show(restPair(cur, next), false); }} />`; })}
     </div>
     <div className="h3-cap">
-      ${cur && CHORD_DB[cur] ? html`<div className="h3-mini now"><b>${CHORD_DB[cur].name}</b><${Diagram} k=${cur} easy=${easy} onClick=${() => engine.playChord(voicing(cur, easy).frets)} /></div>` : null}
+      ${cur && CHORD_DB[cur] ? html`<div className="h3-mini cur"><b>${CHORD_DB[cur].name}</b><${Diagram} k=${cur} easy=${easy} onClick=${() => engine.playChord(voicing(cur, easy).frets)} /></div>` : null}
       ${upcoming && upcoming !== cur && CHORD_DB[upcoming] ? html`${pulse ? html`<div className="h3-gauge">${pulse}</div>` : html`<svg className="h3-arrow" viewBox="0 0 40 20" aria-label="sedan"><path d="M2 10h32M26 3l8 7-8 7" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"/></svg>`}
         <div className="h3-mini nxt"><b>${CHORD_DB[upcoming].name}</b><${Diagram} k=${upcoming} easy=${easy} onClick=${() => engine.playChord(voicing(upcoming, easy).frets)} /></div>` : null}
     </div>
