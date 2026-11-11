@@ -925,6 +925,10 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 .beatcard .beat.cur{background:color-mix(in oklab,var(--brass) 12%,var(--surface));box-shadow:inset 0 0 0 1.5px color-mix(in oklab,var(--brass) 35%,transparent)}
 .beatcard .beat.cur *{color:color-mix(in oklab,var(--text) 80%,transparent)!important}
 .beatcard .beat.tj.cur{background:color-mix(in oklab,#ff9a4a 14%,var(--surface))}
+.h3-cap{display:grid;grid-template-columns:1fr auto 1fr;justify-items:center}
+.h3-gauge{display:grid;justify-items:center;gap:6px;align-self:stretch;align-content:center}
+.h3-gauge .hp-meter{position:relative;right:auto;top:auto;bottom:auto;width:14px;height:84px}
+.h3-arrow.sm{width:22px;height:12px}
 main,.stage,main > div,.transport,.chart,.part,section.card[style],.mixer{grid-template-columns:minmax(0,1fr)}
 .mbar,.sheet-head{display:none}
 .chip.pick-song{display:none}
@@ -2491,11 +2495,10 @@ function Hand3D({ cur, next, upcoming, playing, stepSec, chords, pulse, easy }) 
       ${pairs.map((p) => { const id = p.join('>'); return html`<video key=${id} ref=${(el) => { if (el) vids.current[id] = el; }} src=${handClip(p[0], p[1])}
         muted playsInline preload="auto" disablePictureInPicture className=${active === id ? 'on' : ''}
         onLoadedData=${() => { if (!active && cur && restPair(cur, next) && restPair(cur, next).join('>') === id) show(restPair(cur, next), false); }} />`; })}
-      ${pulse}
     </div>
     <div className="h3-cap">
       ${cur && CHORD_DB[cur] ? html`<div className="h3-mini now"><b>${CHORD_DB[cur].name}</b><${Diagram} k=${cur} easy=${easy} onClick=${() => engine.playChord(voicing(cur, easy).frets)} /></div>` : null}
-      ${upcoming && upcoming !== cur && CHORD_DB[upcoming] ? html`<svg className="h3-arrow" viewBox="0 0 40 20" aria-label="sedan"><path d="M2 10h32M26 3l8 7-8 7" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      ${upcoming && upcoming !== cur && CHORD_DB[upcoming] ? html`${pulse ? html`<div className="h3-gauge">${pulse}<svg className="h3-arrow sm" viewBox="0 0 40 20" aria-hidden="true"><path d="M2 10h32M26 3l8 7-8 7" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"/></svg></div>` : html`<svg className="h3-arrow" viewBox="0 0 40 20" aria-label="sedan"><path d="M2 10h32M26 3l8 7-8 7" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"/></svg>`}
         <div className="h3-mini nxt"><b>${CHORD_DB[upcoming].name}</b><${Diagram} k=${upcoming} easy=${easy} onClick=${() => engine.playChord(voicing(upcoming, easy).frets)} /></div>` : null}
     </div>
   </section>`;
@@ -3704,7 +3707,7 @@ function App() {
   const [lefty, setLefty] = useState(() => lsGet('ng-lefty', '0') === '1');
   const [views, setViews] = useState(() => { try { return { pa: true, beat: true, hand: true, ...JSON.parse(lsGet('ng-views', '{}')) }; } catch (e) { return { pa: true, beat: true, hand: true }; } });
   const togView = (k) => { const n = { ...views, [k]: !views[k] }; setViews(n); lsSet('ng-views', JSON.stringify(n)); };
-  const [marker, setMarker] = useState(() => lsGet('ng-marker', 'top')); // top | ball | meter
+  const [marker, setMarker] = useState(() => (lsGet('ng-marker', 'top') === 'top' ? 'top' : 'meter')); // top | meter
   const pickMarker = (m) => { setMarker(m); lsSet('ng-marker', m); };
   const [vibe, setVibe] = useState(() => lsGet('ng-vibe', '1') !== '0');
   useEffect(() => { document.documentElement.classList.toggle('lefty', lefty); lsSet('ng-lefty', lefty ? '1' : '0'); }, [lefty]);
@@ -4035,7 +4038,7 @@ function App() {
         <div className="vb-group"><span className="vb-lab">Visa</span>
           ${[['pa', 'Ackord'], ['beat', 'Komp'], ['hand', 'Hand']].map(([k, l]) => html`<button key=${k} className=${'vb-chip' + (views[k] ? ' on' : '')} aria-pressed=${views[k]} onClick=${() => togView(k)}>${l}</button>`)}</div>
         <div className="vb-group"><span className="vb-lab">Takt</span>
-          ${[['top', 'Boll i ackord'], ['ball', 'Boll vid hand'], ['meter', 'Mätare']].map(([k, l]) => html`<button key=${k} className=${'vb-chip' + (marker === k ? ' on' : '')} aria-pressed=${marker === k} onClick=${() => pickMarker(k)}>${l}</button>`)}</div>
+          ${[['top', 'Boll i ackord'], ['meter', 'Mätare vid handen']].map(([k, l]) => html`<button key=${k} className=${'vb-chip' + (marker === k ? ' on' : '')} aria-pressed=${marker === k} onClick=${() => pickMarker(k)}>${l}</button>`)}</div>
       </section>
 
       ${views.pa ? html`<${PlayAlong} bars=${bars} startBar=${startBar} playing=${playing === 'song'} easy=${easy} noBall=${marker !== 'top' && views.hand} />` : null}
@@ -4046,7 +4049,7 @@ function App() {
 
       ${views.hand ? html`<${Hand3D} cur=${shownChord} next=${handNext} upcoming=${handUpcoming} easy=${easy} playing=${playing === 'song' && pos.bar >= 0} stepSec=${30 / (origOn ? song.bpm : bpm)}
         chords=${[...new Set(bars.flatMap(barChords))]}
-        pulse=${marker === 'top' && views.pa ? null : html`<${HandPulse} bars=${bars} startBar=${startBar} playing=${playing === 'song'} mode=${marker === 'meter' ? 'meter' : 'ball'} />`} />` : null}
+        pulse=${marker === 'top' && views.pa ? null : html`<${HandPulse} bars=${bars} startBar=${startBar} playing=${playing === 'song'} mode="meter" />`} />` : null}
 
       <section className="card transport" aria-label="Kompband">
         <div className="tp-main">
