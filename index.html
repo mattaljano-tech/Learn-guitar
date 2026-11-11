@@ -871,7 +871,7 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 .h3-stage video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;pointer-events:none}
 .h3-stage video.on{opacity:1}
 .lefty .h3-stage video{transform:scaleX(-1)}
-.h3-tog{margin-left:auto;padding:6px 11px;font-size:12px}
+
 .h3-cap{display:flex;align-items:baseline;gap:10px;padding:10px 16px 12px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
 .h3-cap b{font-family:var(--f-display);font-size:18px;font-weight:800;color:var(--text)}
 .now{position:relative}
@@ -889,6 +889,27 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
   .beatcard{padding:10px 8px}
   .h3-cap{padding:8px 12px 10px}
 }
+/* Vyväljare och taktmarkör i handrutan */
+.viewbar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
+.vb-group{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.vb-lab{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin-right:2px}
+.vb-chip{padding:6px 11px;border-radius:999px;font-size:12.5px;font-weight:700;color:var(--muted);border:1px solid var(--line);background:transparent}
+.vb-chip.on{color:var(--text);background:color-mix(in oklab,var(--leaf) 16%,var(--surface));border-color:color-mix(in oklab,var(--leaf) 45%,transparent)}
+.hp-meter{position:absolute;right:14px;top:12%;bottom:14%;width:14px;border-radius:8px;background:color-mix(in oklab,var(--text) 13%,transparent);box-shadow:inset 0 0 0 1px color-mix(in oklab,var(--text) 10%,transparent);overflow:hidden}
+.hp-fill{position:absolute;inset:0;transform-origin:50% 100%;transform:scaleY(0);border-radius:8px;background:linear-gradient(0deg,color-mix(in oklab,var(--leaf) 55%,transparent),var(--leaf))}
+.hp-fill.hot{background:linear-gradient(0deg,var(--leaf),#5be08a)}
+.hp-ball-lane{position:absolute;right:12px;top:10%;bottom:16%;width:26px}
+.hp-floor{position:absolute;left:0;right:0;bottom:0;height:3px;border-radius:2px;background:color-mix(in oklab,var(--text) 18%,transparent)}
+.hp-ball-wrap{position:absolute;left:0;right:0;bottom:3px;top:0;will-change:transform}
+.hp-ball{position:absolute;left:50%;bottom:0;width:20px;height:20px;margin-left:-10px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,var(--leaf-2) 45%,var(--leaf));box-shadow:0 0 14px color-mix(in oklab,var(--leaf) 60%,transparent)}
+/* Lugnare komp: ljusa toner så att blicken stannar på handen */
+.beatcard .beat{background:color-mix(in oklab,var(--text) 3%,var(--surface));border-color:transparent}
+.beatcard .beat.hit{background:color-mix(in oklab,var(--brass) 7%,var(--surface));border-color:color-mix(in oklab,var(--brass) 18%,transparent)}
+.beatcard .beat .a{color:color-mix(in oklab,var(--text) 70%,transparent)}
+.beatcard .beat.cur{background:color-mix(in oklab,var(--brass) 26%,var(--surface));transform:none;box-shadow:inset 0 0 0 1.5px color-mix(in oklab,var(--brass) 55%,transparent)}
+.beatcard .beat.cur *{color:var(--text)!important}
+.beatcard .beat.tj.cur{background:color-mix(in oklab,#ff9a4a 28%,var(--surface))}
+@media (max-width:760px){.viewbar{gap:6px 10px}.vb-chip{padding:5px 9px;font-size:12px}}
 main,.stage,main > div,.transport,.chart,.part,section.card[style],.mixer{grid-template-columns:minmax(0,1fr)}
 .mbar,.sheet-head{display:none}
 .chip.pick-song{display:none}
@@ -2323,7 +2344,7 @@ const SP = 46, LAND_Y = 74, ARC_H = 56;
 const paLand = () => (window.matchMedia && window.matchMedia('(max-width:760px)').matches ? 50 : LAND_Y);
 // Korten glider nästan jämnt och bromsar bara lite mot mitten. Bollen och ljudet följer klockan linjärt, så rytmen påverkas inte.
 const glide = (p) => 0.6 * p + 0.4 * p * p * (3 - 2 * p);
-function PlayAlong({ bars, startBar, playing, easy }) {
+function PlayAlong({ bars, startBar, playing, easy, noBall }) {
   const segs = useMemo(() => compressBars(bars), [bars]);
   const ring = useMemo(() => [...segs, ...segs.slice(0, 2)], [segs]);
   const segAt = (b) => Math.max(0, segs.findIndex((s) => b >= s.start && b < s.start + s.len));
@@ -2378,7 +2399,7 @@ function PlayAlong({ bars, startBar, playing, easy }) {
   const hear = (k) => engine.playChord(voicing(k, easy).frets);
   const dots = []; for (let i = 0; i < seg.len * 2; i++) dots.push(html`<i key=${i} className=${(i <= beat ? 'on' : '') + (i && i % 4 === 0 ? ' gap' : '')}></i>`);
   return html`<section className="pa" aria-label="Spela med">
-    <div className="pa-msg"><span className="pa-part">${seg.part}</span><span>${playing ? html`Slå när bollen <b>landar</b>` : 'Tryck på Spela för att starta'}</span></div>
+    <div className="pa-msg"><span className="pa-part">${seg.part}</span><span>${noBall ? (playing ? 'Byt när markören i handrutan är framme' : 'Tryck på Spela för att starta') : playing ? html`Slå när bollen <b>landar</b>` : 'Tryck på Spela för att starta'}</span></div>
     ${count != null ? html`<div className="pa-count">${count}</div>` : null}
     <div className="pa-track" ref=${track}>
       ${ring.map((g, j) => html`<div key=${j} className=${'pa-card' + (j === si ? ' cur' : '')} style=${{ left: 50 + j * SP + '%' }}>
@@ -2386,7 +2407,7 @@ function PlayAlong({ bars, startBar, playing, easy }) {
         <${Diagram} k=${g.chord} easy=${easy} onClick=${() => hear(g.chord)} />
       </div>`)}
     </div>
-    <div className="pa-ball center" ref=${ball}></div>
+    ${noBall ? null : html`<div className="pa-ball center" ref=${ball}></div>`}
     <div className="pa-dots" aria-hidden="true">${dots}</div>
   </section>`;
 }
@@ -2400,7 +2421,33 @@ const hk = (k) => k.replace('/', '_').replace('#', 's');
 const handClip = (a, b) => 'hand/' + hk(a) + '__' + hk(b) + '.webm';
 // Ett vilande grepp visas som första bilden i ett klipp som börjar i det ackordet.
 const restPair = (k, prefer) => (prefer && HAND_SET.has(k + '>' + prefer) ? [k, prefer] : HAND_PAIRS.find((p) => p[0] === k) || null);
-function Hand3D({ cur, next, playing, stepSec, chords, hidePa, setHidePa }) {
+// Taktmarkör i handrutan: en boll som studsar och landar på bytet, eller en mätare som fylls inför bytet.
+function HandPulse({ bars, startBar, playing, mode }) {
+  const segs = useMemo(() => compressBars(bars), [bars]);
+  const el = useRef(null);
+  useEffect(() => {
+    const set = (p) => { const e = el.current; if (!e) return;
+      if (mode === 'ball') e.style.transform = `translateY(${(-4 * p * (1 - p) * 100).toFixed(1)}%)`;
+      else { e.style.transform = `scaleY(${p.toFixed(3)})`; e.classList.toggle('hot', p > 0.8); } };
+    if (!playing) { set(0); return; }
+    let raf;
+    const loop = () => {
+      raf = requestAnimationFrame(loop);
+      const c = clockNow(); if (!c) return;
+      const pBar = (c.step + c.frac) / 8;
+      if (c.bar < 0) { set(pBar); return; }
+      const abs = ((startBar + c.bar) % bars.length + pBar) * 2;
+      const k = Math.max(0, segs.findIndex((g) => abs >= g.start && abs < g.start + g.len)), g = segs[k];
+      set(Math.min(1, (abs - g.start) / g.len));
+    };
+    loop();
+    return () => cancelAnimationFrame(raf);
+  }, [playing, startBar, segs, bars, mode]);
+  return mode === 'ball'
+    ? html`<div className="hp-ball-lane" aria-hidden="true"><div className="hp-floor"></div><div className="hp-ball-wrap" ref=${el}><div className="hp-ball"></div></div></div>`
+    : html`<div className="hp-meter" aria-hidden="true"><div className="hp-fill" ref=${el}></div></div>`;
+}
+function Hand3D({ cur, next, playing, stepSec, chords, pulse }) {
   const pairs = useMemo(() => {
     const out = [];
     for (let i = 0; i < chords.length; i++) for (let j = 0; j < chords.length; j++) if (i !== j && HAND_SET.has(chords[i] + '>' + chords[j])) out.push([chords[i], chords[j]]);
@@ -2431,9 +2478,9 @@ function Hand3D({ cur, next, playing, stepSec, chords, hidePa, setHidePa }) {
       ${pairs.map((p) => { const id = p.join('>'); return html`<video key=${id} ref=${(el) => { if (el) vids.current[id] = el; }} src=${handClip(p[0], p[1])}
         muted playsInline preload="auto" disablePictureInPicture className=${active === id ? 'on' : ''}
         onLoadedData=${() => { if (!active && cur && restPair(cur, next) && restPair(cur, next).join('>') === id) show(restPair(cur, next), false); }} />`; })}
+      ${pulse}
     </div>
-    <div className="h3-cap"><b>${d ? d.name : cur || ''}</b><span>${muted.length ? 'Slå inte an ' + muted.join(' och ') : 'Alla sex strängar klingar'}</span>
-      <button className="chip h3-tog" onClick=${() => setHidePa(!hidePa)}>${hidePa ? 'Visa ackordrutan' : 'Bara handen'}</button></div>
+    <div className="h3-cap"><b>${d ? d.name : cur || ''}</b><span>${muted.length ? 'Slå inte an ' + muted.join(' och ') : 'Alla sex strängar klingar'}</span></div>
   </section>`;
 }
 /* ---------------------------------------------------------------- Guitar Hero-läge */
@@ -3638,7 +3685,10 @@ function App() {
   const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : v; } catch (e) { return d; } };
   const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const [lefty, setLefty] = useState(() => lsGet('ng-lefty', '0') === '1');
-  const [hidePa, setHidePa] = useState(() => lsGet('ng-hide-pa', '0') === '1');
+  const [views, setViews] = useState(() => { try { return { pa: true, beat: true, hand: true, ...JSON.parse(lsGet('ng-views', '{}')) }; } catch (e) { return { pa: true, beat: true, hand: true }; } });
+  const togView = (k) => { const n = { ...views, [k]: !views[k] }; setViews(n); lsSet('ng-views', JSON.stringify(n)); };
+  const [marker, setMarker] = useState(() => lsGet('ng-marker', 'top')); // top | ball | meter
+  const pickMarker = (m) => { setMarker(m); lsSet('ng-marker', m); };
   const [vibe, setVibe] = useState(() => lsGet('ng-vibe', '1') !== '0');
   useEffect(() => { document.documentElement.classList.toggle('lefty', lefty); lsSet('ng-lefty', lefty ? '1' : '0'); }, [lefty]);
   useEffect(() => { lsSet('ng-vibe', vibe ? '1' : '0'); }, [vibe]);
@@ -3960,14 +4010,22 @@ function App() {
         </div>
       </div>
 
-      ${hidePa ? null : html`<${PlayAlong} bars=${bars} startBar=${startBar} playing=${playing === 'song'} easy=${easy} />`}
-
-      <section className="card beatcard" aria-label="Slagkomp">
-        <${BeatStrip} pattern=${song.pattern} accents=${song.accents} cur=${playing === 'song' ? pos.step : -1} count=${playing === 'song' && counting ? 1 : null} />
+      <section className="viewbar" aria-label="Vad du ser">
+        <div className="vb-group"><span className="vb-lab">Visa</span>
+          ${[['pa', 'Ackord'], ['beat', 'Komp'], ['hand', 'Hand']].map(([k, l]) => html`<button key=${k} className=${'vb-chip' + (views[k] ? ' on' : '')} aria-pressed=${views[k]} onClick=${() => togView(k)}>${l}</button>`)}</div>
+        <div className="vb-group"><span className="vb-lab">Takt</span>
+          ${[['top', 'Boll i ackord'], ['ball', 'Boll vid hand'], ['meter', 'Mätare']].map(([k, l]) => html`<button key=${k} className=${'vb-chip' + (marker === k ? ' on' : '')} aria-pressed=${marker === k} onClick=${() => pickMarker(k)}>${l}</button>`)}</div>
       </section>
 
-      <${Hand3D} cur=${shownChord} next=${handNext} playing=${playing === 'song' && pos.bar >= 0} stepSec=${30 / (origOn ? song.bpm : bpm)}
-        chords=${[...new Set(bars.flatMap(barChords))]} hidePa=${hidePa} setHidePa=${(v) => { setHidePa(v); lsSet('ng-hide-pa', v ? '1' : '0'); }} />
+      ${views.pa ? html`<${PlayAlong} bars=${bars} startBar=${startBar} playing=${playing === 'song'} easy=${easy} noBall=${marker !== 'top' && views.hand} />` : null}
+
+      ${views.beat ? html`<section className="card beatcard" aria-label="Slagkomp">
+        <${BeatStrip} pattern=${song.pattern} accents=${song.accents} cur=${playing === 'song' ? pos.step : -1} count=${playing === 'song' && counting ? 1 : null} />
+      </section>` : null}
+
+      ${views.hand ? html`<${Hand3D} cur=${shownChord} next=${handNext} playing=${playing === 'song' && pos.bar >= 0} stepSec=${30 / (origOn ? song.bpm : bpm)}
+        chords=${[...new Set(bars.flatMap(barChords))]}
+        pulse=${marker === 'top' && views.pa ? null : html`<${HandPulse} bars=${bars} startBar=${startBar} playing=${playing === 'song'} mode=${marker === 'meter' ? 'meter' : 'ball'} />`} />` : null}
 
       <section className="card transport" aria-label="Kompband">
         <div className="tp-main">
