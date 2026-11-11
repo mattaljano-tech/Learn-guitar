@@ -910,6 +910,21 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 .beatcard .beat.cur *{color:var(--text)!important}
 .beatcard .beat.tj.cur{background:color-mix(in oklab,#ff9a4a 28%,var(--surface))}
 @media (max-width:760px){.viewbar{gap:6px 10px}.vb-chip{padding:5px 9px;font-size:12px}}
+.h3-cap{align-items:center;justify-content:center;gap:14px;padding:10px 14px 12px}
+.h3-mini{display:grid;justify-items:center;gap:2px}
+.h3-mini b{font-family:var(--f-display);font-size:16px;font-weight:800;line-height:1;color:var(--text)}
+.h3-mini.nxt{opacity:.55}
+.h3-mini .dg{background:transparent;border:0;padding:0;width:74px}
+.h3-mini .dg .hd,.h3-mini .dg .ft{display:none}
+.h3-arrow{width:34px;height:18px;color:var(--faint)}
+/* Kompet ännu ljusare */
+.beatcard{background:color-mix(in oklab,var(--surface) 70%,transparent);border-color:color-mix(in oklab,var(--line) 60%,transparent)}
+.beatcard .beat,.beatcard .beat.hit{background:color-mix(in oklab,var(--text) 2.5%,var(--surface));border-color:transparent}
+.beatcard .beat .n,.beatcard .beat .t{color:color-mix(in oklab,var(--text) 38%,transparent)}
+.beatcard .beat .a{color:color-mix(in oklab,var(--text) 45%,transparent)}
+.beatcard .beat.cur{background:color-mix(in oklab,var(--brass) 12%,var(--surface));box-shadow:inset 0 0 0 1.5px color-mix(in oklab,var(--brass) 35%,transparent)}
+.beatcard .beat.cur *{color:color-mix(in oklab,var(--text) 80%,transparent)!important}
+.beatcard .beat.tj.cur{background:color-mix(in oklab,#ff9a4a 14%,var(--surface))}
 main,.stage,main > div,.transport,.chart,.part,section.card[style],.mixer{grid-template-columns:minmax(0,1fr)}
 .mbar,.sheet-head{display:none}
 .chip.pick-song{display:none}
@@ -2447,7 +2462,7 @@ function HandPulse({ bars, startBar, playing, mode }) {
     ? html`<div className="hp-ball-lane" aria-hidden="true"><div className="hp-floor"></div><div className="hp-ball-wrap" ref=${el}><div className="hp-ball"></div></div></div>`
     : html`<div className="hp-meter" aria-hidden="true"><div className="hp-fill" ref=${el}></div></div>`;
 }
-function Hand3D({ cur, next, playing, stepSec, chords, pulse }) {
+function Hand3D({ cur, next, upcoming, playing, stepSec, chords, pulse, easy }) {
   const pairs = useMemo(() => {
     const out = [];
     for (let i = 0; i < chords.length; i++) for (let j = 0; j < chords.length; j++) if (i !== j && HAND_SET.has(chords[i] + '>' + chords[j])) out.push([chords[i], chords[j]]);
@@ -2471,8 +2486,6 @@ function Hand3D({ cur, next, playing, stepSec, chords, pulse }) {
     if (!playing || !active || active.split('>')[1] !== cur) show(restPair(cur, next), false);
   }, [cur, next, playing, pairs]);
   if (!pairs.length) return null;
-  const d = CHORD_DB[cur], v = d ? d.standard : null;
-  const muted = v ? v.frets.map((f, i) => (f < 0 ? STRINGS[i].note : null)).filter(Boolean) : [];
   return html`<section className="card hand3d" aria-label="Handen på greppbrädan">
     <div className="h3-stage">
       ${pairs.map((p) => { const id = p.join('>'); return html`<video key=${id} ref=${(el) => { if (el) vids.current[id] = el; }} src=${handClip(p[0], p[1])}
@@ -2480,7 +2493,11 @@ function Hand3D({ cur, next, playing, stepSec, chords, pulse }) {
         onLoadedData=${() => { if (!active && cur && restPair(cur, next) && restPair(cur, next).join('>') === id) show(restPair(cur, next), false); }} />`; })}
       ${pulse}
     </div>
-    <div className="h3-cap"><b>${d ? d.name : cur || ''}</b><span>${muted.length ? 'Slå inte an ' + muted.join(' och ') : 'Alla sex strängar klingar'}</span></div>
+    <div className="h3-cap">
+      ${cur && CHORD_DB[cur] ? html`<div className="h3-mini now"><b>${CHORD_DB[cur].name}</b><${Diagram} k=${cur} easy=${easy} onClick=${() => engine.playChord(voicing(cur, easy).frets)} /></div>` : null}
+      ${upcoming && upcoming !== cur && CHORD_DB[upcoming] ? html`<svg className="h3-arrow" viewBox="0 0 40 20" aria-label="sedan"><path d="M2 10h32M26 3l8 7-8 7" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        <div className="h3-mini nxt"><b>${CHORD_DB[upcoming].name}</b><${Diagram} k=${upcoming} easy=${easy} onClick=${() => engine.playChord(voicing(upcoming, easy).frets)} /></div>` : null}
+    </div>
   </section>`;
 }
 /* ---------------------------------------------------------------- Guitar Hero-läge */
@@ -3959,6 +3976,10 @@ function App() {
   const hear = (k) => engine.playChord(voicing(k, easy).frets);
 
   const shownChord = playing === 'song' && pos.bar >= 0 ? chordAt(bars[barIdx], pos.step) : selChord;
+  const handUpcoming = (() => { const c0 = shownChord, n = bars.length; if (!n) return null;
+    const start = playing === 'song' && pos.bar >= 0 ? barIdx : startBar, st0 = playing === 'song' && pos.bar >= 0 ? pos.step : -1;
+    for (let i = 0; i <= n; i++) { const b = bars[(start + i) % n]; for (let st = i === 0 ? st0 + 1 : 0; st < 8; st++) { const c = chordAt(b, st); if (c !== c0) return c; } }
+    return null; })();
   const handNext = playing === 'song' && pos.bar >= 0 ? (pos.step < 7 ? chordAt(bars[barIdx], pos.step + 1) : chordAt(bars[(barIdx + 1) % bars.length], 0)) : null;
   const nextChord = bars[(barIdx + 1) % bars.length].chord;
   const skShown = skLevel === 3 ? (playing === 'skank' && pos.bar >= 0 && pos.bar % 2 === 1 ? 'Em' : 'Am') : skChord;
@@ -4023,7 +4044,7 @@ function App() {
         <${BeatStrip} pattern=${song.pattern} accents=${song.accents} cur=${playing === 'song' ? pos.step : -1} count=${playing === 'song' && counting ? 1 : null} />
       </section>` : null}
 
-      ${views.hand ? html`<${Hand3D} cur=${shownChord} next=${handNext} playing=${playing === 'song' && pos.bar >= 0} stepSec=${30 / (origOn ? song.bpm : bpm)}
+      ${views.hand ? html`<${Hand3D} cur=${shownChord} next=${handNext} upcoming=${handUpcoming} easy=${easy} playing=${playing === 'song' && pos.bar >= 0} stepSec=${30 / (origOn ? song.bpm : bpm)}
         chords=${[...new Set(bars.flatMap(barChords))]}
         pulse=${marker === 'top' && views.pa ? null : html`<${HandPulse} bars=${bars} startBar=${startBar} playing=${playing === 'song'} mode=${marker === 'meter' ? 'meter' : 'ball'} />`} />` : null}
 

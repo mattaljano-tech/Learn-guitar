@@ -1,6 +1,6 @@
 /* NylonGitarr Studio – service worker
    Höj VERSION när appen uppdateras, så hämtar telefonen den nya versionen. */
-const VERSION = 'v43';
+const VERSION = 'v44';
 const CACHE = 'nylongitarr-' + VERSION;
 const SHELL = ['./', 'index.html', 'video/scene.jpg', 'video/start.mp4', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png', 'icons/apple-touch-icon.png'];
 const CDN = ['cdnjs.cloudflare.com', 'fonts.googleapis.com', 'fonts.gstatic.com'];
