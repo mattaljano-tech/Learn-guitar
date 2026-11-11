@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="Öva gitarr med kompband, Guitar Hero-läge, skank-skola och stämmare.">
+<meta name="description" content="Öva gitarr med kompband, 3D-grepp, skank-skola och stämmare.">
 <meta name="theme-color" content="#100e0c">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -860,6 +860,34 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
   .hero{grid-template-columns:1fr;justify-items:start}
   .medal{width:76px;height:76px}.medal b{font-size:30px}
   .lvl .mini{display:none}
+}
+/* Kompaktare spela-med-ruta, slagkomp direkt under och 3D-handen */
+.pa{height:300px}
+.pa-card{top:86px}
+.pa-card .dg svg{max-width:124px}
+.beatcard{padding:12px}
+.hand3d{padding:0;overflow:hidden;display:grid}
+.h3-stage{position:relative;aspect-ratio:720/456;background:radial-gradient(90% 70% at 50% 45%,color-mix(in oklab,var(--brass) 10%,var(--surface)),var(--surface) 75%)}
+.h3-stage video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;pointer-events:none}
+.h3-stage video.on{opacity:1}
+.lefty .h3-stage video{transform:scaleX(-1)}
+.h3-tog{margin-left:auto;padding:6px 11px;font-size:12px}
+.h3-cap{display:flex;align-items:baseline;gap:10px;padding:10px 16px 12px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+.h3-cap b{font-family:var(--f-display);font-size:18px;font-weight:800;color:var(--text)}
+.now{position:relative}
+.pick-song{display:none}
+@media (max-width:760px){
+  .pa{height:248px}
+  .pa-card{top:62px;gap:6px}
+  .pa-card .pill{font-size:20px;padding:3px 14px}
+  .pa-card .dg svg{max-width:100px}
+  .pa-msg{top:10px}
+  .pa-dots{bottom:10px}
+  .now{padding-right:96px}
+  .pick-song{display:inline-flex;position:absolute;top:0;right:0;z-index:5;align-items:center;gap:6px;padding:8px 13px;border-radius:999px;font-size:13px;font-weight:800;color:var(--brass);background:var(--surface);border:1px solid color-mix(in oklab,var(--brass) 45%,transparent);box-shadow:0 4px 14px rgba(0,0,0,.08)}
+  .pick-song svg{width:15px;height:15px}
+  .beatcard{padding:10px 8px}
+  .h3-cap{padding:8px 12px 10px}
 }
 main,.stage,main > div,.transport,.chart,.part,section.card[style],.mixer{grid-template-columns:minmax(0,1fr)}
 .mbar,.sheet-head{display:none}
@@ -1780,8 +1808,8 @@ const PLAN = [
   { t: 'Rockgreppen', steps: [{ k: 'chord', c: 'Em7' }, { k: 'chal', p: ['Em7', 'Cadd9'], n: 15 }, { k: 'song', s: 'wonderwall' }] },
   { t: 'Byten mitt i takten', steps: [{ k: 'tune' }, { k: 'chal', p: ['G', 'D'], n: 15 }, { k: 'song', s: 'redemption-song' }] },
   { t: 'Litet barré', steps: [{ k: 'chord', c: 'F' }, { k: 'chal', p: ['F', 'C'], n: 8 }, { k: 'song', s: 'red-red-wine' }, { k: 'song', s: 'jag-ar-storre-nu' }] },
-  { t: 'Wonderwall på riktigt', steps: [{ k: 'chal', p: ['C', 'G'], n: 20 }, { k: 'stars', s: 'wonderwall', n: 3 }] },
-  { t: 'Spela själv', steps: [{ k: 'tune' }, { k: 'solo' }, { k: 'stars', s: 'any', n: 3 }] },
+  { t: 'Wonderwall på riktigt', steps: [{ k: 'chal', p: ['C', 'G'], n: 20 }, { k: 'song', s: 'wonderwall' }] },
+  { t: 'Spela själv', steps: [{ k: 'tune' }, { k: 'solo' }] },
 ];
 function stepDone(n, st) {
   const tags = (n.daily || {})[today()] || [];
@@ -1818,7 +1846,6 @@ const MISSIONS = [
   { id: 'song-rivers', title: 'Spela Rivers of Babylon', desc: 'G, C och D med långa pauser mellan bytena.', xp: 120, auto: (p) => p.songs.includes('rivers-of-babylon'), go: { tab: 'spela', song: 'rivers-of-babylon' } },
   { id: 'song-birds', title: 'Spela Three Little Birds', desc: 'A, D och E. Nu börjar det likna riktig reggae.', xp: 120, auto: (p) => p.songs.includes('three-little-birds'), go: { tab: 'spela', song: 'three-little-birds' } },
   { id: 'solo', title: 'Spela utan hjälp', desc: 'Stäng av "Appen spelar gitarren" och spela en hel låt själv med bandet.', xp: 150, auto: (p) => p.solo, go: { tab: 'spela' } },
-  { id: 'gh3', title: 'Guitar Hero: 3 stjärnor', desc: 'Starta Guitar Hero-läget under Låtar och få minst 3 stjärnor på en låt.', xp: 100, auto: (p) => Object.values(p.ghStars || {}).some((v) => v >= 3), go: { tab: 'spela', gh: true } },
   { id: 'song-zombie', title: 'Spela Zombie', desc: 'Samma fyra ackord men i drivande tempo. Nästa steg-nivån börjar här.', xp: 150, auto: (p) => p.songs.includes('zombie'), go: { tab: 'spela', song: 'zombie' } },
   { id: 'ch-em7-g', title: '1-minutsbyte Em7 ↔ Cadd9', desc: 'Lär dig ankarfingrarna. Klara minst 20 byten på en minut.', xp: 120, auto: (p) => bestPair(p, 'Em7', 'Cadd9') >= 20, go: { tab: 'spel', game: 'chal', pair: ['Em7', 'Cadd9'] } },
   { id: 'song-wonderwall', title: 'Spela Wonderwall', desc: 'Fem rockgrepp med samma ankare. Spela hela formen med kompet.', xp: 200, auto: (p) => p.songs.includes('wonderwall'), go: { tab: 'spela', song: 'wonderwall' } },
@@ -1834,7 +1861,6 @@ const BADGES = [
   { id: 'reggae5', ch: 'JA', title: 'Reggaeresenär', desc: 'Spela tre reggaelåtar som inte är Bob Marley', got: (p) => ['tide-is-high', 'red-red-wine', 'what-i-got', 'many-rivers', 'i-can-see-clearly', 'rivers-of-babylon'].filter((x) => p.songs.includes(x)).length >= 3 },
   { id: 'plan1', ch: 'D1', title: 'Igång!', desc: 'Klara dag 1 i tvåveckorsplanen', got: (p) => (p.planDay || 0) >= 1 },
   { id: 'plan14', ch: '14', title: 'Två veckor', desc: 'Klara hela tvåveckorsplanen', got: (p) => (p.planDay || 0) >= 14 },
-  { id: 'gh5', ch: '★5', title: 'Rockstjärna', desc: 'Få 5 stjärnor i Guitar Hero-läget', got: (p) => Object.values(p.ghStars || {}).some((v) => v >= 5) },
   { id: 'rock', ch: 'W', title: 'Ankarmästare', desc: 'Spela Wonderwall hela vägen', got: (p) => p.songs.includes('wonderwall') },
   { id: 'all', ch: 'Alla', title: 'Hela repertoaren', desc: 'Spela alla färdiga låtar i appen', got: (p) => INITIAL_SONGS.every((x) => p.songs.includes(x.id)) },
   { id: 'skank', ch: '&', title: 'Off-beat', desc: 'Skanka åtta takter', got: (p) => p.skank8 },
@@ -2293,7 +2319,8 @@ function compressBars(bars) {
   }));
   return out;
 }
-const SP = 46, LAND_Y = 92, ARC_H = 64;
+const SP = 46, LAND_Y = 74, ARC_H = 56;
+const paLand = () => (window.matchMedia && window.matchMedia('(max-width:760px)').matches ? 50 : LAND_Y);
 // Korten glider nästan jämnt och bromsar bara lite mot mitten. Bollen och ljudet följer klockan linjärt, så rytmen påverkas inte.
 const glide = (p) => 0.6 * p + 0.4 * p * p * (3 - 2 * p);
 function PlayAlong({ bars, startBar, playing, easy }) {
@@ -2315,8 +2342,8 @@ function PlayAlong({ bars, startBar, playing, easy }) {
       cards[j].style.opacity = (1 - 0.5 * t).toFixed(3);
       cards[j].classList.toggle('cur', j === Math.floor(u + 0.001));
     }
-    const h = ARC_H - 18 + Math.min((len || 1) - 1, 6) * 7;
-    if (ball.current) ball.current.style.transform = `translateY(${LAND_Y - h * 4 * prog * (1 - prog)}px)`;
+    const ly = paLand(), h = (ARC_H - 18 + Math.min((len || 1) - 1, 6) * 7) * ly / LAND_Y;
+    if (ball.current) ball.current.style.transform = `translateY(${ly - h * 4 * prog * (1 - prog)}px)`;
   };
   useEffect(() => {
     if (playing) return;
@@ -2361,6 +2388,52 @@ function PlayAlong({ bars, startBar, playing, easy }) {
     </div>
     <div className="pa-ball center" ref=${ball}></div>
     <div className="pa-dots" aria-hidden="true">${dots}</div>
+  </section>`;
+}
+/* ---------------------------------------------------------------- 3D-hand: greppet som du ser det */
+// Renderad i Blender: ett kort klipp per ackordbyte. Handen lyfter, flyttar och landar på slaget.
+// Klippet startar på sista åttondelen före bytet och spelas i den takt som gör att fingrarna landar exakt på ettan.
+const HAND_PAIRS = [['A','D'],['A','G'],['A7sus4','Em7'],['A7sus4','G_rock'],['Am','C'],['Am','E7'],['Am','Em'],['Am','F'],['Am','G'],['Bm','C'],['C','Am'],['C','Bm'],['C','D'],['C','Dm'],['C','Em'],['C','F'],['C','G'],['D','A'],['D','Am'],['D','C'],['D','Em'],['D','F'],['D','G'],['D/F#','D'],['Dm','E'],['Dsus4','A7sus4'],['E','Am'],['E7','G'],['Em','Am'],['Em','C'],['Em','F'],['Em7','A7sus4'],['Em7','G_rock'],['F','Am'],['F','C'],['F','G'],['G','A'],['G','Am'],['G','Bm'],['G','C'],['G','D'],['G','D/F#'],['G','Em'],['G_rock','Dsus4'],['G_rock','Em7'],['A','E'],['A7sus4','Cadd9'],['Am','Dm'],['C','E'],['Cadd9','Dsus4'],['Cadd9','Em7'],['Dm','Am'],['Dm','C'],['Dsus4','Em7'],['E','A'],['E','D'],['E','F'],['Em7','Cadd9'],['G','Em7'],['G_rock','C']];
+const HAND_SET = new Set(HAND_PAIRS.map((p) => p.join('>')));
+const HAND_MOVE = 12 / 24; // sekunder från lyft till landning i klippet
+const hk = (k) => k.replace('/', '_').replace('#', 's');
+const handClip = (a, b) => 'hand/' + hk(a) + '__' + hk(b) + '.webm';
+// Ett vilande grepp visas som första bilden i ett klipp som börjar i det ackordet.
+const restPair = (k, prefer) => (prefer && HAND_SET.has(k + '>' + prefer) ? [k, prefer] : HAND_PAIRS.find((p) => p[0] === k) || null);
+function Hand3D({ cur, next, playing, stepSec, chords, hidePa, setHidePa }) {
+  const pairs = useMemo(() => {
+    const out = [];
+    for (let i = 0; i < chords.length; i++) for (let j = 0; j < chords.length; j++) if (i !== j && HAND_SET.has(chords[i] + '>' + chords[j])) out.push([chords[i], chords[j]]);
+    return out;
+  }, [chords.join()]);
+  const vids = useRef({});
+  const [active, setActive] = useState(null);
+  const show = (pair, play) => {
+    if (!pair) return;
+    const id = pair.join('>'), v = vids.current[id]; if (!v) return;
+    setActive(id);
+    try {
+      v.pause(); v.currentTime = 0;
+      if (play) { v.playbackRate = Math.min(3, Math.max(0.5, HAND_MOVE / Math.max(0.12, stepSec))); const pr = v.play(); if (pr && pr.catch) pr.catch(() => {}); }
+    } catch (e) {}
+  };
+  // Byte på väg: starta klippet en åttondel innan. Annars vila i nuvarande grepp.
+  useEffect(() => {
+    if (!cur) return;
+    if (playing && next && next !== cur && HAND_SET.has(cur + '>' + next)) { show([cur, next], true); return; }
+    if (!playing || !active || active.split('>')[1] !== cur) show(restPair(cur, next), false);
+  }, [cur, next, playing, pairs]);
+  if (!pairs.length) return null;
+  const d = CHORD_DB[cur], v = d ? d.standard : null;
+  const muted = v ? v.frets.map((f, i) => (f < 0 ? STRINGS[i].note : null)).filter(Boolean) : [];
+  return html`<section className="card hand3d" aria-label="Handen på greppbrädan">
+    <div className="h3-stage">
+      ${pairs.map((p) => { const id = p.join('>'); return html`<video key=${id} ref=${(el) => { if (el) vids.current[id] = el; }} src=${handClip(p[0], p[1])}
+        muted playsInline preload="auto" disablePictureInPicture className=${active === id ? 'on' : ''}
+        onLoadedData=${() => { if (!active && cur && restPair(cur, next) && restPair(cur, next).join('>') === id) show(restPair(cur, next), false); }} />`; })}
+    </div>
+    <div className="h3-cap"><b>${d ? d.name : cur || ''}</b><span>${muted.length ? 'Slå inte an ' + muted.join(' och ') : 'Alla sex strängar klingar'}</span>
+      <button className="chip h3-tog" onClick=${() => setHidePa(!hidePa)}>${hidePa ? 'Visa ackordrutan' : 'Bara handen'}</button></div>
   </section>`;
 }
 /* ---------------------------------------------------------------- Guitar Hero-läge */
@@ -3291,7 +3364,7 @@ function MicCalib({ onDone }) {
   return html`<section className="card" style=${{ display: 'grid', gap: 12 }}>
     <div className="section-head" style=${{ margin: 0 }}><h3>Kalibrera mikrofonen</h3><p>${cal.done ? 'Kalibrerad · ' + noise + ' i rummet' : 'Gör en gång, tar 15 sekunder'}</p></div>
     ${step === 'idle' || step === 'done' ? html`<div className="row between">
-      <p className="lead" style=${{ flex: '1 1 220px' }}>${step === 'done' ? 'Klart! Stämmaren, greppkollen och Guitar Hero är nu inställda efter din gitarr och ditt rum.' : 'Appen lär sig hur tyst det är i rummet och hur starkt din gitarr hörs. Då blir stämmaren, greppkollen och mikrofonläget mycket säkrare.'}</p>
+      <p className="lead" style=${{ flex: '1 1 220px' }}>${step === 'done' ? 'Klart! Stämmaren och greppkollen är nu inställda efter din gitarr och ditt rum.' : 'Appen lär sig hur tyst det är i rummet och hur starkt din gitarr hörs. Då blir stämmaren, greppkollen och mikrofonläget mycket säkrare.'}</p>
       <button className=${step === 'done' ? 'btn' : 'play'} onClick=${run}>${step === 'done' ? 'Kalibrera igen' : html`${I.play}Starta kalibrering`}</button></div>` : null}
     ${step === 'quiet' || step === 'strum' ? html`<div className="coach">
       <div className="big">${step === 'quiet' ? 'Tyst' : count + '/3'}</div>
@@ -3526,8 +3599,8 @@ function App() {
   const [playing, setPlaying] = useState(null);
   const [pos, setPos] = useState({ step: -1, bar: -1 });
   const [bpm, setBpm] = useState(song.bpm);
-  const [ladderOn, setLadderOn] = useState(() => { try { return localStorage.getItem('ng-ladder') === '1'; } catch (e) { return false; } });
-  const [style, setStyle] = useState('reggae');
+  const [ladderOn, setLadderOn] = useState(false);
+  const [style, setStyle] = useState('acoustic');
   const [countIn, setCountIn] = useState(true);
   const [autoGuitar, setAutoGuitar] = useState(true);
   const [swing, setSwing] = useState(0.08);
@@ -3561,10 +3634,11 @@ function App() {
   const [picking, setPicking] = useState(false);
   const [skin, setSkinState] = useState(() => { try { return localStorage.getItem('ng-skin2') === 'riddim' ? 'riddim' : 'salvia'; } catch (e) { return 'salvia'; } });
   const [skinOpen, setSkinOpen] = useState(false);
-  const [ghOpen, setGhOpen] = useState(false);
+  const ghOpen = false;
   const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : v; } catch (e) { return d; } };
   const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const [lefty, setLefty] = useState(() => lsGet('ng-lefty', '0') === '1');
+  const [hidePa, setHidePa] = useState(() => lsGet('ng-hide-pa', '0') === '1');
   const [vibe, setVibe] = useState(() => lsGet('ng-vibe', '1') !== '0');
   useEffect(() => { document.documentElement.classList.toggle('lefty', lefty); lsSet('ng-lefty', lefty ? '1' : '0'); }, [lefty]);
   useEffect(() => { lsSet('ng-vibe', vibe ? '1' : '0'); }, [vibe]);
@@ -3658,7 +3732,6 @@ function App() {
     if (g.game) setGame(g.game);
     if (g.pair) setChPair(g.pair);
     if (g.skank) setSkMode('skank');
-    if (g.gh) setGhOpen(true);
     setTab(g.tab); window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -3830,12 +3903,13 @@ function App() {
   const pickSong = (s) => {
     if (playing) stopAll();
     setSongId(s.id); setBpm(ladderOn ? Math.round((s.bpm * ladderPct(s.id)) / 100) : s.startBpm || s.bpm); setStartBar(0); setPicking(false); setLoop(null);
-    setSelChord([].concat(s.form[0].bars[0])[0]); setStyle(s.feel === 'reggae' ? 'reggae' : 'acoustic');
+    setSelChord([].concat(s.form[0].bars[0])[0]); setStyle('acoustic');
   };
   const setMix = (k, v) => { engine.setMix(k, v); setMixState((m) => ({ ...m, [k]: v })); };
   const hear = (k) => engine.playChord(voicing(k, easy).frets);
 
   const shownChord = playing === 'song' && pos.bar >= 0 ? chordAt(bars[barIdx], pos.step) : selChord;
+  const handNext = playing === 'song' && pos.bar >= 0 ? (pos.step < 7 ? chordAt(bars[barIdx], pos.step + 1) : chordAt(bars[(barIdx + 1) % bars.length], 0)) : null;
   const nextChord = bars[(barIdx + 1) % bars.length].chord;
   const skShown = skLevel === 3 ? (playing === 'skank' && pos.bar >= 0 && pos.bar % 2 === 1 ? 'Em' : 'Am') : skChord;
   const btShown = playing === 'byten' && pos.bar >= 0 ? (pos.bar % 2 === 0 ? 'from' : 'to') : tActive;
@@ -3878,8 +3952,7 @@ function App() {
           <div className="label">${song.feel === 'reggae' ? 'Reggae · skank på &' : 'Akustiskt komp'}</div>
           <h2>${song.title}</h2>
           <div className="meta">${song.artist}</div>
-          <button className="gh-launch" onClick=${() => { if (playing) stopAll(); setGhOpen(true); }}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 20 10 4h4l6 16M7 13h10M9 8h6"/></svg>Guitar Hero-läge</button>
-          <button className="chip pick-song" onClick=${() => { if (playing) stopAll(); setPicking(true); }}>Byt låt · ${songs.length} låtar</button>
+          <button className="pick-song" onClick=${() => { if (playing) stopAll(); setPicking(true); }} aria-label=${'Byt låt, ' + songs.length + ' låtar'}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>Byt låt</button>
           <div className="tags">
             <span className="tag">${song.level}</span><span className="tag mono">${song.bpm} BPM original</span>
             <span className="tag">${bars.length} takter</span>${song.capo ? html`<span className="tag">${song.capo}</span>` : null}
@@ -3887,15 +3960,19 @@ function App() {
         </div>
       </div>
 
-      <${PlayAlong} bars=${bars} startBar=${startBar} playing=${playing === 'song'} easy=${easy} />
+      ${hidePa ? null : html`<${PlayAlong} bars=${bars} startBar=${startBar} playing=${playing === 'song'} easy=${easy} />`}
+
+      <section className="card beatcard" aria-label="Slagkomp">
+        <${BeatStrip} pattern=${song.pattern} accents=${song.accents} cur=${playing === 'song' ? pos.step : -1} count=${playing === 'song' && counting ? 1 : null} />
+      </section>
+
+      <${Hand3D} cur=${shownChord} next=${handNext} playing=${playing === 'song' && pos.bar >= 0} stepSec=${30 / (origOn ? song.bpm : bpm)}
+        chords=${[...new Set(bars.flatMap(barChords))]} hidePa=${hidePa} setHidePa=${(v) => { setHidePa(v); lsSet('ng-hide-pa', v ? '1' : '0'); }} />
 
       <section className="card transport" aria-label="Kompband">
         <div className="tp-main">
           ${playBtn(origOn ? 'Spela med inspelningen' : 'Starta kompet')}
           ${origOn ? null : html`<${Bpm} value=${bpm} set=${setBpm} />`}
-          ${origOn ? null : html`<div className="seg" role="group" aria-label="Komp">
-            ${STYLES.map((s) => html`<button key=${s.id} aria-pressed=${style === s.id} onClick=${() => setStyle(s.id)}>${s.label}</button>`)}
-          </div>`}
         </div>
         ${aud ? html`<div className="row" style=${{ gap: 8 }}>
           <button className=${'chip' + (orig ? ' on' : '')} onClick=${() => { if (playing) stopAll(); setOrig(!orig); setStartBar(0); }}>🎧 Följ din inspelning ${orig ? 'på' : 'av'}</button>
@@ -3907,22 +3984,8 @@ function App() {
             : origOn ? html`<span className="muted" style=${{ fontSize: 12 }}>Ackorden följer din låt. Stoppa när du vill, du fortsätter där du var.</span>` : null}
           ${origOn && startBar > 0 && !playing ? html`<button className="chip" onClick=${() => setStartBar(0)}>Från början</button>` : null}
         </div>` : null}
-        <div className="row" style=${{ gap: 8, display: origOn ? 'none' : undefined }}>
-          <button className=${'chip' + (ladderOn ? ' on' : '')} onClick=${toggleLadder} title="Börjar på 60 % och höjer 5 % efter varje varv">Tempotrappa${ladderOn ? ' · ' + ladderPct(song.id) + ' %' : ''}</button>
-          ${loop ? html`<button className="chip on" onClick=${() => { if (playing) stopAll(); setLoop(null); setStartBar(0); }}>Loopar ${loop.part.toLowerCase()} ×</button>` : html`<span className="muted" style=${{ fontSize: 12 }}>Loopa en del med knappen i ackordschemat</span>`}
-        </div>
-        ${html`<${BeatStrip} pattern=${song.pattern} accents=${song.accents} cur=${playing === 'song' ? pos.step : -1} count=${playing === 'song' && counting ? 1 : null} onEdit=${patEdit ? (i) => editPat(i, song.pattern[i] === 'D' || song.pattern[i] === 'X' || (song.pattern[i] === '-' && i % 2 === 0)) : null} />`}
-        <div className="pat-presets">
-          <span className="sk-lab">Mönster</span>
-          ${[['Pop-tjack', ['D', '-', 'X', 'U', 'D', '-', 'X', 'U']], ['Bara ner', ['D', '-', 'D', '-', 'D', '-', 'D', '-']], ['Folk', P_FOLK], ['Ballad', P_BALLAD], ['Skank', P_SKANK]].map(([l, pt]) =>
-            html`<button key=${l} className=${'chip' + (song.pattern.join() === pt.join() ? ' on' : '')} onClick=${() => setPreset(pt)}>${l}</button>`)}
-        </div>
-        <div className="row" style=${{ gap: 8 }}>
-          <button className=${'chip' + (patEdit ? ' on' : '')} onClick=${() => setPatEdit(!patEdit)}>${patEdit ? 'Klar med slagmönstret' : 'Ändra slagmönster'}</button>
-          ${patEdit ? html`<span className="muted" style=${{ fontSize: 12 }}>Tryck på en ruta för att ändra den: ner → tjack → paus, eller upp → paus</span>` : null}
-          ${patOv[song0.id] ? html`<button className="chip" onClick=${resetPat}>Återställ</button>` : null}
-          ${capoN ? html`<button className=${'chip' + (capoOn ? ' on' : '')} onClick=${toggleCapo} title=${'Sätt capo på band ' + capoN + ' så låter det som originalet'}>Originaltonart · capo ${capoN} ${capoOn ? 'på' : 'av'}</button>` : null}
-        </div>
+        ${loop && !origOn ? html`<div className="row" style=${{ gap: 8 }}><button className="chip on" onClick=${() => { if (playing) stopAll(); setLoop(null); setStartBar(0); }}>Loopar ${loop.part.toLowerCase()} ×</button></div>` : null}
+        ${capoN ? html`<div className="row" style=${{ gap: 8 }}><button className=${'chip' + (capoOn ? ' on' : '')} onClick=${toggleCapo} title=${'Sätt capo på band ' + capoN + ' så låter det som originalet'}>Originaltonart · capo ${capoN} ${capoOn ? 'på' : 'av'}</button></div>` : null}
         <${narrowM ? 'details' : 'div'} className="tp-grid more">
           ${narrowM ? html`<summary>Mixer och känsla</summary>` : null}
           <div className="mixer">
@@ -4206,10 +4269,10 @@ function App() {
   const songTitle = (id) => (INITIAL_SONGS.find((x) => x.id === id) || {}).title || id;
   const stepLabel = (st) => st.k === 'tune' ? 'Stäm gitarren' : st.k === 'chord' ? 'Lär dig ' + CHORD_DB[st.c].name + ' tills greppkollen säger Rätt!'
     : st.k === 'chal' ? '1-minutsbyte ' + CHORD_DB[st.p[0]].name + ' ↔ ' + CHORD_DB[st.p[1]].name + ': minst ' + st.n + ' byten'
-    : st.k === 'skank' ? 'Skanka 8 takter i Skank-skolan' : st.k === 'song' ? 'Spela ' + songTitle(st.s) + ' (Guitar Hero eller hela låten)'
+    : st.k === 'skank' ? 'Skanka 8 takter i Skank-skolan' : st.k === 'song' ? 'Spela ' + songTitle(st.s) + ' (hela låten)'
     : st.k === 'solo' ? 'Spela en hel låt med "Appen spelar gitarren" avstängd' : st.n + ' stjärnor i ' + (st.s === 'any' ? 'valfri låt' : songTitle(st.s)) + ' i Guitar Hero';
   const stepGo = (st) => st.k === 'tune' ? { tab: 'stam' } : st.k === 'chord' ? { tab: 'ackord', chord: st.c } : st.k === 'chal' ? { tab: 'spel', game: 'chal', pair: st.p }
-    : st.k === 'skank' ? { tab: 'skank', skank: true } : st.k === 'song' ? { tab: 'spela', song: st.s, gh: true } : st.k === 'solo' ? { tab: 'spela' } : { tab: 'spela', song: st.s === 'any' ? undefined : st.s, gh: true };
+    : st.k === 'skank' ? { tab: 'skank', skank: true } : st.k === 'song' ? { tab: 'spela', song: st.s } : st.k === 'solo' ? { tab: 'spela' } : { tab: 'spela', song: st.s === 'any' ? undefined : st.s, gh: true };
   const planDone = (prog.planDay || 0), planDay = Math.min(PLAN.length, planDone + 1), pd = PLAN[planDay - 1];
   /* ---------- dagens lektion: ett steg i taget ---------- */
   const FNAME = { 1: 'Pekfingret', 2: 'Långfingret', 3: 'Ringfingret', 4: 'Lillfingret' };
@@ -4275,7 +4338,7 @@ function App() {
       <${MicTools} easy=${easy} onTuned=${(i) => award(10, 'Sträng ' + STRINGS[i].n + ' stämd', (n) => { if (!n.tuned.includes(i)) n.tuned.push(i); addTag(n, 'tune'); })} onChordOk=${chordOk} />
       <div className="ls-actions"><button className="ls-btn" onClick=${() => award(0, '', (n) => addTag(n, 'tune'), true)}>Gitarren är stämd</button></div></div>`;
     const what = st.k === 'skank' ? { h: 'Reggae-skank', p: 'Skanka 8 takter i rad. Vågen visar när du ska slå.', b: 'Öppna skank-övningen' }
-      : st.k === 'song' ? { h: songTitle(st.s), p: 'Spela hela låten, med kompet eller i Guitar Hero.', b: 'Spela ' + songTitle(st.s) }
+      : st.k === 'song' ? { h: songTitle(st.s), p: 'Spela hela låten med kompet.', b: 'Spela ' + songTitle(st.s) }
       : st.k === 'solo' ? { h: 'Spela själv', p: 'Stäng av "Appen spelar gitarren" och spela en hel låt.', b: 'Välj en låt' }
       : { h: st.n + ' stjärnor', p: 'Få ' + st.n + ' stjärnor i ' + (st.s === 'any' ? 'valfri låt' : songTitle(st.s)) + ' i Guitar Hero.', b: 'Starta Guitar Hero' };
     return html`<div className="ls-body">
@@ -4513,24 +4576,14 @@ function App() {
     ${lessonAway && !lesson ? html`<button className="ls-back" onClick=${() => openLesson(lessonAway)}>${I.play}Tillbaka till lektionen</button>` : null}
     ${playing ? html`<button className="fab" onClick=${toggle} aria-label="Stoppa">${I.stop}<span>Stoppa</span></button>` : null}
     <div className=${'toasts' + (ghOpen ? ' gh-toasts' : '')} aria-live="polite">${toasts.map((t) => html`<div key=${t.id} className=${'toast' + (t.big ? ' big' : '')}><span className="x">${t.x}</span><div><b>${t.t}</b>${t.s ? html`<span>${t.s}</span>` : null}</div></div>`)}</div>
-    ${ghOpen ? html`<${GuitarHero} key=${song.id + (easy ? 'e' : '')} song=${song} bars=${bars} easy=${easy} bpm=${bpm} setBpm=${setBpm} playing=${playing === 'song'}
-      onStart=${() => { setCountIn(true); S.current.countIn = true; S.current.startBar = 0; startSong(0); }}
-      onStop=${() => { engine.stop(); setPlaying(null); setPos({ step: -1, bar: -1 }); setStartBar(0); }}
-      autoGuitar=${autoGuitar} setAutoGuitar=${(v) => { setAutoGuitar(v); S.current.autoGuitar = v; }}
-      best=${(prog.ghBest || {})[song.id] || 0} onClose=${() => setGhOpen(false)} ladderPct=${ladderPct(song.id)}
-      onResult=${(r) => { if (r.watch) { if (!loop) award(10, 'Spelade med i ' + song.title, (n) => addTag(n, 'song:' + song.id)); return; } const rec = r.score > ((P.current.ghBest || {})[song.id] || 0);
-        award(10 + r.stars * 8 + (rec ? 15 : 0), r.stars + ' stjärnor i ' + song.title + (rec ? ' · nytt rekord' : ''), (n) => {
-          if (r.ladder && r.acc >= 0.8) { n.ladder = n.ladder || {}; n.ladder[song.id] = Math.min(100, (n.ladder[song.id] || 60) + 5); }
-          if (!loop) { addTag(n, 'song:' + song.id); addTag(n, 'stars:' + song.id + ':' + r.stars); }
-          n.ghBest = n.ghBest || {}; n.ghStars = n.ghStars || {}; n.ghBest[song.id] = Math.max(n.ghBest[song.id] || 0, r.score); n.ghStars[song.id] = Math.max(n.ghStars[song.id] || 0, r.stars); }); }} />` : null}
     ${skinOpen ? html`<div className="scrim" onClick=${(e) => e.target === e.currentTarget && setSkinOpen(false)}>
       <div className="modal settings"><div className="row between"><h3 style=${{ fontSize: 20 }}>Inställningar</h3><button className="btn" onClick=${() => setSkinOpen(false)}>Klar</button></div>
         <div className="label">Färgtema</div>
         <div className="skins">${SKINS.map((k) => html`<button key=${k.id} className="skin" aria-pressed=${skin === k.id} style=${{ background: k.bg, color: k.fg }} onClick=${() => setSkinState(k.id)}>
           <span className="sw">${k.sw.map((c) => html`<i key=${c} style=${{ background: c }}></i>`)}</span><b>${k.name}</b><small>${k.sub}</small></button>`)}</div>
-        <div className="set-row"><div><b>Vänsterhänt</b><small>Spegelvänder greppbrädor, greppbilder och Guitar Hero-banan</small></div>
+        <div className="set-row"><div><b>Vänsterhänt</b><small>Spegelvänder greppbrädor, greppbilder och 3D-handen</small></div>
           <button className=${'chip' + (lefty ? ' on' : '')} onClick=${() => setLefty(!lefty)}>${lefty ? 'På' : 'Av'}</button></div>
-        <div className="set-row"><div><b>Vibration</b><small>Telefonen vibrerar vid träffar i Guitar Hero och vid ackordbyten</small></div>
+        <div className="set-row"><div><b>Vibration</b><small>Telefonen vibrerar vid ackordbyten</small></div>
           <button className=${'chip' + (vibe ? ' on' : '')} onClick=${() => { setVibe(!vibe); if (!vibe) setTimeout(() => vib(30), 50); }}>${vibe ? 'På' : 'Av'}</button></div>
         <div className="set-sec"><b>Flytta framsteg</b><small>XP, märken, rekord, egna låtar och kalibrering följer med. Gör så här: kopiera koden på enheten du övat på och klistra in den på den andra.</small>
           <div className="row"><button className="btn primary" onClick=${makeCode}>Kopiera min kod</button></div>

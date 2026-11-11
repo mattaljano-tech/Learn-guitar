@@ -2,7 +2,7 @@
 
 Här ska jag lära mig spela gitarr.
 
-Övningsapp för nylongitarr: kompband med reggae och akustiskt groove, Guitar Hero-läge, skank-skola, ackordtabell, ackordbyten, lyssnande träning, stämmare och en nybörjarväg med XP, nivåer och märken.
+Övningsapp för nylongitarr: kompband, en 3D-hand som visar greppen i takt med låten, skank-skola, ackordtabell, ackordbyten, lyssnande träning, stämmare och en nybörjarväg med XP, nivåer och märken.
 
 Appen är en installerbar webbapp (PWA). Den fungerar offline efter första besöket och sparar dina framsteg på telefonen.
 
@@ -12,7 +12,7 @@ Appen är en installerbar webbapp (PWA). Den fungerar offline efter första bes�
 2. Tryck på menyn (tre prickar) och välj **Installera app** eller **Lägg till på startskärmen**.
 3. Appen får en egen ikon och öppnas i helskärm.
 
-Mikrofonen (stämmaren, ackordkollen och mikrofonläget i Guitar Hero) fungerar här, eftersom appen ligger på en egen säker adress. Chrome frågar om lov första gången.
+Mikrofonen (stämmaren och ackordkollen) fungerar här, eftersom appen ligger på en egen säker adress. Chrome frågar om lov första gången.
 
 ## Publicera med GitHub Pages
 
@@ -32,3 +32,4 @@ Mikrofonen (stämmaren, ackordkollen och mikrofonläget i Guitar Hero) fungerar 
 - `manifest.webmanifest` – namn, ikon och helskärmsläge
 - `sw.js` – offline-stöd
 - `icons/` – appikoner
+- `hand/` – 3D-handens ackordbyten, ett kort WebM-klipp per byte (renderade i Blender)
