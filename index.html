@@ -577,6 +577,13 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 .home-day{position:relative}
 :root.ls-rise .ls{animation:ls-rise .7s cubic-bezier(.2,.8,.2,1)}
 @keyframes ls-rise{from{transform:translateY(100%)}to{transform:none}}
+.alt-seg{margin-bottom:12px}
+.alt-now{margin:0 0 8px;font-size:15px;color:var(--muted)}
+.alt-now b{color:var(--text);font-size:18px}
+.alt-more{margin-top:12px}
+.alt-more summary{cursor:pointer;font-weight:700;font-size:14px}
+.alt-row{display:grid;gap:6px;margin-top:12px}
+.alt-row>span{font-size:13px;font-weight:700;color:var(--muted)}
 /* Bytescoachen (bx) */
 .bx{display:grid;gap:14px}
 .bx .section-head{margin-bottom:0}
@@ -1340,6 +1347,18 @@ const INITIAL_SONGS = [
   { id: 'knockin', title: "Knockin' on Heaven's Door", artist: 'Bob Dylan', feel: 'acoustic', level: 'Nästa steg', bpm: 68,
     pattern: P_FOLK, accents: [0, 6],
     tip: 'Fyra ackord i en evig loop. Bytet D till Am är det knepiga: håll pek- och långfingret nära varandra och glid över.',
+    // Alternativt komp från en videolektion: eget mönster för G/D (en takt) och Am/C (två takter), med tidigt lyft inför varje byte
+    alt: {
+      label: 'Lärarens variant', accents: [0],
+      note: 'G och D: ner, ner, upp, ner, och ett lätt uppslag på öppna strängar medan du lyfter. Am och C: hela mönstret i första takten, kortare i andra. Lyft i tid och landa på ettan i nästa ackord. Uppslagen tar bara de tunna strängarna.',
+      pats: [
+        ['D', '-', 'D', 'U', 'D', 'U', '-', '-'], ['D', '-', 'D', 'U', 'D', 'U', '-', '-'],
+        ['D', '-', 'D', 'U', '-', 'U', 'D', 'U'], ['-', 'U', 'D', 'U', 'D', '-', '-', '-'],
+        ['D', '-', 'D', 'U', 'D', 'U', '-', '-'], ['D', '-', 'D', 'U', 'D', 'U', '-', '-'],
+        ['D', '-', 'D', 'U', '-', 'U', 'D', 'U'], ['-', 'U', 'D', 'U', 'D', '-', '-', '-'],
+      ],
+      legend: [['G och D', 0], ['Am och C, takt 1', 2], ['Am och C, takt 2', 3]],
+    },
     form: [{ part: 'Vers', bars: ['G', 'D', 'Am', 'Am', 'G', 'D', 'C', 'C'] }, { part: 'Refräng', bars: ['G', 'D', 'Am', 'Am', 'G', 'D', 'C', 'C'] }] },
   { id: 'zombie', title: 'Zombie', artist: 'The Cranberries', feel: 'acoustic', level: 'Nästa steg', bpm: 84,
     pattern: P_BALLAD, accents: [0, 4],
@@ -2752,7 +2771,7 @@ function ghEvents(song, bars, easy) {
     if (bi === 0 || prev !== b.chord || bars[bi - 1].part !== b.part)
       marks.push({ pos: bi * 8, chord: b.chord, part: bi === 0 || bars[bi - 1].part !== b.part ? b.part : null });
     if (b.chord2 && b.chord2 !== b.chord) marks.push({ pos: bi * 8 + 4, chord: b.chord2, part: null });
-    song.pattern.forEach((dir, s) => {
+    (b.pat || song.pattern).forEach((dir, s) => {
       if (dir === '-') return;
       const ch = chordAt(b, s), fr = voicing(ch, easy).frets;
       let lanes = [0, 1, 2, 3, 4, 5].filter((i) => fr[i] >= 0);
@@ -3876,7 +3895,13 @@ function App() {
   const [songId, setSongId] = useState('three-little-birds');
   const song0 = songs.find((s) => s.id === songId) || songs[0];
   const [patOv, setPatOv] = useState(() => { try { return JSON.parse(localStorage.getItem('ng-pat') || '{}'); } catch (e) { return {}; } });
-  const song = useMemo(() => (patOv[song0.id] ? { ...song0, pattern: patOv[song0.id] } : song0), [song0, patOv]);
+  const [altOv, setAltOv] = useState(() => { try { return JSON.parse(localStorage.getItem('ng-alt') || '{}'); } catch (e) { return {}; } });
+  const altOn = !!(song0.alt && altOv[song0.id]);
+  const pickAlt = (on) => { const nx = { ...altOv, [song0.id]: on }; setAltOv(nx); try { localStorage.setItem('ng-alt', JSON.stringify(nx)); } catch (e) {} };
+  const song = useMemo(() => {
+    const sg = patOv[song0.id] ? { ...song0, pattern: patOv[song0.id] } : song0;
+    return altOn ? { ...sg, barPats: song0.alt.pats, accents: song0.alt.accents } : sg;
+  }, [song0, patOv, altOn]);
   const [patEdit, setPatEdit] = useState(false);
   const editPat = (i, down) => { const pt = [...song.pattern]; pt[i] = down ? ({ D: 'X', X: '-', '-': 'D', U: 'D' })[pt[i]] : ({ U: '-', '-': 'U', D: 'U', X: 'U' })[pt[i]]; const nx = { ...patOv, [song0.id]: pt }; setPatOv(nx); try { localStorage.setItem('ng-pat', JSON.stringify(nx)); } catch (e) {} };
   const setPreset = (pt) => { const nx = { ...patOv, [song0.id]: pt }; setPatOv(nx); try { localStorage.setItem('ng-pat', JSON.stringify(nx)); } catch (e) {} };
@@ -3886,7 +3911,7 @@ function App() {
   const capoN = song.capo ? +((/capo\s*(\d+)/i.exec(song.capo) || [])[1] || 0) : 0;
   const [capoOn, setCapoOn] = useState(() => { try { return localStorage.getItem('ng-capo') === '1'; } catch (e) { return false; } });
   const toggleCapo = () => { const v = !capoOn; setCapoOn(v); try { localStorage.setItem('ng-capo', v ? '1' : '0'); } catch (e) {} if (playing === 'song') engine.transpose = v && capoN ? capoN : 0; };
-  const allBars = useMemo(() => song.form.flatMap((p) => p.bars.map((c) => mkBar(c, p.part))), [song]);
+  const allBars = useMemo(() => song.form.flatMap((p) => p.bars.map((c, i) => (song.barPats ? { ...mkBar(c, p.part), pat: song.barPats[i % song.barPats.length] } : mkBar(c, p.part)))), [song]);
   const [loop, setLoop] = useState(null); // { pi, from, to, part } – loopa en del av låten
   const [orig, setOrig] = useState(true);
   const [origMusic, setOrigMusic] = useState(true);   // höra inspelningen
@@ -4123,7 +4148,7 @@ function App() {
         const s = S.current, bl = s.bars, b = bl[(s.startBar + bar) % bl.length], ch = chordAt(b, step), v = voicing(ch, s.easy);
         engine.band(s.style, step, t, sd, CHORD_DB[ch].root);
         if (!s.autoGuitar) return;
-        const dir = s.song.pattern[step];
+        const dir = (b.pat || s.song.pattern)[step];
         if (dir === '-') return;
         if (dir === 'X') return engine.chuck(v.frets, t);
         if (s.song.feel === 'reggae') engine.chop(v.frets, t, { vel: dir === 'D' ? 1 : 0.75 });
@@ -4272,7 +4297,14 @@ function App() {
       ${views.pa ? html`<${PlayAlong} bars=${bars} startBar=${startBar} playing=${playing === 'song'} easy=${easy} noBall=${marker !== 'top' && views.hand} />` : null}
 
       ${views.beat ? html`<section className="card beatcard" aria-label="Slagkomp">
-        <${BeatStrip} pattern=${song.pattern} accents=${song.accents} cur=${playing === 'song' ? pos.step : -1} count=${playing === 'song' && counting ? 1 : null} />
+        ${song0.alt && !origOn ? html`<div className="seg alt-seg" role="group" aria-label="Vilket komp">
+          <button aria-pressed=${!altOn} onClick=${() => pickAlt(false)}>Appens komp</button>
+          <button aria-pressed=${altOn} onClick=${() => pickAlt(true)}>${song0.alt.label}</button></div>` : null}
+        ${altOn && !origOn ? html`<p className="alt-now"><b>${CHORD_DB[chordAt(bars[barIdx] || bars[0], 0)].name}</b> ${(() => { const b = bars[barIdx] || bars[0], L = song0.alt.legend.find(([, k]) => String(song0.alt.pats[k]) === String(b.pat)); return L ? '· ' + L[0] : ''; })()}</p>` : null}
+        <${BeatStrip} pattern=${(!origOn && bars[barIdx] && bars[barIdx].pat) || song.pattern} accents=${song.accents} cur=${playing === 'song' ? pos.step : -1} count=${playing === 'song' && counting ? 1 : null} />
+        ${altOn && !origOn ? html`<details className="alt-more"><summary>Alla mönster i varianten</summary>
+          ${song0.alt.legend.map(([l, k]) => html`<div key=${k} className="alt-row"><span>${l}</span><${BeatStrip} pattern=${song0.alt.pats[k]} accents=${song0.alt.accents} cur=${-1} /></div>`)}
+          <p className="muted" style=${{ fontSize: 14, margin: '8px 0 0' }}>${song0.alt.note}</p></details>` : null}
       </section>` : null}
 
       ${views.hand ? html`<${Hand3D} cur=${shownChord} next=${handNext} upcoming=${handUpcoming} easy=${easy} playing=${playing === 'song' && pos.bar >= 0} stepSec=${30 / (origOn ? song.bpm : bpm)}
