@@ -33,3 +33,4 @@ Mikrofonen (stämmaren och ackordkollen) fungerar här, eftersom appen ligger p�
 - `sw.js` – offline-stöd
 - `icons/` – appikoner
 - `hand/` – 3D-handens ackordbyten, ett kort WebM-klipp per byte (renderade i Blender)
+- `audio/nylon/` – inspelade nylongitarrtoner till kompet. Källa: [tonejs-instruments](https://github.com/nbrosowsky/tonejs-instruments) av Nicholaus P. Brosowsky, licens [CC-BY 3.0](https://creativecommons.org/licenses/by/3.0/). Klippta, mono och normaliserade.

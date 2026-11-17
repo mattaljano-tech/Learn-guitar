@@ -1287,6 +1287,8 @@ details.card.more{padding:18px 0 0}
 .bx-steps li.on{background:color-mix(in oklab,var(--leaf) 9%,transparent)}
 .bx-tips div{background:transparent;padding:0}
 @media (max-width:760px){.card{padding:20px 0 0}}
+
+.confetti{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:90}
 </style>
 
 </head>
@@ -1643,11 +1645,25 @@ const INITIAL_SONGS = [
 const TIER_OF = (s) => (s.custom ? 'Egna' : s.tier ? s.tier : s.level === 'Utmaning' ? 'Utmaning' : s.level === 'Nästa steg' ? 'Nästa steg' : 'Kom igång');
 
 /* ---------------------------------------------------------------- audio engine */
+const NYLON_SAMPLES = [['E2', 40], ['Fs2', 42], ['Gs2', 44], ['B2', 47], ['Cs3', 49], ['E3', 52], ['Fs3', 54], ['A3', 57], ['B3', 59], ['Cs4', 61], ['E4', 64], ['Fs4', 66], ['A4', 69], ['B4', 71], ['Cs5', 73], ['E5', 76]];
+let SAMPLE_GAIN = 0.37;
 class Engine {
   constructor() {
     this.ctx = null; this.cache = new Map(); this.queue = []; this.onVisual = null;
     this.timer = null; this.prog = null; this.mix = { g: 0.85, b: 0.8, d: 0.7 }; this.muted = false; this.log = [];
+    this.useSamples = true; try { this.useSamples = localStorage.getItem('ng-snd') !== 'synth'; } catch (e) {}
+    this.smp = null;
   }
+  // Inspelade toner från en riktig nylongitarr (tonejs-instruments, CC-BY 3.0). Tills de laddats används den syntetiska strängen.
+  loadSamples() {
+    if (this.smp || !this.ctx) return;
+    this.smp = [];
+    NYLON_SAMPLES.forEach(([n, m]) => fetch('audio/nylon/' + n + '.mp3').then((r) => { if (!r.ok) throw 0; return r.arrayBuffer(); })
+      .then((b) => new Promise((res, rej) => this.ctx.decodeAudioData(b, res, rej)))
+      .then((buf) => { this.smp.push({ m, buf }); this.smp.sort((a, b) => a.m - b.m); }).catch(() => {}));
+  }
+  samplesReady() { return this.useSamples && this.smp && this.smp.length === NYLON_SAMPLES.length; }
+  setSound(real) { this.useSamples = real; try { localStorage.setItem('ng-snd', real ? 'real' : 'synth'); } catch (e) {} if (real) this.loadSamples(); }
   init() {
     if (this.ctx) { if (this.ctx.state === 'suspended') this.ctx.resume(); return; }
     const AC = window.AudioContext || window.webkitAudioContext;
@@ -1672,6 +1688,9 @@ class Engine {
     this.shaper = c.createWaveShaper();
     const curve = new Float32Array(1024); for (let i = 0; i < 1024; i++) { const x = i / 512 - 1; curve[i] = Math.tanh(2.4 * x); }
     this.shaper.curve = curve; this.shaper.connect(this.bus.b);
+    // inspelade toner går förbi den syntetiska kroppen, med lite värme i botten
+    this.sbus = c.createBiquadFilter(); this.sbus.type = 'lowshelf'; this.sbus.frequency.value = 220; this.sbus.gain.value = 2; this.sbus.connect(this.bus.g);
+    if (this.useSamples) this.loadSamples();
     setTimeout(() => { for (const s of STRINGS) for (let f = 0; f <= 5; f++) this.ks(fq(s.freq, f), s.wound); }, 20);
     const loop = () => { this.flush(); requestAnimationFrame(loop); };
     requestAnimationFrame(loop);
@@ -1719,6 +1738,18 @@ class Engine {
   }
   note(freq, t, { vel = 1, dur = null, wound = false, pan = 0 } = {}) {
     if (this.transpose) freq *= Math.pow(2, this.transpose / 12);
+    if (this.samplesReady()) {
+      const c = this.ctx, midi = 69 + 12 * Math.log2(freq / 440);
+      let s = this.smp[0]; for (const x of this.smp) if (Math.abs(x.m - midi) < Math.abs(s.m - midi)) s = x;
+      const rate = Math.pow(2, (midi - s.m) / 12), src = c.createBufferSource();
+      src.buffer = s.buf; src.playbackRate.value = rate;
+      const g = c.createGain(); g.gain.setValueAtTime(SAMPLE_GAIN * vel, t);
+      const end = dur ? t + dur + 0.25 : t + s.buf.duration / rate;
+      if (dur) g.gain.setTargetAtTime(0, t + dur, 0.016);
+      src.connect(g);
+      if (c.createStereoPanner) { const p = c.createStereoPanner(); p.pan.value = pan; g.connect(p); p.connect(this.sbus); } else g.connect(this.sbus);
+      src.start(t); src.stop(end); return;
+    }
     const c = this.ctx, k = this.ks(freq, wound), src = c.createBufferSource();
     src.buffer = k.buf; src.playbackRate.value = k.rate;
     const g = c.createGain(); g.gain.setValueAtTime(0.45 * vel, t);
@@ -1871,6 +1902,30 @@ class Engine {
   playChord(frets, dir = 'D') { this.strum(frets, this.now(), dir); }
 }
 const engine = new Engine();
+
+// Konfetti vid belöningar (egen liten motor, inga beroenden). Respekterar "minska rörelse".
+function confetti(power = 1) {
+  try { if (matchMedia('(prefers-reduced-motion: reduce)').matches) return; } catch (e) {}
+  const cv = document.createElement('canvas'), dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.className = 'confetti'; cv.width = innerWidth * dpr; cv.height = innerHeight * dpr; document.body.appendChild(cv);
+  const x = cv.getContext('2d'), cs = getComputedStyle(document.documentElement);
+  const cols = ['--ember', '--leaf', '--brass', '--sky'].map((v) => cs.getPropertyValue(v).trim() || '#c65');
+  cols.push('#ffd23f');
+  const N = Math.round(90 * power), P = [];
+  for (let i = 0; i < N; i++) {
+    const side = i % 2 ? 1 : -1, a = (-90 + side * (25 + Math.random() * 30)) * Math.PI / 180, v = (9 + Math.random() * 9) * dpr * (0.8 + power * 0.2);
+    P.push({ x: (side < 0 ? 0.12 : 0.88) * cv.width, y: cv.height * 0.85, vx: -side * Math.abs(Math.cos(a)) * v, vy: Math.sin(a) * v, r: Math.random() * 6.28, vr: (Math.random() - 0.5) * 0.3,
+      w: (6 + Math.random() * 6) * dpr, h: (3 + Math.random() * 4) * dpr, c: cols[i % cols.length] });
+  }
+  let t0 = performance.now();
+  const step = (now) => {
+    const age = (now - t0) / 1000; x.clearRect(0, 0, cv.width, cv.height);
+    for (const p of P) { p.vy += 0.32 * dpr; p.vx *= 0.985; p.vy *= 0.985; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+      x.save(); x.globalAlpha = Math.max(0, 1 - Math.max(0, age - 1.6) / 0.8); x.translate(p.x, p.y); x.rotate(p.r); x.fillStyle = p.c; x.fillRect(-p.w / 2, -p.h / 2, p.w, p.h * Math.abs(Math.cos(p.r * 2))); x.restore(); }
+    if (age < 2.4) requestAnimationFrame(step); else cv.remove();
+  };
+  requestAnimationFrame(step);
+}
 
 /* ---------------------------------------------------------------- icons */
 const I = {
@@ -4211,6 +4266,7 @@ function App() {
   const [marker, setMarker] = useState(() => (lsGet('ng-marker', 'top') === 'top' ? 'top' : 'meter')); // top | meter
   const pickMarker = (m) => { setMarker(m); lsSet('ng-marker', m); };
   const [vibe, setVibe] = useState(() => lsGet('ng-vibe', '1') !== '0');
+  const [realSnd, setRealSnd] = useState(() => engine.useSamples);
   useEffect(() => { document.documentElement.classList.toggle('lefty', lefty); lsSet('ng-lefty', lefty ? '1' : '0'); }, [lefty]);
   useEffect(() => { lsSet('ng-vibe', vibe ? '1' : '0'); }, [vibe]);
   // flytta framsteg mellan enheter med en kod (ingen server)
@@ -4269,6 +4325,8 @@ function App() {
     if ((old.dayXp[d] || 0) < DAILY_GOAL && (n.dayXp[d] || 0) >= DAILY_GOAL) msgs.push({ x: '✓', t: 'Dagens mål klart', s: 'Streak: ' + streakOf(n.days) + ' dagar i rad', big: true });
     if (!silent && xp > 0) toast({ x: '+' + xp, t: why, s: '' });
     msgs.forEach(toast);
+    if (msgs.some((m) => m.big)) confetti(msgs.some((m) => /nivå|Dagens pass/.test(m.t)) ? 1.6 : 1);
+    else if (/^Låt genomspelad/.test(why)) confetti(0.8);
     if (msgs.some((m) => m.big)) { const c = engine.now(); [0, 4, 7, 12].forEach((s, i) => engine.note(329.63 * Math.pow(2, s / 12), c + i * 0.07, { vel: 0.5, dur: 0.5 })); }
     P.current = n; setProg(n); saveProg(n);
   };
@@ -5196,6 +5254,8 @@ function App() {
           <span className="sw">${k.sw.map((c) => html`<i key=${c} style=${{ background: c }}></i>`)}</span><b>${k.name}</b><small>${k.sub}</small></button>`)}</div>
         <div className="set-row"><div><b>Vänsterhänt</b><small>Spegelvänder greppbrädor, greppbilder och 3D-handen</small></div>
           <button className=${'chip' + (lefty ? ' on' : '')} onClick=${() => setLefty(!lefty)}>${lefty ? 'På' : 'Av'}</button></div>
+        <div className="set-row"><div><b>Gitarrljud</b><small>Inspelade toner från en riktig nylongitarr, eller den gamla syntetiska. Inspelningar: tonejs-instruments (CC-BY 3.0).</small></div>
+          <div className="seg" role="group" aria-label="Gitarrljud">${[[true, 'Riktig'], [false, 'Syntetisk']].map(([v, l]) => html`<button key=${l} aria-pressed=${realSnd === v} onClick=${() => { engine.setSound(v); setRealSnd(v); engine.init(); engine.playChord(voicing('C', easy).frets); }}>${l}</button>`)}</div></div>
         <div className="set-row"><div><b>Vibration</b><small>Telefonen vibrerar vid ackordbyten</small></div>
           <button className=${'chip' + (vibe ? ' on' : '')} onClick=${() => { setVibe(!vibe); if (!vibe) setTimeout(() => vib(30), 50); }}>${vibe ? 'På' : 'Av'}</button></div>
         <div className="set-sec"><b>Flytta framsteg</b><small>XP, märken, rekord, egna låtar och kalibrering följer med. Gör så här: kopiera koden på enheten du övat på och klistra in den på den andra.</small>
