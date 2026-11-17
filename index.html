@@ -1241,6 +1241,52 @@ h2.page + .lead,.page + .lead{margin-top:6px}
   .gd-prog .diagrams{grid-template-columns:repeat(4,minmax(0,1fr))!important}
   h2.page{font-size:28px}
 }
+
+/* =====================================================================
+   LUGN LAYOUT · färre rutor
+   Sektioner skiljs med luft och en tunn linje, inte med kort.
+   Rutor finns bara där de bär något: bollrutan, handvideon, Idag-kortet,
+   dialoger och knappar.
+   ===================================================================== */
+.card{background:transparent;border:0;box-shadow:none;border-radius:0;padding:24px 0 0;border-top:1px solid color-mix(in oklab,var(--line) 65%,transparent)}
+.card.hand3d{border-top:0;padding:0;border-radius:18px;overflow:hidden;background:var(--surface)}
+.modal .card,.ls .card{border-top:0;padding-top:0}
+details.card.more{padding:18px 0 0}
+/* Ackorddiagram: bara greppet, ingen ram */
+.dg{background:transparent;border:0;border-radius:14px;padding:8px 6px 6px}
+.dg:hover{border:0;background:color-mix(in oklab,var(--text) 4%,transparent)}
+.dg.sel{border:0;background:color-mix(in oklab,var(--ember) 9%,transparent)}
+.dg.sel .nm{color:var(--ember)}
+.pr-chords .dg.sel{box-shadow:none}
+/* Slagen: bara pilarna, tonad ruta endast på slaget som spelas */
+.beat,.beat.hit,.beatcard .beat,.beatcard .beat.hit{background:transparent;border-color:transparent}
+.beat.cur,.beatcard .beat.cur{background:color-mix(in oklab,var(--ember) 13%,transparent);box-shadow:none}
+.beat.cur *,.beatcard .beat.cur *{color:var(--text)!important}
+.beat.hit .a{color:var(--text)}
+/* Tips och regler: text, inte lådor */
+.rule{background:transparent;padding:0}
+.rules{gap:18px 28px}
+/* Listor med val: rader i stället för kort */
+.game,.h2-song,.bib-c,.tstr{background:transparent;border-color:transparent;box-shadow:none}
+.game:hover,.h2-song:hover,.bib-c:hover,.tstr:hover{background:color-mix(in oklab,var(--text) 4%,transparent);border-color:transparent;transform:none}
+.game[aria-pressed="true"],.tstr.sel{background:color-mix(in oklab,var(--ember) 9%,transparent);border-color:transparent;box-shadow:none}
+.game[aria-pressed="true"] b{color:var(--ember)}
+.h2-song,.bib-c{padding-left:8px}
+/* Låtrutan och handen: mjukare, utan kantlinje */
+.pa{border:0}
+.song.sel{border-color:transparent}
+.song.can{border-color:transparent}
+.h2-hero{border:0}
+
+.card,:root:is([data-skin="salvia"],[data-skin="riddim"]) .card,.beatcard,.practice .beatcard{background:transparent;border-color:transparent;border-top-color:color-mix(in oklab,var(--line) 65%,transparent);box-shadow:none}
+:root:is([data-skin="salvia"],[data-skin="riddim"]) .card.hand3d{background:var(--surface);border-color:transparent}
+.practice .beatcard,.practice .pr-chords{padding-left:0;padding-right:0}
+.seg{justify-self:start;width:max-content;max-width:100%}
+/* Ackordbyten: steg som en lista, tips som text */
+.bx-steps li,.bx-steps li.on{background:transparent;border-color:transparent}
+.bx-steps li.on{background:color-mix(in oklab,var(--leaf) 9%,transparent)}
+.bx-tips div{background:transparent;padding:0}
+@media (max-width:760px){.card{padding:20px 0 0}}
 </style>
 
 </head>
