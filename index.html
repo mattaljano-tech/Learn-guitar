@@ -1089,6 +1089,20 @@ details.tp-grid>.mixer{margin-top:14px}
 .beatcard .beat.rest{opacity:.5}
 /* Handen: mörk varm ram i stället för kolsvart */
 .hand3d .h3-stage{background:#1d1410;border-radius:16px 16px 0 0}
+
+/* Greppen i låten i tomrummet under kompet (bara när handen står bredvid) */
+.pr-chords{display:none}
+@container (min-width:900px){
+  .practice.split .pr-chords{display:grid;gap:10px;padding:14px 16px}
+  .practice.split ~ .song-chords{display:none}
+}
+.pr-chords-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.pr-chords-head .muted{font-size:12px}
+.pr-chords-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+.pr-chords .dg{padding:8px 6px 6px}
+.pr-chords .dg .nm{font-size:18px}
+.pr-chords .dg .ft{display:none}
+.pr-chords .dg.sel,.pr-chords .dg[aria-pressed="true"]{border-color:var(--ember);box-shadow:inset 0 0 0 1px var(--ember)}
 </style>
 
 </head>
@@ -4355,6 +4369,11 @@ function App() {
           ${song0.alt.legend.map(([l, k]) => html`<div key=${k} className="alt-row"><span>${l}</span><${BeatStrip} pattern=${song0.alt.pats[k]} accents=${song0.alt.accents} cur=${-1} /></div>`)}
           <p className="muted" style=${{ fontSize: 14, margin: '8px 0 0' }}>${song0.alt.note}</p></details>` : null}
       </section>` : null}
+      ${views.hand ? html`<section className="card pr-chords" aria-label="Greppen i låten">
+        <div className="pr-chords-head"><span className="vb-lab">Greppen i låten</span><span className="muted">Klicka för att lyssna</span></div>
+        <div className="pr-chords-row">${[...new Set(bars.flatMap(barChords))].map((k) => html`<${Diagram} key=${k} k=${k} easy=${easy} selected=${shownChord === k}
+          onClick=${() => { setSelChord(k); hear(k); }} />`)}</div>
+      </section>` : null}
       </div>
 
       ${views.hand ? html`<${Hand3D} cur=${shownChord} next=${handNext} upcoming=${handUpcoming} easy=${easy} playing=${playing === 'song' && pos.bar >= 0} stepSec=${30 / (origOn ? song.bpm : bpm)}
@@ -4415,7 +4434,7 @@ function App() {
 
       <div className="tip"><span className="mark">Tips</span><p>${song.tip}</p></div>
 
-      <section>
+      <section className="song-chords">
         <div className="section-head"><h3>Greppen i låten</h3><p>Klicka för att lyssna och se greppet på greppbrädan.</p></div>
         <div className="diagrams">${[...new Set(bars.flatMap(barChords))].map((k) => html`<${Diagram} key=${k} k=${k} easy=${easy} selected=${shownChord === k}
           onClick=${() => { setSelChord(k); hear(k); }} />`)}</div>
