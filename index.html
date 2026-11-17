@@ -1289,6 +1289,98 @@ details.card.more{padding:18px 0 0}
 @media (max-width:760px){.card{padding:20px 0 0}}
 
 .confetti{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:90}
+
+/* Idag utan bild: målet och låtarna sida vid sida på bred skärm */
+.h2-main{display:grid;gap:24px;align-items:start}
+.h2-hero{grid-template-columns:minmax(0,1fr)!important}
+.h2-mission{padding:26px 28px 24px}
+@media (min-width:1000px){
+  .h2-main{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:36px}
+  .h2-jam-grid{grid-template-columns:minmax(0,1fr)}
+  .h2-jam{padding-top:6px}
+}
+
+/* Spela in + övningsläge: knappar i låtraden */
+.song-tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.now{grid-template-areas:none}
+.rec-btn,.focus-btn{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--text);font-weight:700;font-size:13.5px}
+.rec-btn:hover,.focus-btn:hover{background:color-mix(in oklab,var(--text) 5%,transparent)}
+.focus-btn svg{width:16px;height:16px}
+.rec-btn i{width:11px;height:11px;border-radius:50%;background:#d43c2c;box-shadow:0 0 0 2px color-mix(in oklab,#d43c2c 25%,transparent)}
+.rec-btn.on{border-color:#d43c2c;color:#b3261e;background:color-mix(in oklab,#d43c2c 8%,transparent)}
+.rec-btn.live{background:#d43c2c;color:#fff;border-color:#d43c2c}
+.rec-btn.live i{background:#fff;animation:recPulse 1s ease-in-out infinite}
+@keyframes recPulse{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.rec-btn.live i{animation:none}}
+.rec-list{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.rec-item{display:grid;grid-template-columns:130px minmax(0,1fr) auto auto;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid color-mix(in oklab,var(--line) 55%,transparent)}
+.rec-item:last-child{border-bottom:0}
+.rec-meta{display:grid;gap:1px}.rec-meta b{font-size:14px}.rec-meta span{font-size:12px;color:var(--muted)}
+.rec-item audio{width:100%;height:36px}
+.rec-x{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;border:0;background:transparent;color:var(--muted);font-size:18px;font-weight:700;text-decoration:none}
+.rec-x:hover{background:color-mix(in oklab,var(--text) 6%,transparent);color:var(--text)}
+@media (max-width:760px){.rec-item{grid-template-columns:minmax(0,1fr) auto auto}.rec-item audio{grid-column:1/-1;grid-row:2}}
+
+/* ---------- Övningsläge ---------- */
+.focusbar{display:none}
+.app.focus{padding-left:0!important}
+.app.focus header.top,.app.focus .bottomnav,.app.focus .mbar,.app.focus .fab,.app.focus .desk-only,.app.focus .songs,.app.focus .songhead{display:none!important}
+.app.focus .stage>:not(.practice):not(.focusbar){display:none!important}
+.app.focus main.wrap{max-width:none;padding:0 max(12px,env(safe-area-inset-right)) 12px max(12px,env(safe-area-inset-left));margin:0}
+.app.focus main{padding-bottom:12px!important}
+.app.focus .desk{display:block}
+.app.focus .stage{gap:10px}
+.app.focus .focusbar{display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:20;padding:10px 0;background:var(--bg)}
+.fb-x{flex:none;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--line);background:transparent;color:var(--text)}
+.fb-x svg{width:18px;height:18px}
+.fb-t{flex:1;min-width:0;display:grid}
+.fb-t b{font-family:var(--f-display);font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fb-t span{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.focusbar .play{height:44px;padding:0 18px 0 14px}
+.focusbar .bpm .val{min-width:48px}
+.app.focus .practice{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:10px}
+.app.focus .pr-chords{display:none!important}
+.app.focus .card{border-top:0;padding-top:0}
+/* stående telefon: allt under varandra */
+@media (orientation:portrait){
+  .app.focus .pa{height:min(330px,40vh)}
+}
+/* liggande telefon och dator: ackord + slag till vänster, handen till höger */
+@media (orientation:landscape){
+  .app.focus .practice{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr)!important;align-items:start}
+  .app.focus .pr-main{gap:8px}
+  .app.focus .hand3d{position:static}
+}
+@media (orientation:landscape) and (max-height:560px){
+  .app.focus .focusbar{padding:6px 0}
+  .app.focus .fb-x{width:36px;height:36px}
+  .app.focus .focusbar .play{height:38px}
+  .app.focus .focusbar .bpm button{width:34px;height:34px}
+  .app.focus .focusbar .tap{display:none}
+  .app.focus .rec-btn{height:32px;padding:0 10px}
+  .app.focus .pa{height:calc(100vh - 160px);min-height:200px}
+  .app.focus .pa-card .dg svg{max-width:84px}
+  .app.focus .pa-card .pill{font-size:20px;padding:2px 14px}
+  .app.focus .pa-hint{display:none}
+  .app.focus .h3-cap{display:none}
+  .app.focus .hand3d .h3-stage{max-height:calc(100vh - 70px);aspect-ratio:auto;height:calc(100vh - 70px)}
+  .app.focus .beat{padding:4px 0 3px}
+  .app.focus .beat .t{font-size:8px}
+}
+@media (orientation:landscape) and (min-height:561px){
+  .app.focus .pa{height:min(420px,calc(100vh - 230px))}
+  .app.focus .pa-card .dg svg{max-width:150px}
+}
+
+.app.focus,.app.focus main{overflow-x:hidden}
+.app.focus .focusbar .tap{display:none}
+@media (max-width:640px){
+  .app.focus .focusbar{flex-wrap:wrap;row-gap:8px}
+  .app.focus .fb-t{flex:1 1 calc(100% - 60px)}
+  .app.focus .focusbar .play{flex:1;justify-content:center}
+  .app.focus .focusbar .rec-btn{height:44px;padding:0 12px}
+  .app.focus .focusbar .bpm button{width:38px;height:38px}
+}
 </style>
 
 </head>
@@ -4170,6 +4262,34 @@ function RhythmMeter({ active, onHit }) {
   </section>`;
 }
 
+/* ---------- egna inspelningar: sparas i telefonens IndexedDB, per låt ---------- */
+const RecDB = (() => {
+  let dbp;
+  const open = () => dbp || (dbp = new Promise((res, rej) => {
+    const r = indexedDB.open('ng-rec', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('rec', { keyPath: 'id' }).createIndex('song', 'song');
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+  }));
+  const run = (mode, fn) => open().then((db) => new Promise((res, rej) => {
+    const t = db.transaction('rec', mode), q = fn(t.objectStore('rec'));
+    t.oncomplete = () => res(q ? q.result : undefined); t.onerror = () => rej(t.error);
+  }));
+  return { put: (r) => run('readwrite', (st) => st.put(r)), del: (id) => run('readwrite', (st) => st.delete(id)), list: (song) => run('readonly', (st) => st.index('song').getAll(song)) };
+})();
+const fmtDur = (s) => Math.floor(s / 60) + ':' + String(Math.round(s % 60)).padStart(2, '0');
+function RecItem({ r, onDel }) {
+  const url = useMemo(() => URL.createObjectURL(r.blob), [r.id]);
+  useEffect(() => () => URL.revokeObjectURL(url), [url]);
+  const d = new Date(r.at), when = d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+  const ext = /mp4/.test(r.blob.type) ? 'm4a' : 'webm';
+  return html`<li className="rec-item">
+    <div className="rec-meta"><b>${when}</b><span>${fmtDur(r.dur)}${r.bpm ? ' · ' + r.bpm + ' BPM' : ''}</span></div>
+    <audio controls preload="none" src=${url}></audio>
+    <a className="rec-x" href=${url} download=${r.title + ' ' + when.replace(/[: ]/g, '-') + '.' + ext} title="Ladda ner" aria-label="Ladda ner inspelningen">↓</a>
+    <button className="rec-x" onClick=${() => onDel(r.id)} title="Ta bort" aria-label="Ta bort inspelningen">×</button>
+  </li>`;
+}
+
 /* ---------------------------------------------------------------- app */
 function App() {
   const [tab, setTab] = useState(() => { try { return sessionStorage.getItem('ng-tab') || 'vag'; } catch (e) { return 'vag'; } });
@@ -4179,6 +4299,7 @@ function App() {
   const [prog, setProg] = useState(loadProg);
   const P = useRef(prog);
   const [toasts, setToasts] = useState([]);
+  const [focusOn, setFocusOn] = useState(false);
   const [game, setGame] = useState('quiz');
   const [gKey, setGKey] = useState('G');
   const [gPart, setGPart] = useState('foljder');
@@ -4330,6 +4451,68 @@ function App() {
     if (msgs.some((m) => m.big)) { const c = engine.now(); [0, 4, 7, 12].forEach((s, i) => engine.note(329.63 * Math.pow(2, s / 12), c + i * 0.07, { vel: 0.5, dur: 0.5 })); }
     P.current = n; setProg(n); saveProg(n);
   };
+  /* ---------- skärmen vaken medan något spelas ---------- */
+  const wakeRef = useRef(null);
+  useEffect(() => {
+    const grab = async () => { try { if (navigator.wakeLock && !wakeRef.current && document.visibilityState === 'visible') { wakeRef.current = await navigator.wakeLock.request('screen'); wakeRef.current.addEventListener('release', () => { wakeRef.current = null; }); } } catch (e) {} };
+    if (playing || focusOn) { grab(); document.addEventListener('visibilitychange', grab); }
+    else if (wakeRef.current) { try { wakeRef.current.release(); } catch (e) {} wakeRef.current = null; }
+    return () => document.removeEventListener('visibilitychange', grab);
+  }, [playing, focusOn]);
+
+  /* ---------- spela in dig själv ---------- */
+  const [recArm, setRecArm] = useState(false);
+  const [recOn, setRecOn] = useState(0);
+  const [recTick, setRecTick] = useState(0);
+  const [recs, setRecs] = useState([]);
+  const recRef = useRef(null);
+  const loadRecs = (id) => RecDB.list(id).then((l) => setRecs((l || []).sort((a, b) => b.at - a.at))).catch(() => setRecs([]));
+  useEffect(() => { loadRecs(song.id); }, [song.id]);
+  useEffect(() => { if (!recOn) return; const iv = setInterval(() => setRecTick((x) => x + 1), 500); return () => clearInterval(iv); }, [recOn]);
+  const startRec = async () => {
+    try {
+      const st = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+      const mime = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm'].find((m) => window.MediaRecorder && MediaRecorder.isTypeSupported(m)) || '';
+      const mr = new MediaRecorder(st, mime ? { mimeType: mime } : undefined), chunks = [], t0 = Date.now();
+      const sid = song.id, stitle = song.title, b0 = origOn ? song.bpm : bpm;
+      mr.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+      mr.onstop = async () => {
+        st.getTracks().forEach((t) => t.stop());
+        const dur = (Date.now() - t0) / 1000; if (dur < 2 || !chunks.length) return;
+        try {
+          await RecDB.put({ id: String(t0), song: sid, title: stitle, at: t0, dur, bpm: b0, blob: new Blob(chunks, { type: mr.mimeType || 'audio/webm' }) });
+          const all = ((await RecDB.list(sid)) || []).sort((a, b) => b.at - a.at); for (const old of all.slice(20)) await RecDB.del(old.id);
+          try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+          toast({ x: '●', t: 'Inspelningen sparad', s: stitle + ' · ' + fmtDur(dur) + '. Lyssna under låten.' });
+        } catch (e) { toast({ x: '!', t: 'Kunde inte spara inspelningen', s: '' }); }
+        loadRecs(sid);
+      };
+      mr.start(1000); recRef.current = { mr }; setRecOn(t0);
+    } catch (e) { setRecArm(false); toast({ x: '!', t: 'Mikrofonen gick inte att starta', s: 'Tillåt mikrofonen och försök igen.' }); }
+  };
+  const stopRec = () => { const r = recRef.current; recRef.current = null; setRecOn(0); if (r && r.mr.state !== 'inactive') r.mr.stop(); };
+  useEffect(() => {
+    if (playing === 'song' && recArm && !recRef.current) startRec();
+    if ((playing !== 'song' || !recArm) && recRef.current) stopRec();
+  }, [playing, recArm]);
+  const delRec = (id) => RecDB.del(id).then(() => loadRecs(song.id));
+  const recBtn = html`<button className=${'rec-btn' + (recArm ? ' on' : '') + (recOn ? ' live' : '')} aria-pressed=${recArm} onClick=${() => setRecArm(!recArm)}
+    title=${recArm ? 'Sluta spela in' : 'Spela in dig själv nästa gång du startar låten'}><i></i>${recOn ? 'Spelar in ' + fmtDur((Date.now() - recOn) / 1000) : recArm ? (playing === 'song' ? 'Startar …' : 'Spelar in när du startar') : 'Spela in'}</button>`;
+
+  /* ---------- övningsläge: bara ackord, slag och hand, i helskärm ---------- */
+  const enterFocus = () => {
+    setFocusOn(true);
+    try { const el = document.documentElement; if (el.requestFullscreen && !document.fullscreenElement) el.requestFullscreen({ navigationUI: 'hide' }).catch(() => {}); } catch (e) {}
+    window.scrollTo({ top: 0 });
+  };
+  const exitFocus = () => { setFocusOn(false); try { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); } catch (e) {} };
+  useEffect(() => {
+    const h = () => { if (!document.fullscreenElement) setFocusOn(false); };
+    document.addEventListener('fullscreenchange', h); return () => document.removeEventListener('fullscreenchange', h);
+  }, []);
+  useEffect(() => { if (!focusOn) return; const h = (e) => { if (e.key === 'Escape') exitFocus(); }; window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h); }, [focusOn]);
+  useEffect(() => { if (tab !== 'spela' && focusOn) exitFocus(); }, [tab]);
+
   const completeManual = (m) => award(m.xp, 'Uppdrag klart: ' + m.title, (n) => { if (!n.missions.includes(m.id)) n.missions.push(m.id); });
 
   const doneRef = useRef({});
@@ -4583,6 +4766,10 @@ function App() {
             <span className="tag">${song.level}</span><span className="tag mono">${song.bpm} BPM original</span>
             <span className="tag">${bars.length} takter</span>${song.capo ? html`<span className="tag">${song.capo}</span>` : null}
           </div>
+          <div className="song-tools">
+          ${recBtn}
+          <button className="focus-btn" onClick=${enterFocus} title="Helskärm med bara ackord, slag och hand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>Övningsläge</button>
+        </div>
         </div>
         <div className="tp-main now-ctl">
           ${playBtn(origOn ? 'Spela med inspelningen' : 'Starta kompet')}
@@ -4597,6 +4784,14 @@ function App() {
           ${[['top', 'Boll i ackord'], ['meter', 'Mätare vid handen']].map(([k, l]) => html`<button key=${k} className=${'vb-chip' + (marker === k ? ' on' : '')} aria-pressed=${marker === k} onClick=${() => pickMarker(k)}>${l}</button>`)}</div>
       </section>
       </div>
+
+      ${focusOn ? html`<div className="focusbar">
+        <button className="fb-x" onClick=${exitFocus} aria-label="Avsluta övningsläget"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+        <div className="fb-t"><b>${song.title}</b><span>${song.artist}</span></div>
+        ${recBtn}
+        ${origOn ? null : html`<${Bpm} value=${bpm} set=${setBpm} />`}
+        <button className=${'play' + (playing ? ' stop' : '')} onClick=${toggle}>${playing ? I.stop : I.play}${playing ? 'Stoppa' : 'Spela'}</button>
+      </div>` : null}
 
       <div className=${'practice' + (views.hand && (views.pa || views.beat) ? ' split' : '')}>
       <div className="pr-main">
@@ -4674,6 +4869,11 @@ function App() {
             </button>`; })}</div>
         </div>`; }); })()}
       </section>
+
+      ${recs.length ? html`<section className="card recs" aria-label="Dina inspelningar">
+        <div className="section-head" style=${{ margin: 0 }}><h3>Dina inspelningar</h3><p>Lyssna på hur du låter. De ${Math.min(20, recs.length) === 1 ? 'sparas' : 'sparas'} bara på den här enheten.</p></div>
+        <ul className="rec-list">${recs.map((r) => html`<${RecItem} key=${r.id} r=${r} onDel=${delRec} />`)}</ul>
+      </section>` : null}
 
       <div className="tip"><span className="mark">Tips</span><p>${song.tip}</p></div>
 
@@ -5022,7 +5222,7 @@ function App() {
   const allDone = (prog.planDay || 0) >= PLAN.length;
   const daySong = [...lSteps].reverse().find((st) => st.k === 'song');
   const jamSongs = (canPlay.length ? canPlay : songs.filter((x) => x.level === 'Superlätt' || x.level === 'Lätt')).slice(0, 6);
-  const homeHead = allDone ? 'Nu är det bara att spela' : lCur < 0 ? 'Dagens lektion är klar!' : doneCount ? 'Du är igång. Kör vidare!' : streak ? streak + ' dagar i rad. Håll elden vid liv!' : 'Ta fram gitarren';
+  const homeHead = allDone ? 'Nu är det bara att spela' : lCur < 0 ? 'Dagens lektion är klar!' : doneCount ? 'Du är igång. Kör vidare!' : streak ? streak + (streak === 1 ? ' dag i rad. Håll elden vid liv!' : ' dagar i rad. Håll elden vid liv!') : 'Ta fram gitarren';
   const playSong = (x) => { pickSong(x); goTab('spela'); window.scrollTo({ top: 0 }); };
   const HomeTab = () => html`<div className="home home2">
     <div className="h2-greet">
@@ -5035,8 +5235,8 @@ function App() {
       </div>
     </div>
 
+    <div className="h2-main">
     <section className="h2-hero">
-      <${SceneView} vol=${lvl} />
       <div className="h2-mission">
         ${allDone ? html`<span className="h2-kick">Fritt spel</span><h2>Välj en låt och kör</h2>
           <p className="h2-sub">Du har gått igenom hela planen. Nu bygger du repertoar.</p>
@@ -5058,6 +5258,7 @@ function App() {
         <span className="pl">${I.play}</span>
         <span className="tx"><b>${x.title}</b><i>${x.artist}</i><span className="ch">${songChords(x).map((k) => CHORD_DB[k].name).join(' · ')}</span></span></button>`)}</div>
     </section>
+    </div>
 
     <button className="ls-link" style=${{ justifySelf: 'center' }} onClick=${() => goTab('bib')}>Öppna biblioteket</button>
     <details className="card more home-more"><summary>Dina framsteg, uppdrag och märken</summary>
@@ -5214,7 +5415,7 @@ function App() {
     ackord: 'M6 4v16M10 4v16M14 4v16M18 4v16M4 8h16M4 13h16', guide: 'M4 17h4l3-10 3 10h6M4 7h3M17 7h3', byten: 'M4 8h13l-3-3M20 16H7l3 3', stam: 'M12 3v10M8 7l4-4 4 4M5 20a7 7 0 0 1 14 0',
   };
 
-  return html`<div className=${'app' + (tab === 'spela' ? ' on-spela' : '')}>
+  return html`<div className=${'app' + (tab === 'spela' ? ' on-spela' : '') + (focusOn && tab === 'spela' ? ' focus' : '')}>
     <header className="top"><div className="wrap top-in">
       <div className="brand">${Rosette}<div><h1>NylonGitarr <span>Studio</span></h1><small>Grepp, komp och reggae-skank för klassisk gitarr</small></div></div>
       <nav className="tabs" role="tablist">
