@@ -1182,6 +1182,65 @@ details.tp-grid>.mixer{margin-top:14px}
   .h2-steps button{padding:5px 8px;font-size:14px}
   .h2-mission h2{font-size:26px}
 }
+
+/* =====================================================================
+   DESIGNSYSTEM · NylonGitarr Studio
+   Färgroller (gäller båda skinnen):
+     --ember  = huvudhandling: Starta, Kör igång, Slå an. En per vy.
+     --text   = påslaget val (chips, vyknappar) och Stoppa.
+     --leaf   = klart / rätt / framsteg.
+     --sky    = information och grepp.
+   Former: kort 20px, kontroller 14px, piller 999px. Avstånd 8/12/18/24.
+   ===================================================================== */
+:root{--ds-r:20px;--ds-r-ctl:14px;--ds-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 10px 28px -20px rgba(60,30,10,.45)}
+.card{border-radius:var(--ds-r);box-shadow:var(--ds-shadow)}
+.ds-page{display:grid;gap:24px}
+.ds-eyebrow{font-size:12px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+h2.page{font-family:var(--f-display);font-size:clamp(28px,3.4vw,38px);font-weight:800;line-height:1.08;letter-spacing:-.01em}
+h2.page + .lead,.page + .lead{margin-top:6px}
+.lead{font-size:16px;line-height:1.45}
+/* Huvudknapp */
+.play,:root:is([data-skin="salvia"],[data-skin="riddim"]) .play{background:var(--ember);color:var(--ember-ink);font-weight:700;box-shadow:0 10px 24px -14px var(--ember)}
+.play:hover{filter:brightness(1.06)}
+.play.stop,:root:is([data-skin="salvia"],[data-skin="riddim"]) .play.stop{background:var(--text);color:var(--bg);box-shadow:none}
+.fab{background:var(--text);color:var(--bg)}
+.btn{border-radius:var(--ds-r-ctl)}
+.btn.primary,.ls-btn{background:var(--ember);color:var(--ember-ink)}
+.ls-btn.ghost{background:var(--surface-2);color:var(--text)}
+/* Val: segment och chips */
+.seg{border-radius:var(--ds-r-ctl);padding:4px;gap:2px}
+.seg button{border-radius:10px;padding:8px 14px}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.12),0 0 0 1px var(--line)}
+.chip.on{color:var(--bg);background:var(--text);border-color:var(--text)}
+.mbar .play:not(.stop){background:var(--ember);color:var(--ember-ink)}
+/* Spelkort och val-kort */
+.game{border-radius:var(--ds-r);padding:18px;transition:border-color .12s,transform .12s}
+.game:hover{transform:translateY(-1px);border-color:color-mix(in oklab,var(--ember) 40%,transparent)}
+.game[aria-pressed="true"]{border-color:var(--ember);background:color-mix(in oklab,var(--ember) 7%,var(--surface));box-shadow:inset 0 0 0 1px var(--ember)}
+/* Rytm: ordet för slaget, och lugn text innan start */
+.rc-word{color:var(--ember)}
+.rc-word.idle{font-size:20px;font-weight:700;color:var(--faint);align-self:center}
+/* Bibliotek */
+.bib-group{display:grid}
+.bib{grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.bib-c{display:flex;align-items:center;gap:16px;min-height:0;padding:18px 18px 18px 16px;border-radius:var(--ds-r);box-shadow:var(--ds-shadow);transition:transform .12s,border-color .12s}
+.bib-c:hover{transform:translateY(-2px);border-color:color-mix(in oklab,var(--c) 50%,transparent)}
+.bib-ic{flex:none;width:52px;height:52px;border-radius:16px;display:grid;place-items:center;color:var(--c);background:color-mix(in oklab,var(--c) 13%,var(--surface))}
+.bib-ic svg{width:26px;height:26px}
+.bib-tx{display:grid;gap:2px;min-width:0;flex:1}
+.bib-tx b{font-size:18px}
+.bib-tx span{font-size:14px;color:var(--muted)}
+.bib-c .bib-go{width:20px;height:20px;color:var(--faint);flex:none}
+.bib-c:hover .bib-go{color:var(--c)}
+/* Följder och riff: rimligt stora diagram */
+.gd-six{grid-template-columns:repeat(auto-fill,minmax(120px,170px))!important;justify-content:start}
+.gd-prog .diagrams{grid-template-columns:repeat(auto-fill,minmax(110px,150px))!important;justify-content:start}
+@media (max-width:760px){
+  .bib{grid-template-columns:minmax(0,1fr)}
+  .gd-six{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .gd-prog .diagrams{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  h2.page{font-size:28px}
+}
 </style>
 
 </head>
@@ -1939,7 +1998,7 @@ function RhythmCard({ pattern, step, counting, chord, easy, note }) {
   return html`<section className="card rc">
     <div className="rc-top">
       ${chord ? html`<div className="rc-chord"><small>Grepp</small><b>${CHORD_DB[chord] ? CHORD_DB[chord].name : chord}</b></div>` : html`<div className="rc-chord"><small>Grepp</small><b>Dämpat</b></div>`}
-      <div className=${'rc-word' + (d === 'X' ? ' tj' : d === '-' ? ' rest' : '')}>${counting ? 'Räknar in …' : on ? RC_WORD[d] : 'Tryck Starta'}</div>
+      <div className=${'rc-word' + (d === 'X' ? ' tj' : d === '-' ? ' rest' : '') + (!on && !counting ? ' idle' : '')}>${counting ? 'Räknar in …' : on ? RC_WORD[d] : 'Tryck Starta'}</div>
     </div>
     <${BeatStrip} pattern=${pattern} cur=${on ? step : -1} count=${counting ? 1 : null} />
     ${note ? html`<p className="muted" style=${{ margin: 0, fontSize: 13 }}>${note}</p>` : null}
@@ -4902,8 +4961,9 @@ function App() {
     </details>
   </div>`;
 
-  const BIB = [['spela', 'Låtar', 'Alla låtar och dina egna', 'var(--brass)'], ['skank', 'Rytm', 'Skank och tjack med vågen', 'var(--leaf)'], ['ackord', 'Ackord', 'Alla grepp med ljud', 'var(--f1)'],
-    ['byten', 'Ackordbyten', 'Öva två ackord', 'var(--ember)'], ['spel', 'Spel', 'Quiz och 1-minutsutmaningen', '#c07bff'], ['stam', 'Stämmare', 'Lyssnar på gitarren', 'var(--f3)'], ['guide', 'Följder och riff', 'Ackord som passar ihop', 'var(--brass)']];
+  const BIB = [['spela', 'Låtar', 'Alla låtar och dina egna', 'var(--ember)', 'Spela'], ['skank', 'Rytm', 'Skank och tjack med vågen', 'var(--leaf)', 'Spela'], ['spel', 'Spel', 'Quiz och 1-minutsutmaningen', 'var(--ember)', 'Spela'],
+    ['ackord', 'Ackord', 'Alla grepp med ljud', 'var(--sky)', 'Lär dig'], ['byten', 'Ackordbyten', 'Öva två ackord', 'var(--leaf)', 'Lär dig'], ['guide', 'Följder och riff', 'Ackord som passar ihop', 'var(--sky)', 'Lär dig'],
+    ['stam', 'Stämmare', 'Lyssnar på gitarren', 'var(--brass)', 'Verktyg']];
   const chordCard = (k, i) => CHORD_DB[k] ? html`<${Diagram} key=${k + i} k=${k} easy=${easy} onClick=${() => engine.playChord(voicing(k, easy).frets)} />`
     : html`<div key=${k + i} className="gd-chip">${k}<small>barré, finns ej i tabellen</small></div>`;
   const inKey = (steps) => steps.split(' ').map((d) => GUIDE_KEYS[gKey][GUIDE_IDX[d]]);
@@ -4948,11 +5008,13 @@ function App() {
           <${RiffTab} tab=${tab} /><p className="muted" style=${{ margin: 0 }}>${tip}</p></div>`)}
       </section>` : null}
   </div>`;
-  const BibTab = () => html`<div style=${{ display: 'grid', gap: 18 }}>
-    <h2 className="page">Bibliotek</h2>
-    <div className="bib">${BIB.map(([id, t, d, c]) => html`<button key=${id} className="bib-c" onClick=${() => goTab(id)}>
-      <svg viewBox="0 0 24 24" fill="none" stroke=${c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d=${TabIcon[id]} /></svg>
-      <b>${t}</b><span>${d}</span></button>`)}</div>
+  const BibTab = () => html`<div className="ds-page">
+    <div><h2 className="page">Bibliotek</h2><p className="lead">Allt i appen på ett ställe. Spela, lär dig nya grepp eller stäm gitarren.</p></div>
+    ${['Spela', 'Lär dig', 'Verktyg'].map((g) => html`<section key=${g} className="bib-group"><h3 className="ds-eyebrow">${g}</h3>
+      <div className="bib">${BIB.filter((x) => x[4] === g).map(([id, t, d, c]) => html`<button key=${id} className="bib-c" style=${{ '--c': c }} onClick=${() => goTab(id)}>
+        <span className="bib-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d=${TabIcon[id]} /></svg></span>
+        <span className="bib-tx"><b>${t}</b><span>${d}</span></span>
+        <svg className="bib-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg></button>`)}</div></section>`)}
   </div>`;
 
   const OldVag = html`<div style=${{ display: 'grid', gap: 22 }}>
@@ -5020,6 +5082,7 @@ function App() {
   </div>`;
 
   const SpelTab = html`<div style=${{ display: 'grid', gap: 18 }}>
+    <div><h2 className="page">Spel</h2><p className="lead">Korta utmaningar som tränar öra, grepp och byten. Välj ett spel.</p></div>
     <div className="games" role="group" aria-label="Välj spel">
       <button className="game" aria-pressed=${game === 'quiz'} onClick=${() => setGame('quiz')}><b>Ackordquiz</b><span>Känn igen greppet på bild eller ljud. Rätt i rad ger combo-bonus.</span></button>
       <button className="game" aria-pressed=${game === 'chal'} onClick=${() => setGame('chal')}><b>1-minutsutmaningen</b><span>Hur många byten hinner du på 60 sekunder? Slå ditt eget rekord varje dag.</span></button>
