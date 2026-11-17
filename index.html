@@ -1381,6 +1381,16 @@ details.card.more{padding:18px 0 0}
   .app.focus .focusbar .rec-btn{height:44px;padding:0 12px}
   .app.focus .focusbar .bpm button{width:38px;height:38px}
 }
+
+/* Loopa valfria takter */
+.chart-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.chart-head p{flex:1;min-width:200px}
+.bar.out{opacity:.38}
+.bar.pick{box-shadow:inset 0 0 0 2px var(--ember);background:color-mix(in oklab,var(--ember) 12%,var(--surface-2))}
+/* Tempo på egen inspelning */
+.rate-seg button{padding:8px 11px;font-variant-numeric:tabular-nums}
+.mbar .rate-seg{flex:none}
+.skins{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
 </style>
 
 </head>
@@ -1391,7 +1401,7 @@ details.card.more{padding:18px 0 0}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
 <script>
 const { useState, useEffect, useRef, useMemo } = React;
-try { const sk = localStorage.getItem('ng-skin2'); document.documentElement.setAttribute('data-skin', sk === 'riddim' ? 'riddim' : 'salvia'); } catch (e) { document.documentElement.setAttribute('data-skin', 'salvia'); }
+try { const sk = localStorage.getItem('ng-skin2'), dk = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches; document.documentElement.setAttribute('data-skin', sk === 'riddim' || (sk === 'auto' && dk) ? 'riddim' : 'salvia'); } catch (e) { document.documentElement.setAttribute('data-skin', 'salvia'); }
 /* Inbyggd mallmotor (ersätter htm-biblioteket, inga externa beroenden) */
 const html = (() => {
   const P = '', cache = new WeakMap(), VOID = { input: 1, br: 1, img: 1, hr: 1, meta: 1, link: 1 };
@@ -2766,6 +2776,7 @@ function FreePlay({ easy, vol, onFinish }) {
 
 
 const SKINS = [
+  { id: 'auto', name: 'Följ telefonen', sub: 'Ljust på dagen, Riddim när telefonen är i mörkt läge', bg: '#e6dccb', fg: '#2e4136', sw: ['#f3ede1', '#0e1f17', '#f2c230'] },
   { id: 'salvia', name: 'Salvia och persika', sub: 'Ljust papper, dämpat grönt, som ett skivomslag', bg: '#f3ede1', fg: '#2e4136', sw: ['#4c6655', '#edb99f', '#96472e'] },
   { id: 'riddim', name: 'Riddim', sub: 'Djupgrönt, guld och rött, som en strandbar i skymningen', bg: '#0e1f17', fg: '#fbf2dc', sw: ['#f2c230', '#1f8a4c', '#c93a2b'] },
 ];
@@ -2774,6 +2785,47 @@ const SKINS = [
 // Spela med en egen inspelning: klockan följer ljudfilens slag i stället för kompbandet
 let AUDIO_SYNC = null;
 const AUDIO_BUF = {};
+// Tidsförlängning (WSOLA): gör inspelningen långsammare utan att tonhöjden ändras.
+// Varje bit av ljudet läggs om med överlapp, och placeringen finjusteras så att vågformerna hakar i varandra.
+function wsolaCore(inp, rate) {
+  const N = 2048, Hs = 512, tol = 384, Ha = Hs * rate, chs = inp.length, len = inp[0].length;
+  const mono = chs > 1 ? Float32Array.from(inp[0], (v, i) => (v + inp[1][i]) * 0.5) : inp[0];
+  const outLen = Math.ceil(len / rate) + N, out = inp.map(() => new Float32Array(outLen)), wsum = new Float32Array(outLen);
+  const win = new Float32Array(N); for (let i = 0; i < N; i++) win[i] = 0.5 - 0.5 * Math.cos((2 * Math.PI * i) / N);
+  let prev = 0, outPos = 0;
+  for (let k = 0; ; k++, outPos += Hs) {
+    const nominal = Math.round(k * Ha); if (nominal + N + tol >= len) break;
+    let best = nominal;
+    if (k > 0) {
+      const tgt = prev + Hs; let bc = -Infinity;
+      for (let d = -tol; d <= tol; d += 6) {
+        const p0 = nominal + d; if (p0 < 0) continue; let cc = 0;
+        for (let i = 0; i < 1024; i += 4) cc += mono[p0 + i] * mono[tgt + i];
+        if (cc > bc) { bc = cc; best = p0; }
+      }
+    }
+    for (let ch = 0; ch < chs; ch++) { const o = out[ch], src = inp[ch]; for (let i = 0; i < N; i++) o[outPos + i] += src[best + i] * win[i]; }
+    for (let i = 0; i < N; i++) wsum[outPos + i] += win[i];
+    prev = best;
+  }
+  const n = outPos + N;
+  return out.map((o) => { const r = new Float32Array(n); for (let i = 0; i < n; i++) r[i] = wsum[i] > 1e-3 ? o[i] / wsum[i] : 0; return r; });
+}
+// Körs i en bakgrundstråd så att appen inte fryser medan den räknar (faller tillbaka på huvudtråden om det inte går)
+function stretchBuffer(buf, rate, ctx) {
+  const inp = []; for (let i = 0; i < buf.numberOfChannels; i++) inp.push(Float32Array.from(buf.getChannelData(i)));
+  const make = (arrs) => { const r = ctx.createBuffer(arrs.length, arrs[0].length, buf.sampleRate); arrs.forEach((a, i) => r.copyToChannel(a, i)); return r; };
+  return new Promise((ok) => {
+    let w;
+    try {
+      const url = URL.createObjectURL(new Blob(['const wsolaCore = ' + wsolaCore.toString() + ';\nonmessage = (e) => { const o = wsolaCore(e.data.inp, e.data.rate); postMessage(o, o.map((x) => x.buffer)); };'], { type: 'text/javascript' }));
+      w = new Worker(url); URL.revokeObjectURL(url);
+      w.onmessage = (e) => { w.terminate(); ok(make(e.data)); };
+      w.onerror = () => { w.terminate(); ok(make(wsolaCore(inp, rate))); };
+      w.postMessage({ inp, rate }, inp.map((x) => x.buffer));
+    } catch (e) { ok(make(wsolaCore(inp, rate))); }
+  });
+}
 function audioBars(a) {
   const segs = a.chords.map(([st, ch], i) => ({ st, ch, n: (i + 1 < a.chords.length ? a.chords[i + 1][0] : a.beats.length) - st }));
   const bars = [], starts = [];
@@ -4328,12 +4380,14 @@ function App() {
   const [capoOn, setCapoOn] = useState(() => { try { return localStorage.getItem('ng-capo') === '1'; } catch (e) { return false; } });
   const toggleCapo = () => { const v = !capoOn; setCapoOn(v); try { localStorage.setItem('ng-capo', v ? '1' : '0'); } catch (e) {} if (playing === 'song') engine.transpose = v && capoN ? capoN : 0; };
   const allBars = useMemo(() => song.form.flatMap((p) => p.bars.map((c, i) => (song.barPats ? { ...mkBar(c, p.part), pat: song.barPats[i % song.barPats.length] } : mkBar(c, p.part)))), [song]);
-  const [loop, setLoop] = useState(null); // { pi, from, to, part } – loopa en del av låten
+  const [loop, setLoop] = useState(null); // { pi, from, to, part } – loopa en del av låten (pi -1 = egna takter)
+  const [pickLoop, setPickLoop] = useState(null); // null eller { a } medan du väljer takter att loopa
   const [orig, setOrig] = useState(true);
   const [origMusic, setOrigMusic] = useState(true);   // höra inspelningen
   const [origGuitar, setOrigGuitar] = useState(false); // appens gitarr spelar ackorden i takt med inspelningen
   useEffect(() => { if (AUDIO_SYNC && AUDIO_SYNC.g) AUDIO_SYNC.g.gain.setTargetAtTime(origMusic ? 0.55 : 0, engine.ctx.currentTime, 0.03); }, [origMusic]);
   const [origLoad, setOrigLoad] = useState(false);
+  const [origRate, setOrigRate] = useState(1);
   const aud = useMemo(() => (song.audio ? audioBars(song.audio) : null), [song]);
   const origOn = !!(aud && orig);
   const bars = useMemo(() => (origOn ? aud.bars : loop ? allBars.slice(loop.from, loop.to + 1) : allBars), [allBars, loop, origOn, aud]);
@@ -4376,7 +4430,9 @@ function App() {
   const [tableChord, setTableChord] = useState('C');
   const [modal, setModal] = useState(false);
   const [picking, setPicking] = useState(false);
-  const [skin, setSkinState] = useState(() => { try { return localStorage.getItem('ng-skin2') === 'riddim' ? 'riddim' : 'salvia'; } catch (e) { return 'salvia'; } });
+  const [skin, setSkinState] = useState(() => { try { const v = localStorage.getItem('ng-skin2'); return v === 'riddim' || v === 'auto' ? v : 'salvia'; } catch (e) { return 'salvia'; } });
+  const [sysDark, setSysDark] = useState(() => { try { return matchMedia('(prefers-color-scheme: dark)').matches; } catch (e) { return false; } });
+  useEffect(() => { let mq; try { mq = matchMedia('(prefers-color-scheme: dark)'); } catch (e) { return; } const h = (e) => setSysDark(e.matches); mq.addEventListener ? mq.addEventListener('change', h) : mq.addListener(h); return () => (mq.removeEventListener ? mq.removeEventListener('change', h) : mq.removeListener(h)); }, []);
   const [skinOpen, setSkinOpen] = useState(false);
   const ghOpen = false;
   const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : v; } catch (e) { return d; } };
@@ -4418,7 +4474,7 @@ function App() {
     if (typeof d.lefty === 'boolean') setLefty(d.lefty);
     setCodeAsk(null); setCodeIn(''); setCodeMsg('Klart! Dina framsteg är flyttade hit.');
   };
-  useEffect(() => { document.documentElement.setAttribute('data-skin', skin); try { localStorage.setItem('ng-skin2', skin); } catch (e) {} }, [skin]);
+  useEffect(() => { document.documentElement.setAttribute('data-skin', skin === 'auto' ? (sysDark ? 'riddim' : 'salvia') : skin); try { localStorage.setItem('ng-skin2', skin); } catch (e) {} }, [skin, sysDark]);
   const narrowM = useNarrow('(max-width: 760px)');
 
   const S = useRef({});
@@ -4580,15 +4636,22 @@ function App() {
       if (!buf) { toast({ x: '!', t: 'Kunde inte ladda inspelningen', s: 'Kolla att du har nät och försök igen.' }); return; }
       if (S.current.song.id !== id) return;
     }
+    const rate = origRate;
+    if (rate !== 1) {
+      const key = a.src + '@' + rate;
+      if (!AUDIO_BUF[key]) { setOrigLoad(true); await new Promise((r) => setTimeout(r, 40)); AUDIO_BUF[key] = await stretchBuffer(buf, rate, c); setOrigLoad(false); if (S.current.song.id !== id) return; }
+      buf = AUDIO_BUF[key];
+    }
+    const BE = rate === 1 ? a.beats : a.beats.map((x) => x / rate), IBI = aud.ibi / rate;
     engine.transpose = capoN || 0; // inspelningen ligger i originaltonarten
-    const first = a.beats[aud.starts[fromBar]], lead = 4 * aud.ibi, now = c.currentTime + 0.12;
+    const first = BE[aud.starts[fromBar]], lead = 4 * IBI, now = c.currentTime + 0.12;
     const base = now - (first - lead), off = first - lead;
     const src = c.createBufferSource(), g = c.createGain();
     src.buffer = buf; g.gain.value = S.current.origMusic ? 0.55 : 0; src.connect(g); g.connect(engine.master);
     if (off >= 0) src.start(now, off); else src.start(now - off, 0);
-    for (let i = 0; i < 4; i++) engine.click(base + first - (4 - i) * aud.ibi, i === 0);
+    for (let i = 0; i < 4; i++) engine.click(base + first - (4 - i) * IBI, i === 0);
     // ackord per slag och plats i takten, så att appens gitarr kan följa inspelningen
-    const B = a.beats, chOf = [], posOf = [];
+    const B = BE, chOf = [], posOf = [];
     for (let i = 0, ci = 0, bi = 0; i < B.length; i++) {
       while (ci + 1 < a.chords.length && a.chords[ci + 1][0] <= i) ci++;
       while (bi + 1 < aud.starts.length && aud.starts[bi + 1] <= i) bi++;
@@ -4599,7 +4662,7 @@ function App() {
       const A = AUDIO_SYNC; if (!A || A.src !== src) return clearInterval(sched);
       const horizon = c.currentTime + 0.15, cur = S.current;
       while (nextBeat < B.length && base + B[nextBeat] < horizon) {
-        const j = nextBeat++, t0 = base + B[j], nx = j + 1 < B.length ? B[j + 1] - B[j] : aud.ibi;
+        const j = nextBeat++, t0 = base + B[j], nx = j + 1 < B.length ? B[j + 1] - B[j] : IBI;
         if (!cur.origGuitar || t0 < c.currentTime - 0.02) continue;
         const v = voicing(chOf[j], cur.easy), pat = cur.song.pattern, st = posOf[j] * 2;
         // bas: grundton på 1 och 3, kvint på 2 och 4, som i inspelningen (bara när musiken är av)
@@ -4611,7 +4674,7 @@ function App() {
         });
       }
     }, 25);
-    AUDIO_SYNC = { src, g, base, beats: a.beats, starts: aud.starts, ibi: aud.ibi, from: fromBar };
+    AUDIO_SYNC = { src, g, base, beats: BE, starts: aud.starts, ibi: IBI, from: fromBar };
     src.onended = () => {
       if (!AUDIO_SYNC || AUDIO_SYNC.src !== src) return;
       award(40, 'Låt genomspelad: ' + song.title, (n) => { if (!n.songs.includes(song.id)) n.songs.push(song.id); n.plays = n.plays || {}; n.plays[song.id] = (n.plays[song.id] || 0) + 1; addTag(n, 'song:' + song.id); });
@@ -4692,8 +4755,16 @@ function App() {
 
   useEffect(() => {
     const h = (e) => {
-      if (e.code !== 'Space' || ghOpen) return;
-      const tg = e.target.tagName; if (['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'].includes(tg)) return;
+      if (ghOpen) return;
+      const tg = e.target.tagName; if (['INPUT', 'SELECT', 'TEXTAREA'].includes(tg)) return;
+      if ((e.code === 'ArrowLeft' || e.code === 'ArrowRight') && tab === 'spela' && !e.altKey && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        const n = bars.length, cur0 = playing === 'song' && pos.bar >= 0 ? barIdx : startBar, to = Math.max(0, Math.min(n - 1, cur0 + (e.code === 'ArrowRight' ? 1 : -1)));
+        const bb = bars[to]; if (bb) setSelChord(chordAt(bb, 0));
+        if (playing === 'song') { stopAll(); setTimeout(() => startSong(to), 0); } else setStartBar(to);
+        return;
+      }
+      if (e.code !== 'Space' || tg === 'BUTTON') return;
       e.preventDefault(); toggle();
     };
     window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
@@ -4731,6 +4802,8 @@ function App() {
   const btShown = playing === 'byten' && pos.bar >= 0 ? (pos.bar % 2 === 0 ? 'from' : 'to') : tActive;
 
 
+  const pickRate = (r) => { if (playing) stopAll(); setOrigRate(r); };
+  const rateCtl = html`<div className="seg rate-seg" role="group" aria-label="Tempo på inspelningen">${[1, 0.9, 0.8, 0.7].map((r) => html`<button key=${r} aria-pressed=${origRate === r} onClick=${() => pickRate(r)}>${Math.round(r * 100)}%</button>`)}</div>`;
   const playBtn = (label) => html`<button className=${'play inline-play' + (playing ? ' stop' : '')} onClick=${toggle}>
     ${playing ? I.stop : I.play}${playing ? 'Stoppa' : label}</button>`;
 
@@ -4773,7 +4846,7 @@ function App() {
         </div>
         <div className="tp-main now-ctl">
           ${playBtn(origOn ? 'Spela med inspelningen' : 'Starta kompet')}
-          ${origOn ? null : html`<${Bpm} value=${bpm} set=${setBpm} />`}
+          ${origOn ? rateCtl : html`<${Bpm} value=${bpm} set=${setBpm} />`}
         </div>
       </div>
 
@@ -4789,7 +4862,7 @@ function App() {
         <button className="fb-x" onClick=${exitFocus} aria-label="Avsluta övningsläget"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
         <div className="fb-t"><b>${song.title}</b><span>${song.artist}</span></div>
         ${recBtn}
-        ${origOn ? null : html`<${Bpm} value=${bpm} set=${setBpm} />`}
+        ${origOn ? rateCtl : html`<${Bpm} value=${bpm} set=${setBpm} />`}
         <button className=${'play' + (playing ? ' stop' : '')} onClick=${toggle}>${playing ? I.stop : I.play}${playing ? 'Stoppa' : 'Spela'}</button>
       </div>` : null}
 
@@ -4826,8 +4899,8 @@ function App() {
             ${[['both', 'Musik + ackord', true, true], ['music', 'Bara musik', true, false], ['chords', 'Bara ackord', false, true]].map(([id, l, m, gt]) =>
               html`<button key=${id} aria-pressed=${origMusic === m && origGuitar === gt} onClick=${() => { setOrigMusic(m); setOrigGuitar(gt); }}>${l}</button>`)}
           </div>` : null}
-          ${origLoad ? html`<span className="muted" style=${{ fontSize: 12 }}>Laddar inspelningen …</span>`
-            : origOn ? html`<span className="muted" style=${{ fontSize: 12 }}>Ackorden följer din låt. Stoppa när du vill, du fortsätter där du var.</span>` : null}
+          ${origLoad ? html`<span className="muted" style=${{ fontSize: 12 }}>${origRate !== 1 ? 'Gör en långsammare version …' : 'Laddar inspelningen …'}</span>`
+            : origOn ? html`<span className="muted" style=${{ fontSize: 12 }}>Ackorden följer din låt. Sänk tempot med procentknapparna, tonhöjden är densamma.</span>` : null}
           ${origOn && startBar > 0 && !playing ? html`<button className="chip" onClick=${() => setStartBar(0)}>Från början</button>` : null}
         </div>` : null}
         ${loop && !origOn ? html`<div className="row" style=${{ gap: 8 }}><button className="chip on" onClick=${() => { if (playing) stopAll(); setLoop(null); setStartBar(0); }}>Loopar ${loop.part.toLowerCase()} ×</button></div>` : null}
@@ -4854,14 +4927,19 @@ function App() {
       </section>
 
       <section className="card chart" aria-label="Ackordschema">
-        <div className="section-head" style=${{ margin: 0 }}><h3>Ackordschema</h3><p>En ruta är en takt. Klicka för att starta därifrån.</p></div>
-        ${(() => { let n = 0; return song.form.map((p, pi) => { const from = n, on = loop && loop.pi === pi; return html`<div className=${'part' + (loop && !on ? ' dim' : '')} key=${pi}>
+        <div className="section-head chart-head" style=${{ margin: 0 }}><h3>Ackordschema</h3>
+          <p>${pickLoop ? (pickLoop.a == null ? 'Tryck på första takten i loopen.' : 'Tryck på sista takten i loopen.') : 'En ruta är en takt. Klicka för att starta därifrån. Pilarna ← → hoppar en takt.'}</p>
+          ${origOn ? null : html`<button className=${'chip' + (pickLoop ? ' on' : '')} onClick=${() => { if (pickLoop) return setPickLoop(null); if (playing) stopAll(); setPickLoop({ a: null }); }}>${pickLoop ? 'Avbryt' : 'Loopa takter'}</button>`}</div>
+        ${(() => { let n = 0; return song.form.map((p, pi) => { const from = n, on = loop && loop.pi === pi; return html`<div className=${'part' + (loop && loop.pi >= 0 && !on ? ' dim' : '')} key=${pi}>
           <div className="part-head"><div className="label">${p.part}</div>
             <button className=${'chip loopchip' + (on ? ' on' : '')} onClick=${() => { if (playing) stopAll(); setStartBar(0); setLoop(on ? null : { pi, from, to: from + p.bars.length - 1, part: p.part }); }}>${on ? 'Loopar ×' : 'Loopa'}</button></div>
           <div className="bars">${p.bars.map((c) => { const i = n++, inL = !loop || (i >= loop.from && i <= loop.to), rel = loop ? i - loop.from : i;
             const cur = playing === 'song' && pos.bar >= 0 && inL && rel === barIdx;
-            return html`<button key=${i} className=${'bar' + (cur ? ' cur' : '') + (!playing && inL && rel === startBar ? ' start' : '')}
+            return html`<button key=${i} className=${'bar' + (cur ? ' cur' : '') + (!playing && inL && rel === startBar ? ' start' : '') + (loop && loop.pi < 0 && !inL ? ' out' : '') + (pickLoop && pickLoop.a === i ? ' pick' : '')}
               onClick=${() => { const c0 = [].concat(c)[0]; setSelChord(c0);
+                if (pickLoop) { if (pickLoop.a == null) { setPickLoop({ a: i }); hear(c0); return; }
+                  const f = Math.min(pickLoop.a, i), t2 = Math.max(pickLoop.a, i); setPickLoop(null); setStartBar(0);
+                  setLoop({ pi: -1, from: f, to: t2, part: f === t2 ? 'takt ' + (f + 1) : 'takt ' + (f + 1) + '–' + (t2 + 1) }); return; }
                 if (!inL) { if (playing) stopAll(); setLoop(null); setStartBar(i); hear(c0); return; }
                 setStartBar(rel); if (playing === 'song') { engine.stop(); startSong(rel); } else hear(c0); }}>
               <small>${i + 1}</small>${Array.isArray(c) ? html`<b className="split">${CHORD_DB[c[0]].name}<i>${CHORD_DB[c[1]].name}</i></b>` : html`<b>${CHORD_DB[c].name}</b>`}
@@ -5438,7 +5516,7 @@ function App() {
     </main>
     ${['spela', 'skank', 'byten'].includes(tab) ? html`<div className="mbar">
       <button className=${'play' + (playing ? ' stop' : '')} onClick=${toggle}>${playing ? I.stop : I.play}${playing ? 'Stoppa' : tab === 'spela' ? 'Spela låten' : tab === 'skank' ? (skMode === 'tjack' ? 'Starta tjack' : 'Starta skank') : 'Öva bytet'}</button>
-      ${tab === 'spela' ? (origOn ? null : html`<${Bpm} value=${bpm} set=${setBpm} />`) : tab === 'skank' ? (skMode === 'tjack' ? html`<${Bpm} value=${tjBpm} set=${setTjBpm} min=${40} max=${110} />` : html`<${Bpm} value=${skBpm} set=${setSkBpm} min=${40} max=${110} />`) : html`<${Bpm} value=${btBpm} set=${setBtBpm} min=${40} max=${120} />`}
+      ${tab === 'spela' ? (origOn ? rateCtl : html`<${Bpm} value=${bpm} set=${setBpm} />`) : tab === 'skank' ? (skMode === 'tjack' ? html`<${Bpm} value=${tjBpm} set=${setTjBpm} min=${40} max=${110} />` : html`<${Bpm} value=${skBpm} set=${setSkBpm} min=${40} max=${110} />`) : html`<${Bpm} value=${btBpm} set=${setBtBpm} min=${40} max=${120} />`}
     </div>` : null}
     <nav className="bottomnav" aria-label="Meny">
       ${NAV.map(([id, , s]) => html`<button key=${id} aria-current=${navOn(id) ? 'page' : null} onClick=${() => { goTab(id); window.scrollTo({ top: 0 }); }}>

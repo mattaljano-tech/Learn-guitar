@@ -1,6 +1,6 @@
 /* NylonGitarr Studio – service worker
    Höj VERSION när appen uppdateras, så hämtar telefonen den nya versionen. */
-const VERSION = 'v58';
+const VERSION = 'v59';
 const CACHE = 'nylongitarr-' + VERSION;
 const SHELL = ['./', 'index.html', 'video/scene.jpg', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png', 'icons/apple-touch-icon.png',
   ...['E2','Fs2','Gs2','B2','Cs3','E3','Fs3','A3','B3','Cs4','E4','Fs4','A4','B4','Cs5','E5'].map((n) => 'audio/nylon/' + n + '.mp3')];
