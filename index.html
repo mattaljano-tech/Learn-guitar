@@ -1048,6 +1048,47 @@ details.tp-grid>.mixer{margin-top:14px}
 @media (prefers-reduced-motion:reduce){
   *{transition:none!important;animation:none!important}
 }
+
+/* Låtvyn på dator: fast låtrad, övningsytan sida vid sida, tydligare val */
+@media (min-width:1700px){.wrap{max-width:1500px}}
+@media (min-width:2400px) and (min-height:1100px){.wrap{max-width:1720px}}
+.stage{container-type:inline-size}
+.songhead{display:grid;gap:12px}
+.now-ctl{justify-self:end;align-self:center}
+.now-ctl .inline-play{min-width:200px;justify-content:center}
+.practice,.pr-main{display:grid;gap:18px;min-width:0;grid-template-columns:minmax(0,1fr)}
+@container (min-width:900px){
+  .practice.split{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);align-items:start}
+  .practice.split .hand3d{position:sticky;top:var(--sh-h,170px)}
+  .practice .pa{height:380px}
+  .practice .h3-cap{grid-template-columns:110px minmax(0,1fr) 110px}
+  .practice .h3-mini{width:110px}
+  .practice .h3-mini b{font-size:20px}
+  .practice .h3-mini .dg{width:96px;max-width:96px}
+  .practice .pa-card .dg svg{max-width:160px}
+  .practice .pa-card .pill{font-size:28px}
+}
+@media (min-width:761px){
+  .practice .pa{height:330px}
+  .songhead{position:sticky;top:0;z-index:15;margin:-12px -16px 0;padding:12px 16px 14px;background:color-mix(in oklab,var(--bg) 92%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+}
+@media (min-width:761px) and (max-width:1399px){.songhead{top:70px}}
+@media (min-width:1400px){.app.on-spela .fab{display:none}}
+@media (max-width:860px){.now-ctl{justify-self:start}}
+/* Aktivt ackord tydligt, nästa nedtonat */
+.pa-card .pill{border:2px solid transparent}
+.pa-card:not(.cur) .pill{color:var(--muted);border-color:var(--line)}
+.pa-card.cur .pill{background:var(--ember);color:var(--ember-ink)}
+/* Vyknappar: tydligt på eller av */
+.vb-chip{border-style:dashed}
+.vb-chip.on{border-style:solid;background:var(--text);color:var(--bg);border-color:var(--text)}
+.vb-chip.on::before{content:"✓ ";font-weight:800}
+/* Betonade slag syns, pauser tonas ner */
+.beatcard .beat.acc .a,.beatcard .beat.acc .t{color:var(--ember)!important}
+.beatcard .beat.acc .t{font-weight:800}
+.beatcard .beat.rest{opacity:.5}
+/* Handen: mörk varm ram i stället för kolsvart */
+.hand3d .h3-stage{background:#1d1410;border-radius:16px 16px 0 0}
 </style>
 
 </head>
@@ -1790,7 +1831,7 @@ const vib = (pat) => { try { if (localStorage.getItem('ng-vibe') !== '0' && navi
 const DIR_NEXT = { '-': 'D', D: 'U', U: '-' };
 function BeatStrip({ pattern, accents = [], cur, count, onEdit }) {
   return html`<div className="beats" aria-label="Slagmönster">
-    ${pattern.map((dir, i) => html`<div key=${i} className=${'beat' + (dir === '-' ? ' rest' : dir === 'X' ? ' hit tj' : ' hit') + (dir === 'D' ? ' d' : dir === 'U' ? ' u' : '') + (cur === i ? ' cur' : '') + (onEdit ? ' edit' : '')} onClick=${onEdit ? () => onEdit(i) : null} role=${onEdit ? 'button' : null}>
+    ${pattern.map((dir, i) => html`<div key=${i} className=${'beat' + (dir === '-' ? ' rest' : dir === 'X' ? ' hit tj' : ' hit') + (dir === 'D' ? ' d' : dir === 'U' ? ' u' : '') + (dir === 'D' && accents.includes(i) ? ' acc' : '') + (cur === i ? ' cur' : '') + (onEdit ? ' edit' : '')} onClick=${onEdit ? () => onEdit(i) : null} role=${onEdit ? 'button' : null}>
       <div className="n">${count != null && i % 2 === 0 ? html`<span className="count">${4 - i / 2}</span>` : BEATS[i]}</div>
       <div className="a">${dir === 'D' ? I.down : dir === 'U' ? I.up : dir === 'X' ? html`<svg viewBox="0 0 24 20" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><path d="M2 16h20M6 4l2 6M12 2v7M18 4l-2 6" /></svg>` : '·'}</div>
       <div className="t">${dir === 'D' ? (accents.includes(i) ? 'Ner!' : 'Ner') : dir === 'U' ? 'Upp' : dir === 'X' ? 'Tjack' : 'Paus'}</div>
@@ -4274,6 +4315,7 @@ function App() {
     </nav>
 
     <div className="stage">
+      <div className="songhead">
       <div className="now">
         <div style=${{ minWidth: 0 }}>
           <div className="label">${song.feel === 'reggae' ? 'Reggae · skank på &' : 'Akustiskt komp'}</div>
@@ -4285,6 +4327,10 @@ function App() {
             <span className="tag">${bars.length} takter</span>${song.capo ? html`<span className="tag">${song.capo}</span>` : null}
           </div>
         </div>
+        <div className="tp-main now-ctl">
+          ${playBtn(origOn ? 'Spela med inspelningen' : 'Starta kompet')}
+          ${origOn ? null : html`<${Bpm} value=${bpm} set=${setBpm} />`}
+        </div>
       </div>
 
       <section className="viewbar" aria-label="Vad du ser">
@@ -4293,7 +4339,10 @@ function App() {
         <div className="vb-group"><span className="vb-lab">Takt</span>
           ${[['top', 'Boll i ackord'], ['meter', 'Mätare vid handen']].map(([k, l]) => html`<button key=${k} className=${'vb-chip' + (marker === k ? ' on' : '')} aria-pressed=${marker === k} onClick=${() => pickMarker(k)}>${l}</button>`)}</div>
       </section>
+      </div>
 
+      <div className=${'practice' + (views.hand && (views.pa || views.beat) ? ' split' : '')}>
+      <div className="pr-main">
       ${views.pa ? html`<${PlayAlong} bars=${bars} startBar=${startBar} playing=${playing === 'song'} easy=${easy} noBall=${marker !== 'top' && views.hand} />` : null}
 
       ${views.beat ? html`<section className="card beatcard" aria-label="Slagkomp">
@@ -4306,16 +4355,14 @@ function App() {
           ${song0.alt.legend.map(([l, k]) => html`<div key=${k} className="alt-row"><span>${l}</span><${BeatStrip} pattern=${song0.alt.pats[k]} accents=${song0.alt.accents} cur=${-1} /></div>`)}
           <p className="muted" style=${{ fontSize: 14, margin: '8px 0 0' }}>${song0.alt.note}</p></details>` : null}
       </section>` : null}
+      </div>
 
       ${views.hand ? html`<${Hand3D} cur=${shownChord} next=${handNext} upcoming=${handUpcoming} easy=${easy} playing=${playing === 'song' && pos.bar >= 0} stepSec=${30 / (origOn ? song.bpm : bpm)}
         chords=${[...new Set(bars.flatMap(barChords))]}
         pulse=${marker === 'top' && views.pa ? null : html`<${HandPulse} bars=${bars} startBar=${startBar} playing=${playing === 'song'} mode="meter" />`} />` : null}
+      </div>
 
       <section className="card transport" aria-label="Kompband">
-        <div className="tp-main">
-          ${playBtn(origOn ? 'Spela med inspelningen' : 'Starta kompet')}
-          ${origOn ? null : html`<${Bpm} value=${bpm} set=${setBpm} />`}
-        </div>
         ${aud ? html`<div className="row" style=${{ gap: 8 }}>
           <button className=${'chip' + (orig ? ' on' : '')} onClick=${() => { if (playing) stopAll(); setOrig(!orig); setStartBar(0); }}>🎧 Följ din inspelning ${orig ? 'på' : 'av'}</button>
           ${origOn ? html`<div className="seg" role="group" aria-label="Vad du hör">
@@ -4348,8 +4395,6 @@ function App() {
           </div>
         </${narrowM ? 'details' : 'div'}>
       </section>
-
-      <${Fretboard} k=${shownChord} easy=${easy} />
 
       <section className="card chart" aria-label="Ackordschema">
         <div className="section-head" style=${{ margin: 0 }}><h3>Ackordschema</h3><p>En ruta är en takt. Klicka för att starta därifrån.</p></div>
@@ -4875,7 +4920,7 @@ function App() {
     ackord: 'M6 4v16M10 4v16M14 4v16M18 4v16M4 8h16M4 13h16', guide: 'M4 17h4l3-10 3 10h6M4 7h3M17 7h3', byten: 'M4 8h13l-3-3M20 16H7l3 3', stam: 'M12 3v10M8 7l4-4 4 4M5 20a7 7 0 0 1 14 0',
   };
 
-  return html`<div className="app">
+  return html`<div className=${'app' + (tab === 'spela' ? ' on-spela' : '')}>
     <header className="top"><div className="wrap top-in">
       <div className="brand">${Rosette}<div><h1>NylonGitarr <span>Studio</span></h1><small>Grepp, komp och reggae-skank för klassisk gitarr</small></div></div>
       <nav className="tabs" role="tablist">
