@@ -176,6 +176,8 @@ input[type=range]{width:100%;accent-color:var(--brass);height:20px}
 
 /* Beat strip */
 .beats{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px}
+.beats.b16 .beat:nth-child(4n+1){border-left:2px solid color-mix(in oklab,var(--brass) 45%,transparent)}
+.beats.b16 .beat:not(.hit) .t{visibility:hidden}
 .beat{border-radius:12px;padding:8px 2px 7px;text-align:center;background:var(--surface-2);border:1px solid transparent;transition:transform .06s,background .06s}
 .beat .n{font-family:var(--f-mono);font-size:12px;color:var(--muted);font-weight:700}
 .beat .a{height:22px;display:flex;align-items:center;justify-content:center;color:var(--text)}
@@ -1625,6 +1627,8 @@ const P_SKANK_UP = ['-', 'D', '-', 'U', '-', 'D', '-', 'U'];
 const P_FOLK = ['D', '-', 'D', 'U', '-', 'U', 'D', 'U'];
 const P_BALLAD = ['D', '-', 'D', 'U', 'D', 'U', 'D', 'U'];
 const BEATS = ['1', '&', '2', '&', '3', '&', '4', '&'];
+// sextondelar: 16 rutor per takt, visas som två rader med åtta
+const BEATS16 = ['1', 'e', '&', 'a', '2', 'e', '&', 'a', '3', 'e', '&', 'a', '4', 'e', '&', 'a'];
 
 const INITIAL_SONGS = [
   { id: 'july', title: 'July', artist: 'Noah Cyrus & Leon Bridges', feel: 'acoustic', level: 'Medel', bpm: 72,
@@ -1712,8 +1716,8 @@ const INITIAL_SONGS = [
     tip: 'Snabbt tempo men luftigt komp. Låt basen gå på slagen och spela korta slag på varje &. Börja på 90 BPM och öka två steg i taget.',
     form: [{ part: 'Vers', bars: ['G', 'G', 'Em', 'Em', 'C', 'D', 'G', 'G'] }, { part: 'Refräng', bars: ['G', 'G', 'Em', 'Em', 'C', 'D', 'G', 'G'] }] },
   { id: 'mot-toppen', title: 'Mot toppen', artist: 'Wahlberg', feel: 'acoustic', level: 'Nästa steg', bpm: 120,
-    pattern: ['D', 'U', '-', 'U', '-', 'U', '-', 'U'], accents: [0],
-    tip: 'Am, F, C, G, ett ackord per takt genom hela låten. Ett nedslag på 1, sedan uppslag på varje & resten av takten. Handen går upp och ner hela tiden men träffar bara på vägen upp, det är det som ger det studsiga driv som i originalet. Originalet går i 120 BPM, så börja på 80–90 och öka två steg i taget. Använd Fmaj7 om F-barrén bromsar dig, och låt pekfingret ligga kvar på B-strängens första band mellan Am, F och C.',
+    pattern: ['D', 'U', '-', 'U', 'D', 'U', '-', 'U', 'D', 'U', '-', 'U', 'D', 'U', '-', 'U'], accents: [0, 8],
+    tip: 'Am, F, C, G, ett ackord per takt. Kompet går i sextondelar, räkna 1-e-&-a: ner på slaget, upp på e, luft på & och upp igen på a. Handen pendlar hela tiden men träffar mest på vägen upp, det är det studsiga drivet i originalet. Börja på 70–80 BPM, 120 är snabbt i sextondelar. Använd Fmaj7 om F-barrén bromsar dig.',
     form: [{ part: 'Vers', bars: ['Am', 'F', 'C', 'G', 'Am', 'F', 'C', 'G'] }, { part: 'Refräng', bars: ['Am', 'F', 'C', 'G', 'Am', 'F', 'C', 'G'] }] },
 
   /* Utmaning: nya grepp, svårare byten */
@@ -2188,10 +2192,11 @@ function Fretboard({ k, ghost = null, easy, title, extra }) {
 
 const vib = (pat) => { try { if (localStorage.getItem('ng-vibe') !== '0' && navigator.vibrate) navigator.vibrate(pat); } catch (e) {} };
 const DIR_NEXT = { '-': 'D', D: 'U', U: '-' };
-function BeatStrip({ pattern, accents = [], cur, count, onEdit }) {
-  return html`<div className="beats" aria-label="Slagmönster">
-    ${pattern.map((dir, i) => html`<div key=${i} className=${'beat' + (dir === '-' ? ' rest' : dir === 'X' ? ' hit tj' : ' hit') + (dir === 'D' ? ' d' : dir === 'U' ? ' u' : '') + (dir === 'D' && accents.includes(i) ? ' acc' : '') + (cur === i ? ' cur' : '') + (onEdit ? ' edit' : '')} onClick=${onEdit ? () => onEdit(i) : null} role=${onEdit ? 'button' : null}>
-      <div className="n">${count != null && i % 2 === 0 ? html`<span className="count">${4 - i / 2}</span>` : BEATS[i]}</div>
+function BeatStrip({ pattern, accents = [], cur, half = 0, count, onEdit }) {
+  const s16 = pattern.length === 16, per = s16 ? 4 : 2, curI = s16 && cur >= 0 ? cur * 2 + half : cur;
+  return html`<div className=${'beats' + (s16 ? ' b16' : '')} aria-label="Slagmönster">
+    ${pattern.map((dir, i) => html`<div key=${i} className=${'beat' + (dir === '-' ? ' rest' : dir === 'X' ? ' hit tj' : ' hit') + (dir === 'D' ? ' d' : dir === 'U' ? ' u' : '') + (dir === 'D' && accents.includes(i) ? ' acc' : '') + (curI === i ? ' cur' : '') + (onEdit ? ' edit' : '')} onClick=${onEdit ? () => onEdit(i) : null} role=${onEdit ? 'button' : null}>
+      <div className="n">${count != null && i % per === 0 ? html`<span className="count">${4 - i / per}</span>` : (s16 ? BEATS16 : BEATS)[i]}</div>
       <div className="a">${dir === 'D' ? I.down : dir === 'U' ? I.up : dir === 'X' ? html`<svg viewBox="0 0 24 20" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><path d="M2 16h20M6 4l2 6M12 2v7M18 4l-2 6" /></svg>` : '·'}</div>
       <div className="t">${dir === 'D' ? (accents.includes(i) ? 'Ner!' : 'Ner') : dir === 'U' ? 'Upp' : dir === 'X' ? 'Tjack' : 'Paus'}</div>
     </div>`)}
@@ -3219,7 +3224,7 @@ function ghEvents(song, bars, easy) {
       let lanes = [0, 1, 2, 3, 4, 5].filter((i) => fr[i] >= 0);
       if (song.feel === 'reggae') lanes = lanes.filter((i) => i >= 3);
       else if (dir === 'U') lanes = lanes.filter((i) => i >= 2);
-      evs.push({ pos: bi * 8 + s, dir, chord: ch, lanes, frets: fr, res: null });
+      evs.push({ pos: bi * 8 + s * 8 / (b.pat || song.pattern).length, dir, chord: ch, lanes, frets: fr, res: null });
     });
   });
   return { evs, marks };
@@ -4486,7 +4491,8 @@ function App() {
 
   useEffect(() => {
     engine.onVisual = (ev) => {
-      if (ev.type === 'step') setPos({ step: ev.step, bar: ev.bar });
+      if (ev.type === 'step') setPos({ step: ev.step, bar: ev.bar, half: 0 });
+      else if (ev.type === 'half') setPos((p) => (p.step === ev.step ? { ...p, half: 1 } : p));
       else window.dispatchEvent(new CustomEvent('ng-pluck', { detail: ev.strings }));
     };
   }, []);
@@ -4668,10 +4674,10 @@ function App() {
       while (nextBeat < B.length && base + B[nextBeat] < horizon) {
         const j = nextBeat++, t0 = base + B[j], nx = j + 1 < B.length ? B[j + 1] - B[j] : IBI;
         if (!cur.origGuitar || t0 < c.currentTime - 0.02) continue;
-        const v = voicing(chOf[j], cur.easy), pat = cur.song.pattern, st = posOf[j] * 2;
+        const v = voicing(chOf[j], cur.easy), pat = cur.song.pattern, per = pat.length / 4, st = posOf[j] * per;
         // bas: grundton på 1 och 3, kvint på 2 och 4, som i inspelningen (bara när musiken är av)
         if (!cur.origMusic) { const r = CHORD_DB[chOf[j]].root; engine.bass(posOf[j] % 2 ? r * 1.4983 : r, t0, nx * 0.85, 0.9); }
-        [[st, t0], [st + 1, t0 + nx / 2]].forEach(([k, t]) => {
+        Array.from({ length: per }, (_, i) => [st + i, t0 + nx * i / per]).forEach(([k, t]) => {
           const dir = pat[k]; if (!dir || dir === '-') return;
           if (dir === 'X') return engine.chuck(v.frets, t); // dämpat tjack: handkanten landar på strängarna
           engine.strum(v.frets, t, dir, { vel: cur.song.accents.includes(k) ? 1 : 0.62 });
@@ -4696,11 +4702,15 @@ function App() {
         const s = S.current, bl = s.bars, b = bl[(s.startBar + bar) % bl.length], ch = chordAt(b, step), v = voicing(ch, s.easy);
         engine.band(s.style, step, t, sd, CHORD_DB[ch].root);
         if (!s.autoGuitar) return;
-        const dir = (b.pat || s.song.pattern)[step];
-        if (dir === '-') return;
-        if (dir === 'X') return engine.chuck(v.frets, t);
-        if (s.song.feel === 'reggae') engine.chop(v.frets, t, { vel: dir === 'D' ? 1 : 0.75 });
-        else engine.strum(v.frets, t, dir, { vel: s.song.accents.includes(step) ? 1 : 0.62 });
+        const pat = b.pat || s.song.pattern, s16 = pat.length === 16;
+        if (s16) engine.queue.push({ t: t + sd / 2, type: 'half', step });
+        (s16 ? [[step * 2, t], [step * 2 + 1, t + sd / 2]] : [[step, t]]).forEach(([k, tk]) => {
+          const dir = pat[k];
+          if (!dir || dir === '-') return;
+          if (dir === 'X') return engine.chuck(v.frets, tk);
+          if (s.song.feel === 'reggae') engine.chop(v.frets, tk, { vel: dir === 'D' ? 1 : 0.75 });
+          else engine.strum(v.frets, tk, dir, { vel: s.song.accents.includes(k) ? 1 : s16 && dir === 'U' ? 0.5 : 0.62 });
+        });
       },
     });
     engine.transpose = capoOn && capoN ? capoN : 0;
@@ -4879,7 +4889,7 @@ function App() {
           <button aria-pressed=${!altOn} onClick=${() => pickAlt(false)}>Appens komp</button>
           <button aria-pressed=${altOn} onClick=${() => pickAlt(true)}>${song0.alt.label}</button></div>` : null}
         ${altOn && !origOn ? html`<p className="alt-now"><b>${CHORD_DB[chordAt(bars[barIdx] || bars[0], 0)].name}</b> ${(() => { const b = bars[barIdx] || bars[0], L = song0.alt.legend.find(([, k]) => String(song0.alt.pats[k]) === String(b.pat)); return L ? '· ' + L[0] : ''; })()}</p>` : null}
-        <${BeatStrip} pattern=${(!origOn && bars[barIdx] && bars[barIdx].pat) || song.pattern} accents=${song.accents} cur=${playing === 'song' ? pos.step : -1} count=${playing === 'song' && counting ? 1 : null} />
+        <${BeatStrip} pattern=${(!origOn && bars[barIdx] && bars[barIdx].pat) || song.pattern} accents=${song.accents} cur=${playing === 'song' ? pos.step : -1} half=${pos.half || 0} count=${playing === 'song' && counting ? 1 : null} />
         ${altOn && !origOn ? html`<details className="alt-more"><summary>Alla mönster i varianten</summary>
           ${song0.alt.legend.map(([l, k]) => html`<div key=${k} className="alt-row"><span>${l}</span><${BeatStrip} pattern=${song0.alt.pats[k]} accents=${song0.alt.accents} cur=${-1} /></div>`)}
           <p className="muted" style=${{ fontSize: 14, margin: '8px 0 0' }}>${song0.alt.note}</p></details>` : null}
