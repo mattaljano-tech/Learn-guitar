@@ -1103,6 +1103,85 @@ details.tp-grid>.mixer{margin-top:14px}
 .pr-chords .dg .nm{font-size:18px}
 .pr-chords .dg .ft{display:none}
 .pr-chords .dg.sel,.pr-chords .dg[aria-pressed="true"]{border-color:var(--ember);box-shadow:inset 0 0 0 1px var(--ember)}
+
+/* Idag: pepp först, lektionen som väg mot dagens låt */
+.home2{max-width:1120px;gap:24px}
+.h2-greet{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px 24px;margin-top:8px}
+.h2-greet .home-h1{font-size:clamp(30px,4.4vw,46px);margin-top:4px}
+.h2-stats{display:flex;gap:10px;flex-wrap:wrap}
+.h2-stat{display:grid;grid-template-columns:auto auto;align-items:center;column-gap:8px;padding:10px 14px;border-radius:16px;background:var(--surface);border:1px solid var(--line);min-width:0}
+.h2-stat svg{width:20px;height:20px;color:var(--faint)}
+.h2-stat b{font-family:var(--f-display);font-size:24px;font-weight:800;line-height:1}
+.h2-stat span{grid-column:1/-1;font-size:12px;font-weight:600;color:var(--muted)}
+.h2-stat.hot svg,.h2-stat.hot b{color:var(--ember)}
+.h2-stat.lvl{grid-template-columns:auto;min-width:130px}
+.h2-stat.lvl span{grid-column:auto}
+.h2-stat.lvl i{display:block;height:6px;border-radius:3px;background:var(--surface-3);overflow:hidden;margin-top:6px}
+.h2-stat.lvl em{display:block;height:100%;background:var(--ember);border-radius:3px}
+.h2-hero{display:grid;grid-template-columns:minmax(0,1fr);border-radius:22px;overflow:hidden;background:var(--surface);border:1px solid var(--line);box-shadow:0 18px 40px -24px rgba(60,30,10,.45)}
+.h2-hero .scene{aspect-ratio:1/.58}
+.h2-mission{display:grid;gap:14px;align-content:start;padding:22px 22px 20px}
+.h2-kick{font-size:12px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--ember)}
+.h2-mission h2{font-family:var(--f-display);font-weight:800;font-size:clamp(28px,3.6vw,40px);line-height:1.05;margin:-6px 0 0}
+.h2-mission h2 em{font-style:normal;color:var(--ember)}
+.h2-sub{margin:0;color:var(--muted);font-size:16px}
+.h2-prog{display:flex;gap:5px}
+.h2-prog i{flex:1;height:8px;border-radius:4px;background:var(--surface-3)}
+.h2-prog i.done{background:var(--leaf)}
+.h2-prog i.cur{background:linear-gradient(90deg,var(--ember) 35%,var(--surface-3) 35%)}
+.h2-steps{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.h2-steps button{width:100%;display:flex;align-items:center;gap:12px;padding:7px 8px;border-radius:12px;border:0;background:transparent;color:var(--muted);font-size:15px;text-align:left}
+.h2-steps button:hover{background:color-mix(in oklab,var(--text) 5%,transparent)}
+.h2-steps .n{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:13px;box-shadow:inset 0 0 0 2px var(--line)}
+.h2-steps .n svg{width:14px;height:14px}
+.h2-steps .done{color:var(--faint)}
+.h2-steps .done .t{text-decoration:line-through;text-decoration-color:color-mix(in oklab,var(--text) 25%,transparent)}
+.h2-steps .done .n{background:var(--leaf);color:var(--leaf-ink);box-shadow:none}
+.h2-steps .cur{color:var(--text);font-weight:700;background:color-mix(in oklab,var(--ember) 9%,transparent)}
+.h2-steps .cur .n{background:var(--ember);color:var(--ember-ink);box-shadow:none}
+.h2-steps .star{margin-left:auto;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ember);padding:3px 8px;border-radius:999px;background:color-mix(in oklab,var(--ember) 12%,transparent)}
+.h2-go{background:var(--ember)!important;color:var(--ember-ink)!important;box-shadow:0 12px 26px -12px color-mix(in oklab,var(--ember) 80%,transparent)!important}
+.h2-go:hover{filter:brightness(1.06)}
+.h2-skip{justify-self:center;padding:2px 6px}
+.h2-jam{display:grid;gap:12px}
+.h2-jam-head{display:flex;align-items:baseline;justify-content:space-between}
+.h2-jam-head h3{font-size:22px;margin:0}
+.h2-jam-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.h2-song{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:16px;border:1px solid var(--line);background:var(--surface);color:var(--text);text-align:left;transition:transform .12s,border-color .12s}
+.h2-song:hover{transform:translateY(-2px);border-color:color-mix(in oklab,var(--ember) 45%,transparent)}
+.h2-song .pl{flex:none;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:color-mix(in oklab,var(--ember) 14%,var(--surface));color:var(--ember)}
+.h2-song:hover .pl{background:var(--ember);color:var(--ember-ink)}
+.h2-song .pl svg{width:16px;height:16px;margin-left:2px}
+.h2-song .tx{display:grid;gap:1px;min-width:0}
+.h2-song b{font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.h2-song i{font-style:normal;font-size:13px;color:var(--muted)}
+.h2-song .ch{font-size:12px;font-weight:700;color:var(--ember);margin-top:2px}
+@media (min-width:900px){
+  .h2-hero{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr)}
+  .h2-hero .scene{aspect-ratio:auto;height:100%;min-height:440px}
+  .h2-mission{padding:30px 32px 26px}
+}
+@media (max-width:760px){
+  .h2-greet{gap:12px}
+  .h2-stats{width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .h2-stat{padding:8px 10px}
+  .h2-stat.lvl{min-width:0}
+  .h2-stat b{font-size:20px}
+  .h2-mission{padding:18px 16px 16px;gap:12px}
+  .h2-jam-grid{grid-template-columns:minmax(0,1fr)}
+}
+
+.h2-stat{display:flex;flex-direction:column;gap:3px;justify-content:center}
+.h2-stat b{display:flex;align-items:center;gap:6px}
+.h2-stat b svg{width:18px;height:18px;flex:none}
+.h2-stat b small{font-family:var(--f-body);font-size:12px;font-weight:700;color:var(--muted)}
+.h2-stat span{white-space:nowrap}
+@media (max-width:760px){
+  .h2-greet .home-h1{font-size:30px}
+  .h2-hero .scene{aspect-ratio:1/.38}
+  .h2-steps button{padding:5px 8px;font-size:14px}
+  .h2-mission h2{font-size:26px}
+}
 </style>
 
 </head>
@@ -3933,7 +4012,8 @@ function RhythmMeter({ active, onHit }) {
 
 /* ---------------------------------------------------------------- app */
 function App() {
-  const [tab, setTab] = useState('vag');
+  const [tab, setTab] = useState(() => { try { return sessionStorage.getItem('ng-tab') || 'vag'; } catch (e) { return 'vag'; } });
+  useEffect(() => { try { sessionStorage.setItem('ng-tab', tab); } catch (e) {} }, [tab]);
   const [lesson, setLesson] = useState(null); // { day, look } – dagens lektion i helskärm
   const [lessonAway, setLessonAway] = useState(false);
   const [prog, setProg] = useState(loadProg);
@@ -4776,18 +4856,46 @@ function App() {
     launchTimers.current.push(setTimeout(() => { root.classList.add('ls-rise'); openLesson(); }, 380));
     launchTimers.current.push(setTimeout(() => { root.classList.remove('ls-rise'); sc.classList.remove('zoom'); }, 1200));
   };
-  const HomeTab = () => html`<div className="home">
-    <div className="home-day">
-      <${SceneView} vol=${levelOf(prog.xp)} />
-      <div className="sleeve">
-        <span className="ls-kicker">${(prog.planDay || 0) >= PLAN.length ? 'Alla 14 dagar klara' : 'Dag ' + lessonDay + ' av ' + PLAN.length}</span>
-        <h1 className="home-h1">${(prog.planDay || 0) >= PLAN.length ? 'Spela dina låtar' : lp.t}</h1>
-    ${(prog.planDay || 0) < PLAN.length ? html`<ol className="home-steps">${lSteps.map((st, i) => html`<li key=${i} className=${lDone[i] ? 'done' : i === lCur ? 'cur' : ''}>
-      <span>${lDone[i] ? html`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10" /></svg>` : i + 1}</span>${stepShort(st)}</li>`)}</ol>
-    <button className="ls-btn big" onClick=${launchLesson}>${I.play}${lCur < 0 ? 'Dagens lektion är klar' : doneCount ? 'Fortsätt dagens lektion' : 'Starta dagens lektion'}</button>`
-    : html`<button className="ls-btn big" onClick=${() => goTab('spela')}>${I.play}Till låtarna</button>`}
+  const allDone = (prog.planDay || 0) >= PLAN.length;
+  const daySong = [...lSteps].reverse().find((st) => st.k === 'song');
+  const jamSongs = (canPlay.length ? canPlay : songs.filter((x) => x.level === 'Superlätt' || x.level === 'Lätt')).slice(0, 6);
+  const homeHead = allDone ? 'Nu är det bara att spela' : lCur < 0 ? 'Dagens lektion är klar!' : doneCount ? 'Du är igång. Kör vidare!' : streak ? streak + ' dagar i rad. Håll elden vid liv!' : 'Ta fram gitarren';
+  const playSong = (x) => { pickSong(x); goTab('spela'); window.scrollTo({ top: 0 }); };
+  const HomeTab = () => html`<div className="home home2">
+    <div className="h2-greet">
+      <div><span className="ls-kicker">${allDone ? 'Alla 14 dagar klara' : 'Dag ' + lessonDay + ' av ' + PLAN.length}</span>
+        <h1 className="home-h1">${homeHead}</h1></div>
+      <div className="h2-stats">
+        <div className=${'h2-stat' + (streak ? ' hot' : '')}><b>${FlameIcon}${streak}</b><span>${streak === 1 ? 'dag i rad' : 'dagar i rad'}</span></div>
+        <div className="h2-stat lvl"><b><small>Nivå</small>${lvl}</b><span>${TITLES[Math.min(lvl - 1, TITLES.length - 1)]}</span><i><em style=${{ width: Math.max(4, pct) + '%' }}></em></i></div>
+        <div className="h2-stat"><b>${I.play}${prog.songs.length}</b><span>${prog.songs.length === 1 ? 'låt spelad' : 'låtar spelade'}</span></div>
       </div>
     </div>
+
+    <section className="h2-hero">
+      <${SceneView} vol=${lvl} />
+      <div className="h2-mission">
+        ${allDone ? html`<span className="h2-kick">Fritt spel</span><h2>Välj en låt och kör</h2>
+          <p className="h2-sub">Du har gått igenom hela planen. Nu bygger du repertoar.</p>
+          <button className="ls-btn big h2-go" onClick=${() => goTab('spela')}>${I.play}Till låtarna</button>`
+        : html`<span className="h2-kick">Dagens mål · ${lp.t}</span>
+          <h2>${daySong ? html`Spela <em>${songTitle(daySong.s)}</em>` : lp.t}</h2>
+          <div className="h2-prog" aria-label=${doneCount + ' av ' + lSteps.length + ' steg klara'}>${lSteps.map((st, i) => html`<i key=${i} className=${lDone[i] ? 'done' : i === lCur ? 'cur' : ''}></i>`)}</div>
+          <ol className="h2-steps">${lSteps.map((st, i) => html`<li key=${i}><button className=${lDone[i] ? 'done' : i === lCur ? 'cur' : ''} onClick=${() => goMission({ go: stepGo(st) })}>
+            <span className="n">${lDone[i] ? html`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10" /></svg>` : i + 1}</span>
+            <span className="t">${stepShort(st)}</span>${st.k === 'song' ? html`<span className="star">Målet</span>` : null}</button></li>`)}</ol>
+          <button className="ls-btn big h2-go" onClick=${launchLesson}>${I.play}${lCur < 0 ? 'Kör lektionen igen' : doneCount ? 'Fortsätt där du var' : 'Kör igång'}</button>
+          ${daySong ? html`<button className="ls-link h2-skip" onClick=${() => goMission({ go: stepGo(daySong) })}>Hoppa direkt till ${songTitle(daySong.s)}</button>` : null}`}
+      </div>
+    </section>
+
+    <section className="h2-jam">
+      <div className="h2-jam-head"><h3>${canPlay.length ? 'Låtar du kan spela nu' : 'Jamma direkt'}</h3><button className="ls-link" onClick=${() => goTab('spela')}>Alla låtar</button></div>
+      <div className="h2-jam-grid">${jamSongs.map((x) => html`<button key=${x.id} className="h2-song" onClick=${() => playSong(x)}>
+        <span className="pl">${I.play}</span>
+        <span className="tx"><b>${x.title}</b><i>${x.artist}</i><span className="ch">${songChords(x).map((k) => CHORD_DB[k].name).join(' · ')}</span></span></button>`)}</div>
+    </section>
+
     <button className="ls-link" style=${{ justifySelf: 'center' }} onClick=${() => goTab('bib')}>Öppna biblioteket</button>
     <details className="card more home-more"><summary>Dina framsteg, uppdrag och märken</summary>
       <div style=${{ display: 'grid', gap: 22, marginTop: 14 }}>${OldVag}</div>
@@ -5124,7 +5232,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(html`<${App} />`);
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
   var hadSW = !!navigator.serviceWorker.controller, swReloaded = false;
-  navigator.serviceWorker.addEventListener('controllerchange', function () { if (!hadSW || swReloaded || document.querySelector('.ls')) return; swReloaded = true; location.reload(); });
+  // Ingen automatisk omladdning: sidan hämtas alltid färsk från nätet, så nya versionen gäller nästa gång appen öppnas.
 }
 </script>
 </body>
