@@ -911,6 +911,13 @@ html.jam-stage .play.stop{background:var(--text);color:var(--bg)}
 @keyframes jiWave{0%{opacity:0;transform:scale(.7)}35%{opacity:1}100%{opacity:0;transform:scale(1.25)}}
 @media (prefers-reduced-motion:reduce){html,body,html header.top,html .bottomnav{transition:none}}
 .jam-run{display:grid;gap:12px}
+.jam-parts{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.jam-parts li{display:grid;gap:8px;padding:12px;border-radius:12px;background:var(--surface-2)}
+.jp-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.jp-head b{font-family:var(--f-display);font-size:16px}
+.jp-head span{color:var(--muted);font-size:13px}
+.jp-tags{display:flex;flex-wrap:wrap;gap:6px}
+.jp-tags span{font-size:12.5px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--surface-3)}
 .jam-top{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px}
 .jam-top .jam-streak{justify-self:end}
 .jam-streak{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--muted)}
@@ -3025,10 +3032,65 @@ function drawRing(cv, st, t, skin, easy) {
   if (op < 1 && R.prev) { x.globalAlpha = 1 - op; x.fillStyle = tg; x.fillText(R.prev, cx, cy - 6 - op * 10); }
   x.globalAlpha = op; x.fillStyle = tg; x.shadowColor = col(0.5, 0.8); x.shadowBlur = 18; x.fillText(R.name || '…', cx, cy - 6 + (1 - op) * 10); x.shadowBlur = 0; x.globalAlpha = 1;
   x.fillStyle = 'rgba(225,222,240,0.85)'; x.font = '700 12px "Bricolage Grotesque", system-ui, sans-serif';
-  x.fillText(g ? 'slag ' + (beat + 1) + '  ·  ' + Math.round(60 / g.T) + ' BPM' : 'lyssnar in tempot …', cx, cy + fs * 0.55 + 6);
+  x.fillText(g ? 'slag ' + (beat + 1) + '  ·  ' + Math.round(60 / g.T) + ' BPM  ·  ' + (g.sixteen ? '16-delar' : '8-delar') : 'lyssnar in tempot …', cx, cy + fs * 0.55 + 6);
 }
 
 const INTRO_GLOW = { neon: ['#ff3df2', '#33d6ff'], sol: ['#ffb84d', '#ff3d80'], svartvit: ['#ffffff', '#b9b9c4'] };
+// Delar i jammet: hitta var du byter tempo eller går mellan åttondelar och sextondelar.
+// Små fönster (8 s, var 2:a sekund) får var sitt tempo; liknande fönster i rad blir en del.
+function analyzeSections(onsets, segs) {
+  if (onsets.length < 24) return [];
+  const first = onsets[0].t, last = onsets[onsets.length - 1].t;
+  if (last - first < 24) return [];
+  const win = [];
+  for (let a = first; a + 8 <= last + 0.01; a += 2) {
+    const on = onsets.filter((o) => o.t >= a && o.t < a + 8), tp = on.length >= 10 ? jamTempo(on) : null;
+    win.push({ a, c: a + 4, tp });
+  }
+  // grupper: samma sorts slag och tempo inom 7 %
+  const groups = [];
+  const gid = win.map((w) => {
+    if (!w.tp) return -1;
+    let g = groups.findIndex((x) => x.six === w.tp.sixteen && Math.abs(w.tp.bpm / x.bpm - 1) < 0.07);
+    if (g < 0) { groups.push({ six: w.tp.sixteen, bpm: w.tp.bpm, n: 1 }); g = groups.length - 1; }
+    else { const x = groups[g]; x.bpm = (x.bpm * x.n + w.tp.bpm) / (x.n + 1); x.n++; }
+    return g;
+  });
+  // jämna ut enstaka avvikande fönster
+  const sm = gid.map((g, i) => (i > 0 && i < gid.length - 1 && gid[i - 1] === gid[i + 1] && g !== gid[i - 1] ? gid[i - 1] : g));
+  let runs = [];
+  sm.forEach((g, i) => { const r = runs[runs.length - 1]; if (r && r.g === g) r.to = i; else runs.push({ g, from: i, to: i }); });
+  // korta delar (under 3 fönster) och tysta fönster slås ihop med grannen
+  for (let pass = 0; pass < 3; pass++) {
+    runs = runs.filter((r, i) => {
+      if (r.g >= 0 && r.to - r.from >= 2) return true;
+      const prev = runs[i - 1], next = runs[i + 1], into = prev && prev.g >= 0 ? prev : next;
+      if (!into || into === r) return true;
+      into.from = Math.min(into.from, r.from); into.to = Math.max(into.to, r.to); r.dead = true; return false;
+    }).filter((r) => !r.dead);
+    const m = []; runs.forEach((r) => { const l = m[m.length - 1]; if (l && l.g === r.g) l.to = r.to; else m.push({ ...r }); }); runs = m;
+  }
+  if (runs.length < 2) return [];
+  // finjustera varje gräns: där slagen till vänster passar vänster dels tempo och slagen till höger högerdelens
+  const fitTo = (tp, o) => { const g = tp.T / (tp.sixteen ? 4 : 2), q = (o.t - tp.ph) / g, d = (q - Math.round(q)) * g; return Math.exp(-(d * d) / 0.0012); };
+  const tps = runs.map((r) => jamTempo(onsets.filter((o) => o.t >= win[r.from].a && o.t < win[r.to].a + 8)));
+  const cuts = [];
+  for (let i = 1; i < runs.length; i++) {
+    const mid = (win[runs[i - 1].to].c + win[runs[i].from].c) / 2, L = tps[i - 1], R = tps[i];
+    let best = mid, bv = -1e9;
+    if (L && R) for (let x = mid - 4; x <= mid + 4; x += 0.05) {
+      let v = 0; for (const o of onsets) { if (o.t < x - 6 || o.t > x + 6) continue; v += o.t < x ? fitTo(L, o) - fitTo(R, o) : fitTo(R, o) - fitTo(L, o); }
+      if (v > bv) { bv = v; best = x; }
+    }
+    const nx = onsets.find((o) => o.t >= best - 0.02); cuts.push(nx ? nx.t - 0.05 : best);
+  }
+  return runs.map((r, i) => {
+    const a = i === 0 ? first - 0.05 : cuts[i - 1], b = i === runs.length - 1 ? last + 0.5 : cuts[i];
+    const on = onsets.filter((o) => o.t >= a && o.t < b), sg = segs.filter((s) => s.t1 > a && s.t0 < b).map((s) => ({ ...s, t0: Math.max(a, s.t0), t1: Math.min(b, s.t1) }));
+    return { from: Math.max(0, a), to: b, ...analyzeJam(on, sg) };
+  });
+}
+
 function Jam({ easy, onSave, onDone }) {
   const [phase, setPhase] = useState('idle');
   const [now, setNow] = useState(null);
@@ -3078,6 +3140,7 @@ function Jam({ easy, onSave, onDone }) {
   };
   useEffect(() => { loadRecs(); return () => { halt(); }; }, []);
 
+  const cheer = (txt) => { const el = cheerR.current; if (!el) return; el.textContent = txt; if (el.animate) el.animate([{ opacity: 0, transform: 'translate(-50%, 6px)' }, { opacity: 1, transform: 'translate(-50%, 0)', offset: 0.15 }, { opacity: 1, offset: 0.8 }, { opacity: 0, transform: 'translate(-50%, 0)' }], { duration: 2400, fill: 'forwards' }); };
   const start = async () => {
     setMicErr(false); setRes(null); setNow(null); setTrail([]); setLive({ bpm: 0, secs: 0 });
     const m = new Mic();
@@ -3115,7 +3178,7 @@ function Jam({ easy, onSave, onDone }) {
           st.streak = off < 0.045 ? st.streak + 1 : 0; st.best = Math.max(st.best, st.streak);
           if (streakR.current) streakR.current.textContent = st.streak + ' slag i takt';
           const C = { 16: 'Som en klocka!', 32: 'Rytmen sitter!', 64: 'Grym takt!', 128: 'Maskin!' }[st.streak];
-          if (C && cheerR.current) { cheerR.current.textContent = C; if (cheerR.current.animate) cheerR.current.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none', offset: 0.15 }, { opacity: 1, offset: 0.8 }, { opacity: 0 }], { duration: 2200, fill: 'forwards' }); }
+          if (C) cheer(C);
         }
       }
       st.env = st.env * 0.9 + r * 0.1; st.prev = r;
@@ -3141,6 +3204,15 @@ function Jam({ easy, onSave, onDone }) {
     st.iv = setInterval(() => {
       const t = (performance.now() - T0) / 1000, rec = st.onsets.filter((o) => o.t > t - 12), tp = jamTempo(rec);
       if (tp) st.grid = tp; else if (!rec.length) st.grid = null;
+      // märk när du byter mellan åttondelar och sextondelar, eller byter tempo, och det håller i sig
+      if (tp && rec.length >= 12) {
+        const L = st.feelNow, six = tp.sixteen, b = tp.bpm;
+        if (!L) st.feelNow = { six, bpm: b };
+        else if (six !== L.six || Math.abs(b / L.bpm - 1) > 0.1) {
+          st.pend = st.pend && st.pend.six === six && Math.abs(b / st.pend.bpm - 1) < 0.07 ? { ...st.pend, n: st.pend.n + 1 } : { six, bpm: b, n: 1 };
+          if (st.pend.n >= 3) { cheer(six !== L.six ? (six ? 'Nu: sextondelar' : 'Nu: åttondelar') : 'Nytt tempo: ' + Math.round(b) + ' BPM'); st.feelNow = { six, bpm: b }; st.pend = null; }
+        } else { st.pend = null; L.bpm = L.bpm * 0.8 + b * 0.2; }
+      }
       setLive({ bpm: tp ? Math.round(tp.bpm) : 0, secs: t });
     }, 1000);
     setPhase('run'); window.scrollTo({ top: 0, behavior: 'instant' });
@@ -3151,12 +3223,12 @@ function Jam({ easy, onSave, onDone }) {
     const st = S.current; if (!st) return;
     const t = (performance.now() - st.T0) / 1000;
     if (st.cur) st.segs.push({ k: st.cur, t0: st.curT, t1: Math.max(st.last, st.curT + 0.3) });
-    const r = analyzeJam(st.onsets, st.segs);
+    const r = analyzeJam(st.onsets, st.segs), parts = analyzeSections(st.onsets, st.segs);
     st.meta.bpm = r.bpm;
     halt();
     const d = new Date();
     setName('Jam ' + d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }));
-    setRes({ ...r, dur: t, hits: st.onsets.length, best: st.best }); setPhase('done');
+    setRes({ ...r, dur: t, hits: st.onsets.length, best: st.best, parts }); setPhase('done');
     if (t >= 20 && (r.chords.length || r.bpm)) onDone(r, t);
   };
 
@@ -3250,6 +3322,13 @@ function Jam({ easy, onSave, onDone }) {
           <${BeatStrip} pattern=${res.pattern} accents=${[0]} cur=${-1} />
           <small className="muted">Ner på slagen, upp mellan dem, så som armen rör sig när du kompar.</small></div>`
           : res.chords.length ? html`<p className="muted">Spela fler slag i jämn takt så kan appen räkna ut tempo och komp.</p>` : null}
+        ${res.parts && res.parts.length > 1 ? html`<div className="jam-block"><span className="label">Delar i jammet</span>
+          <ol className="jam-parts">${res.parts.map((p, i) => html`<li key=${i}>
+            <div className="jp-head"><b>Del ${i + 1}</b><span className="mono">${fmtDur(p.from)}–${fmtDur(p.to)}</span></div>
+            <div className="jp-tags"><span>${p.bpm || '–'} BPM</span><span>${p.meter}/4</span><span>${p.sixteen ? 'Sextondelar' : 'Åttondelar'}</span><span>${p.name}</span></div>
+            ${p.pattern ? html`<${BeatStrip} pattern=${p.pattern} accents=${[0]} cur=${-1} />` : null}
+            ${p.loop.length ? html`<div className="ns-bars">${p.loop.map((b, j) => html`<span key=${j}>${barTxt(b)}</span>`)}</div>` : null}
+          </li>`)}</ol></div>` : null}
         ${res.loop.length ? html`<div className="row" style=${{ gap: 8, flexWrap: 'wrap' }}>
           <button className="btn" onClick=${playLoop}>Lyssna på rundan</button>
           ${res.meter === 4 && res.bpm ? html`<input type="text" className="jam-name" aria-label="Namn på låten" value=${name} onInput=${(e) => setName(e.target.value)} onChange=${() => {}} />
