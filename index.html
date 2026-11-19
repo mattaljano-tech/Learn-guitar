@@ -868,6 +868,17 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 .chal .pair span.on{color:var(--brass-ink);background:var(--brass)}
 .chal .count{font-family:var(--f-display);font-weight:800;font-size:88px;line-height:1}
 .chal-mic{display:grid;gap:8px;justify-items:center;width:min(360px,100%)}
+.jam-rec{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:13.5px;color:#d43c2c}
+.jam-rec i{width:11px;height:11px;border-radius:50%;background:#d43c2c;animation:recPulse 1s ease-in-out infinite}
+.jam-live{display:flex;align-items:center;gap:14px;font-size:15px;color:var(--muted)}
+.jam-live b{font-family:var(--f-display);font-weight:800;font-size:28px;color:var(--text)}
+.jam-dot{width:18px;height:18px;border-radius:50%;background:var(--brass);opacity:.3}
+.jam-res{display:grid;gap:14px}
+.jam-block{display:grid;gap:8px}
+.jam-bars span{font-size:17px;padding:6px 12px}
+.jam-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.jam-name{flex:1;min-width:150px;height:40px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font:inherit}
+@media (prefers-reduced-motion:reduce){.jam-rec i{animation:none}}
 .chal-mic b{font-family:var(--f-display);font-size:20px}
 .tapbtn{width:min(320px,100%);height:110px;border-radius:24px;background:var(--leaf);color:var(--leaf-ink);font-family:var(--f-display);font-weight:800;font-size:28px;box-shadow:0 10px 30px -12px var(--leaf)}
 .tapbtn:active{transform:scale(.97)}
@@ -880,7 +891,7 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 .fab svg{width:18px;height:18px}
 @media (max-width:760px){
   .tabs{display:none}
-  .bottomnav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));position:fixed;left:0;right:0;bottom:0;z-index:30;background:color-mix(in oklab,var(--surface) 94%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:6px max(4px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(4px,env(safe-area-inset-left,0px))}
+  .bottomnav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));position:fixed;left:0;right:0;bottom:0;z-index:30;background:color-mix(in oklab,var(--surface) 94%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:6px max(4px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(4px,env(safe-area-inset-left,0px))}
   .bottomnav button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;min-height:52px;border-radius:12px;font-size:11px;font-weight:700;color:var(--muted)}
   .bottomnav svg{width:22px;height:22px}
   .bottomnav button[aria-current="page"]{color:var(--brass);background:color-mix(in oklab,var(--brass) 12%,transparent)}
@@ -2784,6 +2795,282 @@ function FreePlay({ easy, vol, onFinish }) {
 }
 
 
+/* ---------------------------------------------------------------- jamma */
+// Jamma: spela fritt. Appen spelar in dig och räknar ut ackorden, tempot, taktarten och slagmönstret.
+// Tempo: hitta slagavståndet som bäst förklarar anslagen (autokorrelation), finjustera mot ett rutnät av åttondelar.
+function jamTempo(onsets) {
+  if (onsets.length < 8) return null;
+  const t0 = onsets[0].t, R = 100, n = Math.ceil((onsets[onsets.length - 1].t - t0) * R) + 12, E = new Float32Array(n);
+  const K = [0.25, 0.6, 1, 0.6, 0.25];
+  onsets.forEach(({ t, s }) => { const i = Math.round((t - t0) * R); K.forEach((w, j) => { const q = i + j - 2; if (q >= 0 && q < n) E[q] += w * s; }); });
+  const acf = (L) => { if (L >= n) return 0; let v = 0; for (let i = 0; i + L < n; i++) v += E[i] * E[i + L]; return v / (n - L); };
+  let bestP = 0, bestS = -1;
+  for (let P = 33; P <= 100; P++) { // 60–180 slag per minut
+    const prior = Math.exp(-0.5 * Math.pow(Math.log2(6000 / P / 95) / 0.8, 2));
+    const s = (acf(P) + 0.5 * acf(2 * P) + 0.35 * acf(Math.round(P / 2))) * prior;
+    if (s > bestS) { bestS = s; bestP = P; }
+  }
+  if (!bestP) return null;
+  const fit = (bpm, ph) => { const g = 30 / bpm; let v = 0; for (const o of onsets) { const d = ((o.t - ph) / g - Math.round((o.t - ph) / g)) * g; v += o.s * Math.exp(-(d * d) / 0.0018); } return v; };
+  let B = { bpm: 6000 / bestP, ph: t0, v: -1 };
+  for (let b = 6000 / bestP - 4; b <= 6000 / bestP + 4; b += 0.25) { const g = 30 / b; for (let ph = 0; ph < g; ph += 0.01) { const v = fit(b, t0 + ph); if (v > B.v) B = { bpm: b, ph: t0 + ph, v }; } }
+  // spelar du sextondelar? Många anslag mitt emellan åttondelarna.
+  let mid = 0, all = 0;
+  onsets.forEach((o) => { const q = (o.t - B.ph) / (30 / B.bpm), e = Math.abs(q - Math.round(q)); all += o.s; if (e > 0.35) mid += o.s; });
+  let sixteen = mid / (all || 1) > 0.2;
+  if (sixteen) { // finjustera fasen mot sextondelar
+    const g = 15 / B.bpm; let bv = -1, bp = B.ph;
+    for (let ph = 0; ph < g; ph += 0.005) { let v = 0; for (const o of onsets) { const d = ((o.t - B.ph - ph) / g - Math.round((o.t - B.ph - ph) / g)) * g; v += o.s * Math.exp(-(d * d) / 0.0008); } if (v > bv) { bv = v; bp = B.ph + ph; } }
+    B.ph = bp;
+    if (B.bpm < 85) { B.bpm *= 2; sixteen = false; } // långsamma sextondelar är oftast åttondelar i dubbelt tempo
+  }
+  const sub = sixteen ? 4 : 2;
+  // vilken ruta är taktslaget? Nedslagen på slaget brukar vara starkast.
+  let gs = 60 / B.bpm / sub, best = -1, j0 = 0;
+  for (let j = 0; j < sub; j++) {
+    let v = 0; onsets.forEach((o) => { const q = (o.t - B.ph) / gs - j, r = Math.round(q); if (Math.abs(q - r) < 0.3) { const m = ((r % sub) + sub) % sub; if (m === 0) v += o.s; else if (m === sub / 2) v += 0.3 * o.s; } });
+    if (v > best) { best = v; j0 = j; }
+  }
+  let ph = B.ph + j0 * gs, T = 60 / B.bpm;
+  // minsta kvadrat: räkna fram exakt slaglängd och fas ur anslagen som ligger på rutnätet
+  { let n = 0, sx = 0, sy = 0, sxx = 0, sxy = 0;
+    onsets.forEach((o) => { const q = (o.t - ph) / gs, r = Math.round(q); if (Math.abs(q - r) < 0.25) { n++; sx += r; sy += o.t; sxx += r * r; sxy += r * o.t; } });
+    const den = n * sxx - sx * sx;
+    if (n >= 6 && den > 0) { const k = (n * sxy - sx * sy) / den, c = (sy - k * sx) / n; if (Math.abs(k * sub / T - 1) < 0.05) { T = k * sub; ph = c; } } }
+  return { bpm: 60 / T, T, ph, sixteen };
+}
+
+function analyzeJam(onsets, segs) {
+  const out = { bpm: 0, steady: 0, meter: 4, pattern: null, sixteen: false, bars: [], loop: [], chords: [], feel: 'acoustic', name: '' };
+  // ackord sorterade efter hur länge de klingade
+  const time = {}; segs.forEach((s) => { time[s.k] = (time[s.k] || 0) + (s.t1 - s.t0); });
+  out.chords = Object.entries(time).filter(([, v]) => v >= 0.4).sort((a, b) => b[1] - a[1]).map(([k]) => k);
+  const tp = jamTempo(onsets); if (!tp) return out;
+  const { T, ph } = tp; out.bpm = Math.round(tp.bpm);
+  out.sixteen = tp.sixteen; let dev = 0;
+  const gq = out.sixteen ? T / 4 : T / 2;
+  onsets.forEach((o) => { const q = (o.t - ph) / gq; dev += Math.abs(q - Math.round(q)) * gq; });
+  out.steady = Math.max(0, Math.min(100, Math.round(100 - (dev / onsets.length) * 1000 * 1.6)));
+  // taktslag
+  const k0 = Math.floor((onsets[0].t - ph) / T), k1 = Math.ceil((onsets[onsets.length - 1].t - ph) / T), tb = (k) => ph + k * T;
+  const chordAtT = (t) => { for (const s of segs) if (t >= s.t0 && t < s.t1) return s.k; return null; };
+  const S = {}; onsets.forEach((o) => { const k = Math.round((o.t - ph) / T); if (Math.abs((o.t - ph) / T - k) < 0.2) S[k] = (S[k] || 0) + o.s; });
+  const changes = []; segs.forEach((s, i) => { if (i && segs[i - 1].k !== s.k) { const k = Math.round((s.t0 - ph) / T); if (Math.abs((s.t0 - ph) / T - k) < 0.4) changes.push(k); } });
+  const meanS = Object.values(S).reduce((x, y) => x + y, 0) / Math.max(1, k1 - k0 + 1);
+  const best = (M) => {
+    let top = { sc: -1e9, o: 0 };
+    for (let o = 0; o < M; o++) {
+      const ch = changes.length >= 3 ? (changes.filter((k) => (((k - o) % M) + M) % M === 0).length / changes.length) * M : 1;
+      let acc = 0, c = 0; for (let k = k0; k <= k1; k++) if ((((k - o) % M) + M) % M === 0) { acc += S[k] || 0; c++; }
+      const sc = ch + (meanS ? acc / c / meanS - 1 : 0) * 0.5;
+      if (sc > top.sc) top = { sc, o };
+    }
+    return top;
+  };
+  const b4 = best(4), b3 = best(3);
+  out.meter = b3.sc > b4.sc + 0.35 ? 3 : 4;
+  const M = out.meter, o = out.meter === 3 ? b3.o : b4.o;
+  if (M === 3) out.sixteen = false;
+  // slagmönster: hur ofta varje ruta i takten har ett anslag
+  const sub = out.sixteen ? 4 : 2, L = M * sub, gs = T / sub, cnt = new Array(L).fill(0), seen = new Set();
+  const down0 = ph + o * T;
+  onsets.forEach((x) => { const q = (x.t - down0) / gs, sl = Math.round(q); if (Math.abs(q - sl) < 0.35 && !seen.has(sl)) { seen.add(sl); cnt[((sl % L) + L) % L]++; } });
+  const nBars = Math.max(1, (onsets[onsets.length - 1].t - onsets[0].t) / (M * T));
+  out.pattern = cnt.map((c, i) => (c / nBars >= 0.4 ? (i % 2 === 0 ? 'D' : 'U') : '-'));
+  if (!out.pattern.some((x) => x !== '-')) out.pattern = cnt.map((c, i) => (i % sub === 0 ? 'D' : '-'));
+  const P = out.pattern.join('');
+  const NAMES = [[P_FOLK, 'Folk-kompet'], [P_BALLAD, 'Ballad-kompet'], [P_SKANK, 'Reggae-skank'], [P_SKANK_UP, 'Reggae-skank med uppslag'], [['D', '-', 'D', '-', 'D', '-', 'D', '-'], 'Ett nedslag på varje slag'], [['D', 'U', 'D', 'U', 'D', 'U', 'D', 'U'], 'Raka åttondelar, ner och upp'], [['D', '-', '-', '-', 'D', '-', '-', '-'], 'Halvnoter, ett slag på 1 och 3'], [['D', '-', 'D', 'U', 'D', '-', 'D', 'U'], 'Pop-komp'], [['D', '-', 'D', 'U', '-', 'U', 'D', '-'], 'Folk-kompet utan sista uppslaget']];
+  const hit = NAMES.find(([p]) => p.join('') === P);
+  out.name = hit ? hit[1] : M === 3 ? 'Valstakt' : out.sixteen ? 'Eget komp i sextondelar' : 'Eget komp';
+  out.feel = P === P_SKANK.join('') || P === P_SKANK_UP.join('') ? 'reggae' : 'acoustic';
+  // ackord per takt: ett ackord, eller två om de delar på takten
+  const most = (ks) => { const c = {}; ks.filter(Boolean).forEach((k, i) => { c[k] = (c[k] || 0) + (i === 0 ? 1.5 : 1); }); const e = Object.entries(c).sort((a, b) => b[1] - a[1]); return e.length ? e[0][0] : null; };
+  const bars = []; const first = Math.floor((onsets[0].t - down0) / (M * T)), last = Math.floor((onsets[onsets.length - 1].t - down0) / (M * T));
+  for (let b = first; b <= last && bars.length < 64; b++) {
+    const ks = []; for (let j = 0; j < M; j++) ks.push(chordAtT(tb(o + b * M + j) + T * 0.3));
+    if (M === 4) { const h1 = most(ks.slice(0, 2)), h2 = most(ks.slice(2)); bars.push(h1 && h2 && h1 !== h2 ? [h1, h2] : h1 || h2); }
+    else bars.push(most(ks));
+  }
+  while (bars.length && !bars[0]) bars.shift();
+  while (bars.length && !bars[bars.length - 1]) bars.pop();
+  for (let i = 1; i < bars.length; i++) if (!bars[i]) bars[i] = bars[i - 1];
+  out.bars = bars;
+  // hitta rundan som upprepas
+  const eq = (x, y) => JSON.stringify(x) === JSON.stringify(y);
+  let loop = bars.slice(0, 32);
+  for (let p = 1; p <= Math.min(16, Math.floor(bars.length / 2)); p++) {
+    let ok = 0; for (let i = 0; i + p < bars.length; i++) if (eq(bars[i], bars[i + p])) ok++;
+    if (ok >= 0.8 * (bars.length - p)) { loop = bars.slice(0, p); break; }
+  }
+  while (loop.length && loop.length < 4 && 4 % loop.length === 0) loop = [...loop, ...loop];
+  out.loop = loop;
+  return out;
+}
+
+function Jam({ easy, onSave, onDone }) {
+  const [phase, setPhase] = useState('idle');
+  const [now, setNow] = useState(null);
+  const [trail, setTrail] = useState([]);
+  const [live, setLive] = useState({ bpm: 0, secs: 0 });
+  const [res, setRes] = useState(null);
+  const [micErr, setMicErr] = useState(false);
+  const [recs, setRecs] = useState([]);
+  const [name, setName] = useState('');
+  const S = useRef(null), lvl = useRef(null), dot = useRef(null);
+  const loadRecs = () => RecDB.list('jam').then((l) => setRecs((l || []).sort((a, b) => b.at - a.at))).catch(() => setRecs([]));
+  const halt = () => {
+    const st = S.current; if (!st) return; S.current = null;
+    cancelAnimationFrame(st.raf); clearInterval(st.iv);
+    try { if (st.mr && st.mr.state !== 'inactive') st.mr.stop(); } catch (e) {}
+    st.mic.stop();
+    try { st.wake && st.wake.release(); } catch (e) {}
+    return st;
+  };
+  useEffect(() => { loadRecs(); return () => { halt(); }; }, []);
+
+  const start = async () => {
+    setMicErr(false); setRes(null); setNow(null); setTrail([]); setLive({ bpm: 0, secs: 0 });
+    const m = new Mic();
+    try { await m.start({ aec: false }); } catch (e) { setMicErr(true); return; }
+    const cal = micCal(), T0 = performance.now();
+    const st = { mic: m, onsets: [], segs: [], cur: null, curT: 0, cand: null, candT: 0, n: 0, chk: 0, env: 0.01, prev: 0, lastOn: -1, last: 0, meta: { bpm: 0 }, T0 };
+    S.current = st;
+    try { if (navigator.wakeLock) st.wake = await navigator.wakeLock.request('screen'); } catch (e) {}
+    // spela in samtidigt som appen lyssnar
+    try {
+      const mime = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm'].find((x) => window.MediaRecorder && MediaRecorder.isTypeSupported(x)) || '';
+      const mr = new MediaRecorder(m.stream, mime ? { mimeType: mime } : undefined), chunks = [], at = Date.now(), meta = st.meta;
+      mr.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+      mr.onstop = async () => {
+        const dur = (Date.now() - at) / 1000; if (dur < 2 || !chunks.length) return;
+        try {
+          await RecDB.put({ id: String(at), song: 'jam', title: 'Jam', at, dur, bpm: meta.bpm, blob: new Blob(chunks, { type: mr.mimeType || 'audio/webm' }) });
+          const all = ((await RecDB.list('jam')) || []).sort((a, b) => b.at - a.at); for (const old of all.slice(20)) await RecDB.del(old.id);
+          try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+        } catch (e) {}
+        loadRecs();
+      };
+      mr.start(1000); st.mr = mr;
+    } catch (e) {}
+    const loop = (tt) => {
+      st.raf = requestAnimationFrame(loop);
+      const t = (tt - T0) / 1000; m.read(); const r = m.rms();
+      if (lvl.current) lvl.current.style.width = Math.min(100, r * 600) + '%';
+      // anslag: ljudet stiger snabbt över rummets nivå
+      if (r > cal.onset * 0.7 && r > st.env * 1.8 && r > st.prev * 1.15 && t - st.lastOn > 0.09) {
+        st.lastOn = t; st.onsets.push({ t, s: r });
+        if (dot.current && dot.current.animate) dot.current.animate([{ transform: 'scale(1.7)', opacity: 1 }, { transform: 'scale(1)', opacity: 0.3 }], { duration: 260 });
+      }
+      st.env = st.env * 0.9 + r * 0.1; st.prev = r;
+      if (tt - st.chk < 70) return; st.chk = tt;
+      if (r < cal.gate * 2) {
+        st.cand = null; st.n = 0;
+        if (st.cur && t - st.last > 1.2) { st.segs.push({ k: st.cur, t0: st.curT, t1: st.last }); st.cur = null; }
+        return;
+      }
+      st.last = t;
+      const { ch, tot } = m.chroma(); if (tot <= 0) return;
+      const k = guessChord(ch, easy);
+      if (!k) { st.cand = null; st.n = 0; return; }
+      if (k === st.cand) st.n++; else { st.cand = k; st.n = 1; st.candT = t; }
+      if (st.n >= 3 && k !== st.cur) {
+        const at = Math.max(0, st.candT - 0.08);
+        if (st.cur) st.segs.push({ k: st.cur, t0: st.curT, t1: at });
+        st.cur = k; st.curT = at; setNow(k); setTrail((l) => [...l, k].slice(-10));
+      }
+    };
+    st.raf = requestAnimationFrame(loop);
+    st.iv = setInterval(() => {
+      const t = (performance.now() - T0) / 1000, rec = st.onsets.filter((o) => o.t > t - 12), tp = jamTempo(rec);
+      setLive({ bpm: tp ? Math.round(tp.bpm) : 0, secs: t });
+    }, 1000);
+    setPhase('run');
+  };
+
+  const finish = () => {
+    const st = S.current; if (!st) return;
+    const t = (performance.now() - st.T0) / 1000;
+    if (st.cur) st.segs.push({ k: st.cur, t0: st.curT, t1: Math.max(st.last, st.curT + 0.3) });
+    const r = analyzeJam(st.onsets, st.segs);
+    st.meta.bpm = r.bpm;
+    halt();
+    const d = new Date();
+    setName('Jam ' + d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }));
+    setRes({ ...r, dur: t, hits: st.onsets.length }); setPhase('done');
+    if (t >= 20 && (r.chords.length || r.bpm)) onDone(r, t);
+  };
+
+  const save = () => {
+    const r = res; if (!r || !r.loop.length || r.meter !== 4) return;
+    const L = r.pattern.length;
+    onSave({ id: 'custom-' + Date.now(), custom: true, title: name.trim() || 'Min jam', artist: 'Egen jam', level: 'Egen',
+      bpm: Math.max(40, Math.min(200, r.bpm || 80)), feel: r.feel, pattern: r.pattern, accents: r.feel === 'reggae' ? [] : [0, L / 2],
+      tip: 'Det här är rundan du jammade. Kompet är det slagmönster appen hörde: ' + r.name.toLowerCase() + '.', form: [{ part: 'Runda', bars: r.loop }] });
+  };
+  const playLoop = () => {
+    const r = res; if (!r || !r.loop.length) return;
+    engine.init(); const T = 60 / (r.bpm || 80), t0 = engine.now() + 0.05, M = r.meter, sub = r.pattern.length / M;
+    r.loop.slice(0, 8).forEach((b, bi) => r.pattern.forEach((dir, i) => {
+      if (dir === '-') return; const half = Array.isArray(b) && i >= r.pattern.length / 2 ? 1 : 0, k = Array.isArray(b) ? b[half] : b;
+      engine.strum(voicing(k, easy).frets, t0 + (bi * M + i / sub) * T, dir, { vel: i === 0 ? 0.85 : 0.6, stagger: 0.012 });
+    }));
+  };
+  const steadyTxt = (s) => (s >= 80 ? 'Stadigt, rytmen sitter.' : s >= 60 ? 'Ganska jämnt, med lite gung.' : 'Tempot vandrar lite. Räkna 1, 2, 3, 4 tyst för dig själv.');
+  const barTxt = (b) => [].concat(b).map((k) => CHORD_DB[k].name).join(' · ');
+
+  return html`<div style=${{ display: 'grid', gap: 18 }}>
+    <div className="section-head"><h2>Jamma</h2><p>Spela vad du vill. Appen spelar in dig och räknar ut ackorden, tempot, taktarten och kompet.</p></div>
+    ${micErr ? MIC_BLOCKED : null}
+    <section className="card jam">
+      ${phase === 'idle' ? html`<div className="chal">
+        <p className="lead">Lägg telefonen nära gitarren och spela minst 8 takter i jämnt tempo. Byt gärna ackord på första slaget i takten, då hittar appen taktarten lättare.</p>
+        <button className="play" onClick=${start}>${I.play}Börja jamma</button></div>` : null}
+      ${phase === 'run' ? html`<div className="chal">
+        <div className="jam-rec"><i></i>Spelar in ${fmtDur(live.secs)}</div>
+        <div className="count">${now ? CHORD_DB[now].name : '…'}</div>
+        <div className="jam-live">
+          <span className="jam-dot" ref=${dot}></span>
+          <span><b>${live.bpm || '–'}</b> BPM</span>
+        </div>
+        <div className="chal-mic"><div className="gh-lvl cc-lvl" style=${{ width: '100%' }}><i ref=${lvl}></i></div>
+          <small className="muted" style=${{ minHeight: 20 }}>${trail.length ? trail.map((k) => CHORD_DB[k].name).join(' · ') : 'Appen lyssnar. Spela på.'}</small></div>
+        <button className="play stop" onClick=${finish}>${I.stop}Klar, visa vad jag spelade</button></div>` : null}
+      ${phase === 'done' && res ? html`<div className="jam-res">
+        <span className="ls-kicker">Din jam · ${fmtDur(res.dur)}</span>
+        <h2 className="home-h1">Det här spelade du</h2>
+        ${!res.chords.length && !res.bpm ? html`<p className="lead">Appen hörde inte tillräckligt. Spela lite längre och lite starkare, eller kalibrera mikrofonen under Stämning.</p>` : null}
+        ${res.loop.length ? html`<div className="jam-block"><span className="label">Ackord, takt för takt</span>
+          <div className="ns-bars jam-bars">${res.loop.map((b, i) => html`<span key=${i}>${barTxt(b)}</span>`)}</div>
+          ${res.bars.length > res.loop.length ? html`<small className="muted">Rundan upprepades. Hela jammet var ${res.bars.length} takter.</small>` : null}</div>`
+          : res.chords.length ? html`<div className="jam-block"><span className="label">Ackord</span><div className="ns-bars jam-bars">${res.chords.map((k) => html`<span key=${k}>${CHORD_DB[k].name}</span>`)}</div></div>` : null}
+        ${res.chords.length ? html`<div className="diagrams" style=${{ gridTemplateColumns: `repeat(${Math.min(4, res.chords.length)}, minmax(0, 1fr))` }}>
+          ${res.chords.slice(0, 8).map((k) => html`<${Diagram} key=${k} k=${k} easy=${easy} onClick=${() => engine.playChord(voicing(k, easy).frets)} />`)}</div>` : null}
+        ${res.bpm ? html`<div className="jam-stats">
+          <div className="stat"><b>${res.bpm}</b><span>BPM</span></div>
+          <div className="stat"><b>${res.meter}/4</b><span>${res.meter === 3 ? 'Valstakt' : 'Fyrtakt'}</span></div>
+          <div className="stat"><b>${res.steady} %</b><span>Jämnhet</span></div>
+        </div>
+        <p className="muted" style=${{ margin: 0, fontSize: 13 }}>${steadyTxt(res.steady)}</p>
+        <div className="jam-block"><span className="label">Kompet: ${res.name}</span>
+          <${BeatStrip} pattern=${res.pattern} accents=${[0]} cur=${-1} />
+          <small className="muted">Ner på slagen, upp mellan dem, så som armen rör sig när du kompar.</small></div>`
+          : res.chords.length ? html`<p className="muted">Spela fler slag i jämn takt så kan appen räkna ut tempo och komp.</p>` : null}
+        ${res.loop.length ? html`<div className="row" style=${{ gap: 8, flexWrap: 'wrap' }}>
+          <button className="btn" onClick=${playLoop}>Lyssna på rundan</button>
+          ${res.meter === 4 && res.bpm ? html`<input type="text" className="jam-name" aria-label="Namn på låten" value=${name} onInput=${(e) => setName(e.target.value)} onChange=${() => {}} />
+            <button className="btn primary" onClick=${save}>Spara som låt</button>` : null}
+        </div>
+        ${res.meter === 3 ? html`<small className="muted">Kompbandet kan bara spela fyrtakt än, så valstakter kan inte sparas som låt.</small>` : null}` : null}
+        <button className="play" style=${{ justifySelf: 'center' }} onClick=${start}>${I.play}Jamma igen</button>
+      </div>` : null}
+    </section>
+    ${recs.length ? html`<section className="card recs" aria-label="Dina jam-inspelningar">
+      <div className="section-head" style=${{ margin: 0 }}><h3>Dina jam-inspelningar</h3><p>De senaste 20 sparas på den här enheten.</p></div>
+      <ul className="rec-list">${recs.map((r) => html`<${RecItem} key=${r.id} r=${r} onDel=${(id) => RecDB.del(id).then(loadRecs)} />`)}</ul>
+    </section>` : null}
+  </div>`;
+}
+
 const SKINS = [
   { id: 'auto', name: 'Följ telefonen', sub: 'Ljust på dagen, Riddim när telefonen är i mörkt läge', bg: '#e6dccb', fg: '#2e4136', sw: ['#f3ede1', '#0e1f17', '#f2c230'] },
   { id: 'salvia', name: 'Salvia och persika', sub: 'Ljust papper, dämpat grönt, som ett skivomslag', bg: '#f3ede1', fg: '#2e4136', sw: ['#4c6655', '#edb99f', '#96472e'] },
@@ -4559,11 +4846,11 @@ function App() {
   const stopRec = () => { const r = recRef.current; recRef.current = null; setRecOn(0); if (r && r.mr.state !== 'inactive') r.mr.stop(); };
   useEffect(() => {
     if (playing === 'song' && recArm && !recRef.current) startRec();
-    if ((playing !== 'song' || !recArm) && recRef.current) stopRec();
+    if ((playing !== 'song' || !recArm) && recRef.current) { stopRec(); if (playing !== 'song') setRecArm(false); }
   }, [playing, recArm]);
   const delRec = (id) => RecDB.del(id).then(() => loadRecs(song.id));
-  const recBtn = html`<button className=${'rec-btn' + (recArm ? ' on' : '') + (recOn ? ' live' : '')} aria-pressed=${recArm} onClick=${() => setRecArm(!recArm)}
-    title=${recArm ? 'Sluta spela in' : 'Spela in dig själv nästa gång du startar låten'}><i></i>${recOn ? 'Spelar in ' + fmtDur((Date.now() - recOn) / 1000) : recArm ? (playing === 'song' ? 'Startar …' : 'Spelar in när du startar') : 'Spela in'}</button>`;
+  const recBtn = html`<button className=${'rec-btn' + (recArm ? ' on' : '') + (recOn ? ' live' : '')} aria-pressed=${recArm} onClick=${() => { if (recArm) { setRecArm(false); return; } setRecArm(true); if (playing !== 'song') { if (playing) stopAll(); startSong(); } }}
+    title=${recArm ? 'Sluta spela in' : 'Starta låten och spela in dig själv'}><i></i>${recOn ? 'Spelar in ' + fmtDur((Date.now() - recOn) / 1000) + ' · Stopp' : recArm ? 'Startar …' : 'Spela in'}</button>`;
 
   /* ---------- övningsläge: bara ackord, slag och hand, i helskärm ---------- */
   const enterFocus = () => {
@@ -5497,11 +5784,16 @@ function App() {
           award(cnt * 2 + (rec ? 20 : 0), rec ? 'Nytt rekord: ' + cnt + ' byten!' : cnt + ' byten på en minut', (n) => { n.best[k] = Math.max(n.best[k] || 0, cnt); addTag(n, 'chal:' + k + ':' + cnt); }); }} />`}
   </div>`;
 
+  const JamTab = html`<${Jam} easy=${easy}
+    onDone=${(r, secs) => award(secs >= 60 ? 30 : 15, 'Jam: ' + fmtDur(secs) + (r.bpm ? ' · ' + r.bpm + ' BPM' : ''), (n) => { n.jams = (n.jams || 0) + 1; addTag(n, 'jam'); })}
+    onSave=${(s) => { const list = [...custom, s]; setCustom(list); saveCustom(list); pickSong(s); setTab('spela'); window.scrollTo({ top: 0 }); toast({ x: '♪', t: 'Sparad som låt', s: s.title + ' ligger nu under Låtar.' }); }} />`;
+
   const TABS = [['vag', 'Min väg', 'Väg'], ['spela', 'Spela låtar', 'Låtar'], ['spel', 'Spel', 'Spel'], ['skank', 'Skank-skola', 'Skank'], ['ackord', 'Ackordtabell', 'Ackord'], ['byten', 'Ackordbyten', 'Byten'], ['stam', 'Stämning', 'Stäm']];
-  const NAV = [['vag', 'Idag', 'Idag'], ['spela', 'Låtar', 'Låtar'], ['skank', 'Rytm', 'Rytm'], ['bib', 'Bibliotek', 'Bibliotek']];
+  const NAV = [['vag', 'Idag', 'Idag'], ['spela', 'Låtar', 'Låtar'], ['jam', 'Jamma', 'Jamma'], ['skank', 'Rytm', 'Rytm'], ['bib', 'Bibliotek', 'Bibliotek']];
   const navOn = (id) => tab === id || (id === 'bib' && ['ackord', 'byten', 'spel', 'stam', 'guide'].includes(tab));
   const TabIcon = {
     bib: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',
+    jam: 'M12 3a3 3 0 0 0-3 3v5a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM6 11a6 6 0 0 0 12 0M12 17v4M9 21h6',
     vag: 'M5 19c3-1 3-6 7-7s4-6 7-7', spela: 'M9 18V6l10-2v12M9 18a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0zM19 16a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z',
     spel: 'M6 9h12a3 3 0 0 1 3 3v2a3 3 0 0 1-5 2l-1-1H9l-1 1a3 3 0 0 1-5-2v-2a3 3 0 0 1 3-3zM8 11v3M6.5 12.5h3M16 12h.01', skank: 'M4 12h3l2-6 4 12 2-6h5',
     ackord: 'M6 4v16M10 4v16M14 4v16M18 4v16M4 8h16M4 13h16', guide: 'M4 17h4l3-10 3 10h6M4 7h3M17 7h3', byten: 'M4 8h13l-3-3M20 16H7l3 3', stam: 'M12 3v10M8 7l4-4 4 4M5 20a7 7 0 0 1 14 0',
@@ -5525,7 +5817,7 @@ function App() {
       </div>
     </div></header>
     <main className="wrap">
-      ${tab === 'vag' ? HomeTab() : tab === 'bib' ? BibTab() : tab === 'spel' ? SpelTab : tab === 'spela' ? SpelaTab : tab === 'ackord' ? AckordTab : tab === 'guide' ? GuideTab : tab === 'skank' ? SkankTab : tab === 'byten' ? BytenTab : StamTab}
+      ${tab === 'vag' ? HomeTab() : tab === 'jam' ? JamTab : tab === 'bib' ? BibTab() : tab === 'spel' ? SpelTab : tab === 'spela' ? SpelaTab : tab === 'ackord' ? AckordTab : tab === 'guide' ? GuideTab : tab === 'skank' ? SkankTab : tab === 'byten' ? BytenTab : StamTab}
       ${['spela', 'skank', 'byten'].includes(tab) ? html`<p className="muted desk-only" style=${{ fontSize: 12 }}>Tryck <span className="kbd">mellanslag</span> för att starta och stoppa.</p>` : null}
     </main>
     ${['spela', 'skank', 'byten'].includes(tab) ? html`<div className="mbar">
