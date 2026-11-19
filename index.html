@@ -887,13 +887,17 @@ html.jam-stage .jam-ring{box-shadow:none}
 html.jam-stage .play.stop{background:var(--text);color:var(--bg)}
 .jam-dock{justify-self:center;display:grid;place-items:center;width:58px;height:58px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 12px 2px var(--a),inset 0 0 12px 2px color-mix(in oklab,var(--b) 70%,transparent)}
 .jam-wrap .jam-top .jam-dock{transition:none}
-.jam-dock svg{width:58%;height:auto;filter:drop-shadow(0 0 5px var(--a))}
-.jam-wrap.intro .jam-dock{opacity:0}
+.jam-dock>svg{width:58%;height:auto;filter:drop-shadow(0 0 5px var(--a))}
+.jam-wrap.intro .jam-dock{border-color:transparent;box-shadow:none}
+.jam-wrap.intro .jam-dock>svg{opacity:0}
+.jam-dock{position:relative}
+.jam-top{position:relative;z-index:5}
+html.jam-stage,html.jam-stage body{overflow-x:clip}
 .jam-wrap.intro .jam-ring{animation:jiCanvas .9s cubic-bezier(.2,.8,.2,1) 1.9s both}
 @keyframes jiCanvas{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:none}}
-.jam-intro{position:fixed;inset:0;z-index:80;pointer-events:none;overflow:hidden}
-.ji-group{position:absolute;left:50%;top:36%;width:min(64vw,260px);aspect-ratio:1;transform:translate(-50%,-50%);animation:jiDock 2.6s cubic-bezier(.65,0,.25,1) both}
-@keyframes jiDock{0%,64%{transform:translate(-50%,-50%) scale(1)}100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(var(--ds))}}
+.jam-intro{position:absolute;left:50%;top:50%;width:0;height:0;z-index:20;pointer-events:none}
+.ji-group{position:absolute;left:0;top:0;width:min(64vw,260px);aspect-ratio:1;transform:translate(-50%,-50%) translate(var(--sx,0px),var(--sy,0px));animation:jiDock 2.6s cubic-bezier(.65,0,.25,1) both}
+@keyframes jiDock{0%,64%{transform:translate(-50%,-50%) translate(var(--sx,0px),var(--sy,0px)) scale(1)}100%{transform:translate(-50%,-50%) scale(var(--ds,.22))}}
 .ji-group>*{position:absolute;left:50%;top:50%;translate:-50% -50%}
 .ji-dot{width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 0 18px 6px var(--a),0 0 60px 18px var(--b);animation:jiDot 1.1s cubic-bezier(.3,.7,.2,1) both}
 @keyframes jiDot{0%{transform:scale(0);opacity:0}30%{transform:scale(1);opacity:1}55%{transform:scale(1.6);opacity:1}75%{transform:scale(.2);opacity:0}100%{opacity:0}}
@@ -3116,16 +3120,15 @@ function Jam({ easy, onSave, onDone }) {
     return () => { el.classList.remove('jam-stage'); el.removeAttribute('data-jam'); if (meta && old) meta.setAttribute('content', old); };
   }, [phase, skin]);
   // introt landar som en liten mikrofon ovanför ringen: mät var den ska hamna
-  // introt landar där mikrofonen i raden sitter: positionen följs varje bildruta, så den hamnar rätt även om sidan flyttar sig
+  // introt ligger inuti mikrofonens plats i raden: det startar mitt på skärmen och krymper tillbaka till sin egen plats
   const introR = useRef(null);
-  const trackDock = () => {
-    const I = introR.current, D = dockR.current; if (!I || !D) return;
+  React.useLayoutEffect(() => {
+    const I = introR.current, D = dockR.current; if (!intro || !I || !D) return;
     const r = D.getBoundingClientRect(), S = Math.min(window.innerWidth * 0.64, 260);
-    I.style.setProperty('--dx', r.left + r.width / 2 - window.innerWidth / 2 + 'px');
-    I.style.setProperty('--dy', r.top + r.height / 2 - window.innerHeight * 0.36 + 'px');
+    I.style.setProperty('--sx', window.innerWidth / 2 - (r.left + r.width / 2) + 'px');
+    I.style.setProperty('--sy', window.innerHeight * 0.36 - (r.top + r.height / 2) + 'px');
     I.style.setProperty('--ds', String(r.width / S));
-  };
-  React.useLayoutEffect(() => { if (intro) trackDock(); }, [intro]);
+  }, [intro]);
   useEffect(() => { if (phase !== 'run' && intro) setIntro(0); }, [phase]);
   const loadRecs = () => RecDB.list('jam').then((l) => setRecs((l || []).sort((a, b) => b.at - a.at))).catch(() => setRecs([]));
   const halt = () => {
@@ -3181,7 +3184,6 @@ function Jam({ easy, onSave, onDone }) {
       }
       st.env = st.env * 0.9 + r * 0.1; st.prev = r;
       if (cvR.current) drawRing(cvR.current, st, t, skinR.current, easy);
-      trackDock();
       if (tt - st.chk < 70) return; st.chk = tt;
       if (r < cal.gate * 2) {
         st.cand = null; st.n = 0;
@@ -3251,7 +3253,7 @@ function Jam({ easy, onSave, onDone }) {
   const barTxt = (b) => [].concat(b).map((k) => CHORD_DB[k].name).join(' · ');
 
   const SK = RING_SKINS[skin] || RING_SKINS.neon, glow = INTRO_GLOW[skin] || INTRO_GLOW.neon;
-  const introEl = intro ? ReactDOM.createPortal(html`<div key=${intro} className="jam-intro" aria-hidden="true" ref=${introR} style=${{ '--a': glow[0], '--b': glow[1] }}>
+  const introEl = intro ? html`<div key=${intro} className="jam-intro" aria-hidden="true" ref=${introR} style=${{ '--a': glow[0], '--b': glow[1] }}>
     <div className="ji-group">
     <div className="ji-rays"></div>
     <div className="ji-ring"></div>
@@ -3270,12 +3272,11 @@ function Jam({ easy, onSave, onDone }) {
       </g>
     </svg>
     </div>
-  </div>`, document.body) : null;
+  </div>` : null;
   const micSvg = (id) => html`<svg viewBox="0 0 64 64" fill="none" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <defs><linearGradient id=${id} x1="0" y1="0" x2="1" y2="1"><stop offset="0" style=${{ stopColor: '#fff' }} /><stop offset=".45" style=${{ stopColor: 'var(--a)' }} /><stop offset="1" style=${{ stopColor: 'var(--b)' }} /></linearGradient></defs>
     <g stroke=${'url(#' + id + ')'} strokeWidth="3.4"><rect x="23" y="8" width="18" height="30" rx="9" /><path d="M15 30a17 17 0 0 0 34 0M32 47v8M24 57h16" /></g></svg>`;
   return html`<div className=${'jam-wrap' + (intro ? ' intro' : '')} style=${{ display: 'grid', gap: 18 }}>
-    ${introEl}
     <div className="section-head"><h2>Jamma</h2><p>Spela vad du vill. Appen spelar in dig och räknar ut ackorden, tempot, taktarten och kompet.</p></div>
     ${micErr ? MIC_BLOCKED : null}
     <section className="card jam">
@@ -3286,7 +3287,7 @@ function Jam({ easy, onSave, onDone }) {
       ${phase === 'run' ? html`<div className="jam-run">
         <div className="jam-top">
           <div className="jam-rec"><i></i>Spelar in ${fmtDur(live.secs)}</div>
-          <span className="jam-dock" ref=${(el) => { dockR.current = el; if (el && !intro) dot.current = el; }} style=${{ '--a': glow[0], '--b': glow[1] }}>${micSvg('jamDockG')}</span>
+          <span className="jam-dock" ref=${(el) => { dockR.current = el; if (el && !intro) dot.current = el; }} style=${{ '--a': glow[0], '--b': glow[1] }}>${micSvg('jamDockG')}${introEl}</span>
           <span className="jam-streak">${FlameIcon}<span ref=${streakR}>0 slag i takt</span></span>
         </div>
         <div className="jam-stage">
