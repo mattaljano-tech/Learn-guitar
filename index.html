@@ -3055,10 +3055,16 @@ function Jam({ easy, onSave, onDone }) {
     return () => { el.classList.remove('jam-stage'); el.removeAttribute('data-jam'); if (meta && old) meta.setAttribute('content', old); };
   }, [phase, skin]);
   // introt landar som en liten mikrofon ovanför ringen: mät var den ska hamna
-  React.useLayoutEffect(() => {
-    if (!intro || !dockR.current) return;
-    const r = dockR.current.getBoundingClientRect(), S = Math.min(window.innerWidth * 0.64, 260);
-    setGeo({ dx: r.left + r.width / 2 - window.innerWidth / 2, dy: r.top + r.height / 2 - window.innerHeight * 0.36, ds: r.width / S });
+  // mät precis innan mikrofonen börjar röra sig (vid 1,66 s), när sidan har scrollat klart och allt ligger still
+  useEffect(() => {
+    if (!intro) return;
+    const measure = () => {
+      if (!dockR.current) return;
+      const r = dockR.current.getBoundingClientRect(), S = Math.min(window.innerWidth * 0.64, 260);
+      setGeo({ dx: r.left + r.width / 2 - window.innerWidth / 2, dy: r.top + r.height / 2 - window.innerHeight * 0.36, ds: r.width / S });
+    };
+    measure(); const a = setTimeout(measure, 700), b = setTimeout(measure, 1450);
+    return () => { clearTimeout(a); clearTimeout(b); };
   }, [intro]);
   useEffect(() => { if (phase !== 'run' && intro) setIntro(0); }, [phase]);
   const loadRecs = () => RecDB.list('jam').then((l) => setRecs((l || []).sort((a, b) => b.at - a.at))).catch(() => setRecs([]));
@@ -3137,7 +3143,7 @@ function Jam({ easy, onSave, onDone }) {
       if (tp) st.grid = tp; else if (!rec.length) st.grid = null;
       setLive({ bpm: tp ? Math.round(tp.bpm) : 0, secs: t });
     }, 1000);
-    setPhase('run'); window.scrollTo({ top: 0 });
+    setPhase('run'); window.scrollTo({ top: 0, behavior: 'instant' });
     if (!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) setIntro(Date.now());
   };
 
