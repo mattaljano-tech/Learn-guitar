@@ -872,11 +872,20 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 .jam-rec i{width:11px;height:11px;border-radius:50%;background:#d43c2c;animation:recPulse 1s ease-in-out infinite}
 .jam-live{display:flex;align-items:center;gap:14px;font-size:15px;color:var(--muted)}
 .jam-live b{font-family:var(--f-display);font-weight:800;font-size:28px;color:var(--text)}
-.jam-dot{width:18px;height:18px;border-radius:50%;background:var(--brass);opacity:.3}
+.jam-run{display:grid;gap:12px}
+.jam-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.jam-streak{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--muted)}
+.jam-streak svg{width:15px;height:15px;color:var(--brass)}
+.jam-stage{position:relative}
+.jam-ring{display:block;width:100%;height:min(400px,92vw);border-radius:22px;background:#05040b;box-shadow:inset 0 0 0 1px rgba(200,180,255,.08),0 24px 60px rgba(120,60,255,.18)}
+.jam-cheer{position:absolute;left:50%;top:14px;transform:translateX(-50%);opacity:0;pointer-events:none;white-space:nowrap;font-weight:800;font-size:13px;padding:5px 12px;border-radius:999px;color:#fff;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.jam-mic{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;background:color-mix(in oklab,var(--brass) 15%,transparent);color:var(--brass)}
+.jam-mic svg{width:22px;height:22px}
+.jam-skins button{padding:0 10px}
 .jam-res{display:grid;gap:14px}
 .jam-block{display:grid;gap:8px}
 .jam-bars span{font-size:17px;padding:6px 12px}
-.jam-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.jam-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px}
 .jam-name{flex:1;min-width:150px;height:40px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font:inherit}
 @media (prefers-reduced-motion:reduce){.jam-rec i{animation:none}}
 .chal-mic b{font-family:var(--f-display);font-size:20px}
@@ -2907,6 +2916,81 @@ function analyzeJam(onsets, segs) {
   return out;
 }
 
+// Neonringen i Jamma: strålar som växer med ljudet, tryckvågor vid varje slag, gnistor vid hårda slag
+// och en komet som går ett varv per takt. Tre teman: neon, sol och svartvitt som skimrar i neon när du slår an.
+const RING_SKINS = {
+  neon: { name: 'Neon', pairs: [[[255, 61, 242], [51, 214, 255]], [[51, 214, 255], [138, 92, 255]], [[138, 92, 255], [255, 61, 242]], [[46, 230, 184], [138, 92, 255]]], bg: ['#160f2e', '#05040b'] },
+  sol: { name: 'Sol', pairs: [[[255, 184, 77], [255, 61, 128]], [[255, 96, 64], [255, 210, 92]], [[255, 61, 160], [255, 140, 60]], [[255, 220, 110], [255, 80, 90]]], bg: ['#2a120f', '#070304'] },
+  svartvit: { name: 'Svartvit', bw: true, pairs: [[[255, 61, 242], [51, 214, 255]], [[51, 214, 255], [138, 92, 255]], [[138, 92, 255], [255, 61, 242]], [[46, 230, 184], [138, 92, 255]]], bg: ['#1a1a1d', '#000000'] },
+};
+const PC_OF = { C: 0, 'C#': 1, Db: 1, D: 2, 'D#': 3, Eb: 3, E: 4, F: 5, 'F#': 6, Gb: 6, G: 7, 'G#': 8, Ab: 8, A: 9, 'A#': 10, Bb: 10, B: 11 };
+function drawRing(cv, st, t, skin, easy) {
+  const W = cv.clientWidth, H = cv.clientHeight; if (!W || !H) return;
+  const dpr = Math.min(3, window.devicePixelRatio || 1);
+  if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+  const x = cv.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, W, H);
+  const R = st.ring || (st.ring = { ray: new Array(140).fill(0), waves: [], sparks: [], seen: 0, lvl: 0, flash: 0, pulse: 0, nodes: [0, 0, 0, 0], cA: null, cB: null, name: '', prev: '', chg: -9 });
+  const SK = RING_SKINS[skin] || RING_SKINS.neon, N = R.ray.length;
+  const cx = W / 2, cy = H / 2, R0 = Math.min(W, H) * 0.27;
+  // ackordets färger
+  const k = st.cur, nm = k ? CHORD_DB[k].name : '', root = nm ? PC_OF[(/^[A-G](#|b)?/.exec(nm) || ['C'])[0]] : 0;
+  const pair = SK.pairs[root % SK.pairs.length];
+  if (!R.cA) { R.cA = pair[0].slice(); R.cB = pair[1].slice(); }
+  for (let i = 0; i < 3; i++) { R.cA[i] += (pair[0][i] - R.cA[i]) * 0.05; R.cB[i] += (pair[1][i] - R.cB[i]) * 0.05; }
+  if (nm !== R.name) { R.prev = R.name; R.name = nm; R.chg = t; }
+  // nya anslag
+  for (; R.seen < st.onsets.length; R.seen++) {
+    const o = st.onsets[R.seen], h = o.h || 0.6; R.waves.push({ t0: o.t, s: h }); R.flash = Math.max(R.flash, h);
+    if (h > 0.7) for (let q = 0; q < Math.round(8 + h * 12); q++) R.sparks.push({ a: Math.random() * 6.283, r: R0, v: 60 + Math.random() * 120, life: 1, f: Math.random() });
+  }
+  R.waves = R.waves.filter((w) => t - w.t0 < 1); R.sparks = R.sparks.filter((s) => s.life > 0).slice(-160);
+  let lt = 0; for (let i = st.onsets.length - 1; i >= 0 && t - st.onsets[i].t < 1.6; i--) { const d = t - st.onsets[i].t; lt = Math.max(lt, (st.onsets[i].h || 0.6) * (d < 0.03 ? d / 0.03 : Math.exp(-(d - 0.03) * 2.2))); }
+  R.lvl += (lt - R.lvl) * 0.22; R.flash *= SK.bw ? 0.87 : 0.93; const lvl = R.lvl;
+  // svartvitt: vitt och grått som skimrar över i neon när du slår an
+  const mixc = (a, b, f) => [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f];
+  const fl = SK.bw ? Math.pow(Math.min(1, R.flash * 1.1), 1.4) : 1;
+  const A = SK.bw ? mixc([245, 245, 250], R.cA, fl) : R.cA, B = SK.bw ? mixc([120, 120, 130], R.cB, fl) : R.cB;
+  const col = (f, al) => 'rgba(' + Math.round(A[0] + (B[0] - A[0]) * f) + ',' + Math.round(A[1] + (B[1] - A[1]) * f) + ',' + Math.round(A[2] + (B[2] - A[2]) * f) + ',' + al + ')';
+  const bgg = x.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * 0.75); bgg.addColorStop(0, SK.bg[0]); bgg.addColorStop(1, SK.bg[1]); x.fillStyle = bgg; x.fillRect(0, 0, W, H);
+  // takthållaren: tempot appen har hört
+  const g = st.grid; let beat = -1, fr = 0, oa = null;
+  if (g) { const bp = (t - g.ph) / g.T; beat = ((Math.floor(bp) % 4) + 4) % 4; fr = bp - Math.floor(bp); oa = -Math.PI / 2 + ((((bp / 4) % 1) + 1) % 1) * 6.283; }
+  R.pulse += ((g && fr < 0.06 ? (beat === 0 ? 1 : 0.5) : 0) - R.pulse) * (g && fr < 0.06 ? 0.55 : 0.07);
+  const Rr = R0 + R.pulse * 6 + lvl * 4;
+  const hg = x.createRadialGradient(cx, cy, Rr * 0.6, cx, cy, Rr * 2.1); hg.addColorStop(0, col(0.5, 0)); hg.addColorStop(0.45, col(0.5, (SK.bw ? 0.06 : 0.14) + lvl * 0.22)); hg.addColorStop(1, col(0.5, 0)); x.fillStyle = hg; x.fillRect(0, 0, W, H);
+  x.globalCompositeOperation = 'lighter';
+  for (const w of R.waves) { const age = t - w.t0; if (age < 0) continue; x.strokeStyle = col(age, (1 - age) * 0.5 * w.s); x.lineWidth = 1 + w.s * 3 * (1 - age); x.beginPath(); x.arc(cx, cy, Rr + age * 150, 0, 7); x.stroke(); }
+  const pcs = k ? chordPcs(k, easy) : new Set(), rot = t * 0.1; x.lineCap = 'round';
+  for (let i = 0; i < N; i++) {
+    const pc = Math.floor((i / N) * 24) % 12, tone = !k || pcs.has(pc) ? 1 : 0.38, tg = lvl * tone * (0.65 + 0.35 * Math.sin(t * 4.3 + i * 0.77)) + 0.07 + 0.05 * Math.sin(t * 1.5 + i * 0.37);
+    R.ray[i] += (tg - R.ray[i]) * (tg > R.ray[i] ? 0.38 : 0.08);
+    const a = rot + (i / N) * 6.283, v = R.ray[i], f = (Math.sin(a * 2 - t * 0.6) + 1) / 2, len = 5 + v * R0 * 1.05, ca = Math.cos(a), sa = Math.sin(a);
+    x.strokeStyle = col(f, 0.12 + v * 0.18); x.lineWidth = 6; x.beginPath(); x.moveTo(cx + ca * (Rr + 6), cy + sa * (Rr + 6)); x.lineTo(cx + ca * (Rr + 6 + len), cy + sa * (Rr + 6 + len)); x.stroke();
+    x.strokeStyle = col(f, 0.45 + v * 0.55); x.lineWidth = 2; x.stroke();
+    const il = v * R0 * 0.28; x.strokeStyle = col(1 - f, 0.25 + v * 0.4); x.lineWidth = 1.5; x.beginPath(); x.moveTo(cx + ca * (Rr - 7), cy + sa * (Rr - 7)); x.lineTo(cx + ca * (Rr - 7 - il), cy + sa * (Rr - 7 - il)); x.stroke();
+  }
+  const rg = x.createLinearGradient(cx - Rr, cy - Rr, cx + Rr, cy + Rr); rg.addColorStop(0, col(0, 1)); rg.addColorStop(1, col(1, 1));
+  x.strokeStyle = rg; x.globalAlpha = 0.22; x.lineWidth = 16; x.beginPath(); x.arc(cx, cy, Rr, 0, 7); x.stroke();
+  x.globalAlpha = 1; x.lineWidth = 3; x.beginPath(); x.arc(cx, cy, Rr, 0, 7); x.stroke();
+  if (oa != null) for (let tr = 0; tr < 18; tr++) { const aa = oa - tr * 0.045; x.fillStyle = 'rgba(255,255,255,' + 0.9 * (1 - tr / 18) + ')'; x.beginPath(); x.arc(cx + Math.cos(aa) * Rr, cy + Math.sin(aa) * Rr, 4.2 * (1 - tr / 22), 0, 7); x.fill(); }
+  for (let q = 0; q < 4; q++) {
+    const want = q === beat ? 1 : 0; R.nodes[q] += (want - R.nodes[q]) * (want ? 0.5 : 0.06);
+    const na = -Math.PI / 2 + (q * Math.PI) / 2, gl = R.nodes[q], px = cx + Math.cos(na) * Rr, py = cy + Math.sin(na) * Rr;
+    x.fillStyle = q === 0 ? col(0, 0.35 + gl * 0.65) : 'rgba(235,240,255,' + ((g ? 0.3 : 0.12) + gl * 0.7) + ')'; x.beginPath(); x.arc(px, py, 5 + gl * 4, 0, 7); x.fill();
+    if (gl > 0.05) { x.fillStyle = col(q / 3, gl * 0.25); x.beginPath(); x.arc(px, py, 14 + gl * 10, 0, 7); x.fill(); }
+  }
+  for (const s of R.sparks) { s.r += s.v / 60; s.v *= 0.965; s.life -= 0.018; x.fillStyle = col(s.f, Math.max(0, s.life)); x.beginPath(); x.arc(cx + Math.cos(s.a) * s.r, cy + Math.sin(s.a) * s.r, 1.8, 0, 7); x.fill(); }
+  x.globalCompositeOperation = 'source-over';
+  // ackordet i mitten
+  const op = Math.min(1, (t - R.chg) / 0.25), fs = Math.round(Math.min(68, R0 * 0.62));
+  x.textAlign = 'center'; x.textBaseline = 'middle'; x.font = `800 ${fs}px "Bricolage Grotesque", system-ui, sans-serif`;
+  const tg = x.createLinearGradient(cx - 50, 0, cx + 50, 0); tg.addColorStop(0, col(0, 1)); tg.addColorStop(1, col(1, 1));
+  if (op < 1 && R.prev) { x.globalAlpha = 1 - op; x.fillStyle = tg; x.fillText(R.prev, cx, cy - 6 - op * 10); }
+  x.globalAlpha = op; x.fillStyle = tg; x.shadowColor = col(0.5, 0.8); x.shadowBlur = 18; x.fillText(R.name || '…', cx, cy - 6 + (1 - op) * 10); x.shadowBlur = 0; x.globalAlpha = 1;
+  x.fillStyle = 'rgba(225,222,240,0.85)'; x.font = '700 12px "Bricolage Grotesque", system-ui, sans-serif';
+  x.fillText(g ? 'slag ' + (beat + 1) + '  ·  ' + Math.round(60 / g.T) + ' BPM' : 'lyssnar in tempot …', cx, cy + fs * 0.55 + 6);
+}
+
 function Jam({ easy, onSave, onDone }) {
   const [phase, setPhase] = useState('idle');
   const [now, setNow] = useState(null);
@@ -2916,7 +3000,10 @@ function Jam({ easy, onSave, onDone }) {
   const [micErr, setMicErr] = useState(false);
   const [recs, setRecs] = useState([]);
   const [name, setName] = useState('');
-  const S = useRef(null), lvl = useRef(null), dot = useRef(null);
+  const S = useRef(null), cvR = useRef(null), dot = useRef(null), streakR = useRef(null), cheerR = useRef(null);
+  const [skin, setSkinS] = useState(() => { try { return localStorage.getItem('ng-jam-skin') || 'neon'; } catch (e) { return 'neon'; } });
+  const skinR = useRef(skin);
+  const setSkin = (v) => { setSkinS(v); skinR.current = v; try { localStorage.setItem('ng-jam-skin', v); } catch (e) {} };
   const loadRecs = () => RecDB.list('jam').then((l) => setRecs((l || []).sort((a, b) => b.at - a.at))).catch(() => setRecs([]));
   const halt = () => {
     const st = S.current; if (!st) return; S.current = null;
@@ -2933,7 +3020,7 @@ function Jam({ easy, onSave, onDone }) {
     const m = new Mic();
     try { await m.start({ aec: false }); } catch (e) { setMicErr(true); return; }
     const cal = micCal(), T0 = performance.now();
-    const st = { mic: m, onsets: [], segs: [], cur: null, curT: 0, cand: null, candT: 0, n: 0, chk: 0, env: 0.01, prev: 0, lastOn: -1, last: 0, meta: { bpm: 0 }, T0 };
+    const st = { mic: m, onsets: [], segs: [], cur: null, curT: 0, cand: null, candT: 0, n: 0, chk: 0, env: 0.01, prev: 0, lastOn: -1, last: 0, meta: { bpm: 0 }, T0, grid: null, streak: 0, best: 0 };
     S.current = st;
     try { if (navigator.wakeLock) st.wake = await navigator.wakeLock.request('screen'); } catch (e) {}
     // spela in samtidigt som appen lyssnar
@@ -2955,13 +3042,21 @@ function Jam({ easy, onSave, onDone }) {
     const loop = (tt) => {
       st.raf = requestAnimationFrame(loop);
       const t = (tt - T0) / 1000; m.read(); const r = m.rms();
-      if (lvl.current) lvl.current.style.width = Math.min(100, r * 600) + '%';
       // anslag: ljudet stiger snabbt över rummets nivå
       if (r > cal.onset * 0.7 && r > st.env * 1.8 && r > st.prev * 1.15 && t - st.lastOn > 0.09) {
-        st.lastOn = t; st.onsets.push({ t, s: r });
-        if (dot.current && dot.current.animate) dot.current.animate([{ transform: 'scale(1.7)', opacity: 1 }, { transform: 'scale(1)', opacity: 0.3 }], { duration: 260 });
+        st.lastOn = t; st.onsets.push({ t, s: r, h: Math.max(0.3, Math.min(1, r / Math.max(0.02, cal.strum || 0.08))) });
+        if (dot.current && dot.current.animate) dot.current.animate([{ transform: 'scale(1.35)' }, { transform: 'scale(1)' }], { duration: 240, easing: 'ease-out' });
+        // slag i takt: nära takthållarens rutnät av åttondelar (eller sextondelar)
+        if (st.grid) {
+          const gq = st.grid.T / (st.grid.sixteen ? 4 : 2), q = (t - st.grid.ph) / gq, off = Math.abs(q - Math.round(q)) * gq;
+          st.streak = off < 0.045 ? st.streak + 1 : 0; st.best = Math.max(st.best, st.streak);
+          if (streakR.current) streakR.current.textContent = st.streak + ' slag i takt';
+          const C = { 16: 'Som en klocka!', 32: 'Rytmen sitter!', 64: 'Grym takt!', 128: 'Maskin!' }[st.streak];
+          if (C && cheerR.current) { cheerR.current.textContent = C; if (cheerR.current.animate) cheerR.current.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none', offset: 0.15 }, { opacity: 1, offset: 0.8 }, { opacity: 0 }], { duration: 2200, fill: 'forwards' }); }
+        }
       }
       st.env = st.env * 0.9 + r * 0.1; st.prev = r;
+      if (cvR.current) drawRing(cvR.current, st, t, skinR.current, easy);
       if (tt - st.chk < 70) return; st.chk = tt;
       if (r < cal.gate * 2) {
         st.cand = null; st.n = 0;
@@ -2982,6 +3077,7 @@ function Jam({ easy, onSave, onDone }) {
     st.raf = requestAnimationFrame(loop);
     st.iv = setInterval(() => {
       const t = (performance.now() - T0) / 1000, rec = st.onsets.filter((o) => o.t > t - 12), tp = jamTempo(rec);
+      if (tp) st.grid = tp; else if (!rec.length) st.grid = null;
       setLive({ bpm: tp ? Math.round(tp.bpm) : 0, secs: t });
     }, 1000);
     setPhase('run');
@@ -2996,7 +3092,7 @@ function Jam({ easy, onSave, onDone }) {
     halt();
     const d = new Date();
     setName('Jam ' + d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }));
-    setRes({ ...r, dur: t, hits: st.onsets.length }); setPhase('done');
+    setRes({ ...r, dur: t, hits: st.onsets.length, best: st.best }); setPhase('done');
     if (t >= 20 && (r.chords.length || r.bpm)) onDone(r, t);
   };
 
@@ -3015,6 +3111,7 @@ function Jam({ easy, onSave, onDone }) {
       engine.strum(voicing(k, easy).frets, t0 + (bi * M + i / sub) * T, dir, { vel: i === 0 ? 0.85 : 0.6, stagger: 0.012 });
     }));
   };
+  const SkinPick = html`<div className="seg jam-skins" role="group" aria-label="Färg på ringen">${Object.entries(RING_SKINS).map(([id, k]) => html`<button key=${id} type="button" aria-pressed=${skin === id} onClick=${() => setSkin(id)}>${k.name}</button>`)}</div>`;
   const steadyTxt = (s) => (s >= 80 ? 'Stadigt, rytmen sitter.' : s >= 60 ? 'Ganska jämnt, med lite gung.' : 'Tempot vandrar lite. Räkna 1, 2, 3, 4 tyst för dig själv.');
   const barTxt = (b) => [].concat(b).map((k) => CHORD_DB[k].name).join(' · ');
 
@@ -3024,17 +3121,25 @@ function Jam({ easy, onSave, onDone }) {
     <section className="card jam">
       ${phase === 'idle' ? html`<div className="chal">
         <p className="lead">Lägg telefonen nära gitarren och spela minst 8 takter i jämnt tempo. Byt gärna ackord på första slaget i takten, då hittar appen taktarten lättare.</p>
+        <div className="row" style=${{ gap: 10, alignItems: 'center', justifyContent: 'center' }}><span className="label">Ringens färg</span>${SkinPick}</div>
         <button className="play" onClick=${start}>${I.play}Börja jamma</button></div>` : null}
-      ${phase === 'run' ? html`<div className="chal">
-        <div className="jam-rec"><i></i>Spelar in ${fmtDur(live.secs)}</div>
-        <div className="count">${now ? CHORD_DB[now].name : '…'}</div>
-        <div className="jam-live">
-          <span className="jam-dot" ref=${dot}></span>
-          <span><b>${live.bpm || '–'}</b> BPM</span>
+      ${phase === 'run' ? html`<div className="jam-run">
+        <div className="jam-top">
+          <div className="jam-rec"><i></i>Spelar in ${fmtDur(live.secs)}</div>
+          <span className="jam-streak">${FlameIcon}<span ref=${streakR}>0 slag i takt</span></span>
         </div>
-        <div className="chal-mic"><div className="gh-lvl cc-lvl" style=${{ width: '100%' }}><i ref=${lvl}></i></div>
-          <small className="muted" style=${{ minHeight: 20 }}>${trail.length ? trail.map((k) => CHORD_DB[k].name).join(' · ') : 'Appen lyssnar. Spela på.'}</small></div>
-        <button className="play stop" onClick=${finish}>${I.stop}Klar, visa vad jag spelade</button></div>` : null}
+        <div className="jam-stage">
+          <canvas className="jam-ring" ref=${cvR} aria-hidden="true"></canvas>
+          <span className="jam-cheer" ref=${cheerR} aria-live="polite"></span>
+        </div>
+        <div className="jam-live">
+          <span className="jam-mic" ref=${dot}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3a3 3 0 0 0-3 3v5a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z" /><path d="M6 11a6 6 0 0 0 12 0M12 17v4M9 21h6" /></svg></span>
+          <span><b>${live.bpm || '–'}</b> BPM</span>
+          <span style=${{ flex: 1 }}></span>
+          ${SkinPick}
+        </div>
+        <small className="muted" style=${{ minHeight: 20, textAlign: 'center' }}>${trail.length ? trail.map((k) => CHORD_DB[k].name).join(' · ') : 'Appen lyssnar. Spela på.'}</small>
+        <button className="play stop" style=${{ justifySelf: 'center' }} onClick=${finish}>${I.stop}Klar, visa vad jag spelade</button></div>` : null}
       ${phase === 'done' && res ? html`<div className="jam-res">
         <span className="ls-kicker">Din jam · ${fmtDur(res.dur)}</span>
         <h2 className="home-h1">Det här spelade du</h2>
@@ -3049,6 +3154,7 @@ function Jam({ easy, onSave, onDone }) {
           <div className="stat"><b>${res.bpm}</b><span>BPM</span></div>
           <div className="stat"><b>${res.meter}/4</b><span>${res.meter === 3 ? 'Valstakt' : 'Fyrtakt'}</span></div>
           <div className="stat"><b>${res.steady} %</b><span>Jämnhet</span></div>
+          ${res.best >= 8 ? html`<div className="stat"><b>${res.best}</b><span>Slag i takt i rad</span></div>` : null}
         </div>
         <p className="muted" style=${{ margin: 0, fontSize: 13 }}>${steadyTxt(res.steady)}</p>
         <div className="jam-block"><span className="label">Kompet: ${res.name}</span>
