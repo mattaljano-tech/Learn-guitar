@@ -3060,7 +3060,7 @@ function Jam({ easy, onSave, onDone }) {
     const r = dockR.current.getBoundingClientRect(), S = Math.min(window.innerWidth * 0.64, 260);
     setGeo({ dx: r.left + r.width / 2 - window.innerWidth / 2, dy: r.top + r.height / 2 - window.innerHeight * 0.36, ds: r.width / S });
   }, [intro]);
-  useEffect(() => { if (!intro) return; const id = setTimeout(() => setIntro(0), 2750); return () => clearTimeout(id); }, [intro]);
+  useEffect(() => { if (phase !== 'run' && intro) setIntro(0); }, [phase]);
   const loadRecs = () => RecDB.list('jam').then((l) => setRecs((l || []).sort((a, b) => b.at - a.at))).catch(() => setRecs([]));
   const halt = () => {
     const st = S.current; if (!st) return; S.current = null;
@@ -3179,7 +3179,7 @@ function Jam({ easy, onSave, onDone }) {
     <div className="ji-rays"></div>
     <div className="ji-ring"></div>
     <div className="ji-dot"></div>
-    <svg className="ji-mic" viewBox="0 0 64 64" fill="none" strokeLinecap="round" strokeLinejoin="round">
+    <svg className="ji-mic" ref=${(el) => { if (el) dot.current = el; }} viewBox="0 0 64 64" fill="none" strokeLinecap="round" strokeLinejoin="round">
       <defs><linearGradient id="jiMicG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style=${{ stopColor: '#fff' }} /><stop offset=".45" style=${{ stopColor: 'var(--a)' }} /><stop offset="1" style=${{ stopColor: 'var(--b)' }} /></linearGradient></defs>
       <g stroke="url(#jiMicG)" strokeWidth="2.6">
         <rect className="ji-draw" pathLength="1" x="23" y="8" width="18" height="30" rx="9" />
@@ -3209,7 +3209,7 @@ function Jam({ easy, onSave, onDone }) {
       ${phase === 'run' ? html`<div className="jam-run">
         <div className="jam-top">
           <div className="jam-rec"><i></i>Spelar in ${fmtDur(live.secs)}</div>
-          <span className="jam-dock" ref=${(el) => { dockR.current = el; dot.current = el; }} style=${{ '--a': glow[0], '--b': glow[1] }}>${micSvg('jamDockG')}</span>
+          <span className="jam-dock" ref=${(el) => { dockR.current = el; if (el && !intro) dot.current = el; }} style=${{ '--a': glow[0], '--b': glow[1] }}>${micSvg('jamDockG')}</span>
           <span className="jam-streak">${FlameIcon}<span ref=${streakR}>0 slag i takt</span></span>
         </div>
         <div className="jam-stage">
