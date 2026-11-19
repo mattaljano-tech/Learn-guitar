@@ -892,12 +892,14 @@ html.jam-stage .jam-ring{box-shadow:none;background:transparent}
 @keyframes jiRing{0%{transform:scale(.04);opacity:0}18%{transform:scale(.3);opacity:1}45%{transform:scale(1);opacity:1}80%{transform:scale(1.04);opacity:.9}100%{transform:scale(1.9);opacity:0}}
 .ji-rays{width:min(150vw,820px);aspect-ratio:1;border-radius:50%;background:repeating-conic-gradient(from 0deg,color-mix(in oklab,var(--a) 70%,transparent) 0deg 1.2deg,transparent 1.2deg 5deg);-webkit-mask:radial-gradient(circle,transparent 0 22%,#000 23% 40%,transparent 62%);mask:radial-gradient(circle,transparent 0 22%,#000 23% 40%,transparent 62%);animation:jiRays 2.4s cubic-bezier(.2,.8,.2,1) .6s both}
 @keyframes jiRays{0%{transform:scale(.2) rotate(-40deg);opacity:0}35%{opacity:.9}100%{transform:scale(1.25) rotate(25deg);opacity:0}}
-.ji-text{display:flex;white-space:nowrap;font-family:var(--f-display);font-weight:800;font-size:clamp(46px,14vw,92px);letter-spacing:-.02em;line-height:1.3;animation:jiOut .7s ease-in 1.75s both}
-.ji-text span{display:inline-block;background:linear-gradient(100deg,#fff,var(--a) 40%,var(--b));-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 14px color-mix(in oklab,var(--a) 70%,transparent));animation:jiLetter .55s cubic-bezier(.2,1.4,.3,1) both}
-@keyframes jiLetter{from{opacity:0;transform:translateY(28px) scale(.6);filter:blur(10px)}to{opacity:1;transform:none}}
-@keyframes jiOut{to{opacity:0;transform:scale(1.25);filter:blur(6px)}}
-.ji-sub{top:calc(46% + clamp(46px,11vw,72px));white-space:nowrap;color:#fff;opacity:0;font-weight:700;letter-spacing:.24em;text-transform:uppercase;font-size:12px;animation:jiSub 1.6s ease 1s both}
-@keyframes jiSub{0%{opacity:0;letter-spacing:.6em}40%{opacity:.85;letter-spacing:.24em}75%{opacity:.85}100%{opacity:0}}
+.ji-mic{width:min(36vw,160px);height:auto;overflow:visible;filter:drop-shadow(0 0 10px color-mix(in oklab,var(--a) 80%,transparent)) drop-shadow(0 0 26px color-mix(in oklab,var(--b) 55%,transparent));animation:jiMic 2.6s cubic-bezier(.2,.9,.2,1) .45s both}
+@keyframes jiMic{0%{transform:scale(.6);opacity:0}12%{opacity:1}30%{transform:scale(1.04)}36%,58%{transform:scale(1)}48%{transform:scale(1.07)}72%{transform:scale(1);opacity:1}100%{transform:scale(1.4);opacity:0}}
+.ji-draw{stroke-dasharray:1;stroke-dashoffset:1;animation:jiDraw .7s ease-out .55s forwards}
+@keyframes jiDraw{to{stroke-dashoffset:0}}
+.ji-grille{opacity:0;animation:jiFade .5s ease 1.05s forwards}
+@keyframes jiFade{to{opacity:.7}}
+.ji-waves path{opacity:0;transform-box:fill-box;transform-origin:center;animation:jiWave .8s ease-out 2 both}
+@keyframes jiWave{0%{opacity:0;transform:scale(.7)}35%{opacity:1}100%{opacity:0;transform:scale(1.25)}}
 @media (prefers-reduced-motion:reduce){.jam-veil,html header.top,html .bottomnav{transition:none}}
 .jam-run{display:grid;gap:12px}
 .jam-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -3158,8 +3160,19 @@ function Jam({ easy, onSave, onDone }) {
     <div className="ji-rays"></div>
     <div className="ji-ring"></div>
     <div className="ji-dot"></div>
-    <div className="ji-text">${[...'GÅ LOSS!'].map((ch, i) => html`<span key=${i} style=${{ animationDelay: 0.55 + i * 0.05 + 's' }}>${ch === ' ' ? '\u00a0' : ch}</span>`)}</div>
-    <div className="ji-sub">Scenen är din</div>
+    <svg className="ji-mic" viewBox="0 0 64 64" fill="none" strokeLinecap="round" strokeLinejoin="round">
+      <defs><linearGradient id="jiMicG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style=${{ stopColor: '#fff' }} /><stop offset=".45" style=${{ stopColor: 'var(--a)' }} /><stop offset="1" style=${{ stopColor: 'var(--b)' }} /></linearGradient></defs>
+      <g stroke="url(#jiMicG)" strokeWidth="2.6">
+        <rect className="ji-draw" pathLength="1" x="23" y="8" width="18" height="30" rx="9" />
+        <path className="ji-draw" pathLength="1" style=${{ animationDelay: '.75s' }} d="M15 30a17 17 0 0 0 34 0" />
+        <path className="ji-draw" pathLength="1" style=${{ animationDelay: '.95s' }} d="M32 47v8M24 57h16" />
+        <path className="ji-grille" d="M27 17h10M27 22h10M27 27h10" strokeWidth="1.6" />
+      </g>
+      <g className="ji-waves" stroke="url(#jiMicG)" strokeWidth="2.2">
+        <path style=${{ animationDelay: '1.15s' }} d="M10 19q-5 9 0 18M54 19q5 9 0 18" />
+        <path style=${{ animationDelay: '1.35s' }} d="M4 14q-8 14 0 28M60 14q8 14 0 28" />
+      </g>
+    </svg>
   </div>`, document.body) : null;
   return html`<div className=${'jam-wrap' + (intro ? ' intro' : '')} style=${{ display: 'grid', gap: 18 }}>
     ${veil}${introEl}
