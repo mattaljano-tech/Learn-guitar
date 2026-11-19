@@ -872,6 +872,33 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 .jam-rec i{width:11px;height:11px;border-radius:50%;background:#d43c2c;animation:recPulse 1s ease-in-out infinite}
 .jam-live{display:flex;align-items:center;gap:14px;font-size:15px;color:var(--muted)}
 .jam-live b{font-family:var(--f-display);font-weight:800;font-size:28px;color:var(--text)}
+.jam-veil{position:fixed;inset:0;z-index:-1;opacity:0;pointer-events:none;transition:opacity 1.1s ease}
+.jam-veil.on{opacity:1}
+html.jam-stage{--text:#f2eeff;--muted:#aaa3cc;--faint:#6f6890;--line:rgba(255,255,255,.1);color-scheme:dark}
+html header.top,html .bottomnav{transition:opacity .8s ease,transform .8s ease}
+html.jam-stage header.top,html.jam-stage .bottomnav{opacity:0;pointer-events:none}
+html.jam-stage .bottomnav{transform:translateY(24px)}
+.jam-wrap .section-head,.jam-wrap .card.jam{transition:color .9s ease,background-color .9s ease,border-color .9s ease}
+html.jam-stage .jam-wrap .card.jam{background:transparent;border-color:transparent;box-shadow:none}
+html.jam-stage .jam-wrap .section-head p{opacity:.0;transition:opacity .6s}
+html.jam-stage .jam-ring{box-shadow:none;background:transparent}
+.jam-wrap.intro .jam-ring{animation:jiCanvas 1s cubic-bezier(.2,.8,.2,1) 1.25s both}
+@keyframes jiCanvas{from{opacity:0;transform:scale(.86)}to{opacity:1;transform:none}}
+.jam-intro{position:fixed;inset:0;z-index:80;pointer-events:none;overflow:hidden}
+.jam-intro>*{position:absolute;left:50%;top:46%;translate:-50% -50%}
+.ji-dot{width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 0 18px 6px var(--a),0 0 60px 18px var(--b);animation:jiDot 1.1s cubic-bezier(.3,.7,.2,1) both}
+@keyframes jiDot{0%{transform:scale(0);opacity:0}30%{transform:scale(1);opacity:1}55%{transform:scale(1.6);opacity:1}75%{transform:scale(.2);opacity:0}100%{opacity:0}}
+.ji-ring{width:min(62vw,300px);aspect-ratio:1;border-radius:50%;border:3px solid #fff;box-shadow:0 0 22px 4px var(--a),inset 0 0 22px 4px var(--b),0 0 90px 10px color-mix(in oklab,var(--b) 50%,transparent);animation:jiRing 2.4s cubic-bezier(.2,.8,.2,1) .45s both}
+@keyframes jiRing{0%{transform:scale(.04);opacity:0}18%{transform:scale(.3);opacity:1}45%{transform:scale(1);opacity:1}80%{transform:scale(1.04);opacity:.9}100%{transform:scale(1.9);opacity:0}}
+.ji-rays{width:min(150vw,820px);aspect-ratio:1;border-radius:50%;background:repeating-conic-gradient(from 0deg,color-mix(in oklab,var(--a) 70%,transparent) 0deg 1.2deg,transparent 1.2deg 5deg);-webkit-mask:radial-gradient(circle,transparent 0 22%,#000 23% 40%,transparent 62%);mask:radial-gradient(circle,transparent 0 22%,#000 23% 40%,transparent 62%);animation:jiRays 2.4s cubic-bezier(.2,.8,.2,1) .6s both}
+@keyframes jiRays{0%{transform:scale(.2) rotate(-40deg);opacity:0}35%{opacity:.9}100%{transform:scale(1.25) rotate(25deg);opacity:0}}
+.ji-text{display:flex;white-space:nowrap;font-family:var(--f-display);font-weight:800;font-size:clamp(46px,14vw,92px);letter-spacing:-.02em;line-height:1.3;animation:jiOut .7s ease-in 1.75s both}
+.ji-text span{display:inline-block;background:linear-gradient(100deg,#fff,var(--a) 40%,var(--b));-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 14px color-mix(in oklab,var(--a) 70%,transparent));animation:jiLetter .55s cubic-bezier(.2,1.4,.3,1) both}
+@keyframes jiLetter{from{opacity:0;transform:translateY(28px) scale(.6);filter:blur(10px)}to{opacity:1;transform:none}}
+@keyframes jiOut{to{opacity:0;transform:scale(1.25);filter:blur(6px)}}
+.ji-sub{top:calc(46% + clamp(46px,11vw,72px));white-space:nowrap;color:#fff;opacity:0;font-weight:700;letter-spacing:.24em;text-transform:uppercase;font-size:12px;animation:jiSub 1.6s ease 1s both}
+@keyframes jiSub{0%{opacity:0;letter-spacing:.6em}40%{opacity:.85;letter-spacing:.24em}75%{opacity:.85}100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.jam-veil,html header.top,html .bottomnav{transition:none}}
 .jam-run{display:grid;gap:12px}
 .jam-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .jam-streak{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--muted)}
@@ -2991,6 +3018,7 @@ function drawRing(cv, st, t, skin, easy) {
   x.fillText(g ? 'slag ' + (beat + 1) + '  ·  ' + Math.round(60 / g.T) + ' BPM' : 'lyssnar in tempot …', cx, cy + fs * 0.55 + 6);
 }
 
+const INTRO_GLOW = { neon: ['#ff3df2', '#33d6ff'], sol: ['#ffb84d', '#ff3d80'], svartvit: ['#ffffff', '#b9b9c4'] };
 function Jam({ easy, onSave, onDone }) {
   const [phase, setPhase] = useState('idle');
   const [now, setNow] = useState(null);
@@ -3004,6 +3032,13 @@ function Jam({ easy, onSave, onDone }) {
   const [skin, setSkinS] = useState(() => { try { return localStorage.getItem('ng-jam-skin') || 'neon'; } catch (e) { return 'neon'; } });
   const skinR = useRef(skin);
   const setSkin = (v) => { setSkinS(v); skinR.current = v; try { localStorage.setItem('ng-jam-skin', v); } catch (e) {} };
+  const [intro, setIntro] = useState(0);
+  // scenläge: sidan tonar över till ringens färger medan du jammar, och tillbaka när du är klar
+  useEffect(() => {
+    const el = document.documentElement;
+    if (phase === 'run') { el.classList.add('jam-stage'); return () => el.classList.remove('jam-stage'); }
+  }, [phase]);
+  useEffect(() => { if (!intro) return; const id = setTimeout(() => setIntro(0), 2600); return () => clearTimeout(id); }, [intro]);
   const loadRecs = () => RecDB.list('jam').then((l) => setRecs((l || []).sort((a, b) => b.at - a.at))).catch(() => setRecs([]));
   const halt = () => {
     const st = S.current; if (!st) return; S.current = null;
@@ -3081,6 +3116,7 @@ function Jam({ easy, onSave, onDone }) {
       setLive({ bpm: tp ? Math.round(tp.bpm) : 0, secs: t });
     }, 1000);
     setPhase('run');
+    if (!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) setIntro(Date.now());
   };
 
   const finish = () => {
@@ -3115,7 +3151,18 @@ function Jam({ easy, onSave, onDone }) {
   const steadyTxt = (s) => (s >= 80 ? 'Stadigt, rytmen sitter.' : s >= 60 ? 'Ganska jämnt, med lite gung.' : 'Tempot vandrar lite. Räkna 1, 2, 3, 4 tyst för dig själv.');
   const barTxt = (b) => [].concat(b).map((k) => CHORD_DB[k].name).join(' · ');
 
-  return html`<div style=${{ display: 'grid', gap: 18 }}>
+  const SK = RING_SKINS[skin] || RING_SKINS.neon, glow = INTRO_GLOW[skin] || INTRO_GLOW.neon;
+  const veil = ReactDOM.createPortal(html`<div className=${'jam-veil' + (phase === 'run' ? ' on' : '')} aria-hidden="true"
+    style=${{ background: `radial-gradient(120% 90% at 50% 38%, ${SK.bg[0]} 0%, ${SK.bg[1]} 72%)` }}></div>`, document.body);
+  const introEl = intro ? ReactDOM.createPortal(html`<div key=${intro} className="jam-intro" aria-hidden="true" style=${{ '--a': glow[0], '--b': glow[1] }}>
+    <div className="ji-rays"></div>
+    <div className="ji-ring"></div>
+    <div className="ji-dot"></div>
+    <div className="ji-text">${[...'GÅ LOSS!'].map((ch, i) => html`<span key=${i} style=${{ animationDelay: 0.55 + i * 0.05 + 's' }}>${ch === ' ' ? '\u00a0' : ch}</span>`)}</div>
+    <div className="ji-sub">Scenen är din</div>
+  </div>`, document.body) : null;
+  return html`<div className=${'jam-wrap' + (intro ? ' intro' : '')} style=${{ display: 'grid', gap: 18 }}>
+    ${veil}${introEl}
     <div className="section-head"><h2>Jamma</h2><p>Spela vad du vill. Appen spelar in dig och räknar ut ackorden, tempot, taktarten och kompet.</p></div>
     ${micErr ? MIC_BLOCKED : null}
     <section className="card jam">
