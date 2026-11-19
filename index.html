@@ -872,7 +872,8 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 .jam-rec i{width:11px;height:11px;border-radius:50%;background:#d43c2c;animation:recPulse 1s ease-in-out infinite}
 .jam-live{display:flex;align-items:center;gap:14px;font-size:15px;color:var(--muted)}
 .jam-live b{font-family:var(--f-display);font-weight:800;font-size:28px;color:var(--text)}
-.jam-dot{width:18px;height:18px;border-radius:50%;background:var(--brass);opacity:.3}
+.jam-heart{display:inline-block;color:var(--brass);font-size:24px;line-height:1}
+.jam-ekg{width:100%;height:150px;display:block;border-radius:14px;background:color-mix(in oklab,var(--brass) 5%,var(--surface-2))}
 .jam-res{display:grid;gap:14px}
 .jam-block{display:grid;gap:8px}
 .jam-bars span{font-size:17px;padding:6px 12px}
@@ -2907,6 +2908,48 @@ function analyzeJam(onsets, segs) {
   return out;
 }
 
+// EKG-mätare för Jamma: varje anslag blir ett hjärtslag som rullar åt vänster. Ackordbyten märks ut på linjen.
+const EKG_WIN = 5;
+function ekgBeat(d) {
+  if (d < 0) return 0;
+  if (d < 0.018) return d / 0.018;
+  if (d < 0.04) return 1 - 1.4 * ((d - 0.018) / 0.022);
+  if (d < 0.075) return -0.4 + 0.4 * ((d - 0.04) / 0.035);
+  if (d < 0.14) return 0;
+  if (d < 0.3) return 0.13 * Math.sin(((d - 0.14) / 0.16) * Math.PI);
+  return 0;
+}
+function drawEkg(cv, st, now, col) {
+  const W = cv.clientWidth, H = cv.clientHeight; if (!W || !H) return;
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+  const x = cv.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, W, H);
+  const base = H * 0.6, X = (t) => W - ((now - t) / EKG_WIN) * W;
+  // millimeterpapper
+  x.lineWidth = 1;
+  for (let gx = W - ((now * 40) % 20); gx > -20; gx -= 20) { x.strokeStyle = col.grid; x.globalAlpha = 0.35; x.beginPath(); x.moveTo(gx + 0.5, 0); x.lineTo(gx + 0.5, H); x.stroke(); }
+  for (let gy = base % 20; gy < H; gy += 20) { x.beginPath(); x.moveTo(0, gy + 0.5); x.lineTo(W, gy + 0.5); x.stroke(); }
+  x.globalAlpha = 1;
+  // ackordbyten
+  x.font = `800 14px ${col.font}`; x.textBaseline = 'top';
+  for (const c of st.marks) {
+    const px = X(c.t); if (px < -60 || px > W) continue;
+    x.strokeStyle = col.ink; x.globalAlpha = 0.35; x.setLineDash([3, 4]); x.beginPath(); x.moveTo(px, 6); x.lineTo(px, H); x.stroke(); x.setLineDash([]);
+    x.globalAlpha = Math.max(0.25, Math.min(1, px / 80)); x.fillStyle = col.ink; x.fillText(c.name, px + 5, 6);
+  }
+  x.globalAlpha = 1;
+  // linjen
+  const spikes = st.onsets.filter((o) => o.t > now - EKG_WIN - 0.4), amp = H * 0.48, noise = st.noise;
+  const yAt = (t) => { let v = 0; for (const o of spikes) v += ekgBeat(t - o.t) * o.h; const ni = Math.floor(t * 60) % noise.length; return base - v * amp + (noise[(ni + noise.length) % noise.length] || 0); };
+  const grad = x.createLinearGradient(0, 0, W, 0); grad.addColorStop(0, 'transparent'); grad.addColorStop(0.25, col.line); grad.addColorStop(1, col.line);
+  x.strokeStyle = grad; x.lineWidth = 2.4; x.lineJoin = 'round'; x.shadowColor = col.line; x.shadowBlur = 10;
+  x.beginPath();
+  for (let px = 0; px <= W - 2; px += 1.5) { const y = yAt(now - ((W - px) / W) * EKG_WIN); if (px === 0) x.moveTo(px, y); else x.lineTo(px, y); }
+  x.stroke();
+  // pennan längst till höger
+  const yn = yAt(now - 0.01); x.shadowBlur = 16; x.fillStyle = col.line; x.beginPath(); x.arc(W - 3, yn, 4.5, 0, Math.PI * 2); x.fill(); x.shadowBlur = 0;
+}
+
 function Jam({ easy, onSave, onDone }) {
   const [phase, setPhase] = useState('idle');
   const [now, setNow] = useState(null);
@@ -2916,7 +2959,7 @@ function Jam({ easy, onSave, onDone }) {
   const [micErr, setMicErr] = useState(false);
   const [recs, setRecs] = useState([]);
   const [name, setName] = useState('');
-  const S = useRef(null), lvl = useRef(null), dot = useRef(null);
+  const S = useRef(null), cvR = useRef(null), dot = useRef(null);
   const loadRecs = () => RecDB.list('jam').then((l) => setRecs((l || []).sort((a, b) => b.at - a.at))).catch(() => setRecs([]));
   const halt = () => {
     const st = S.current; if (!st) return; S.current = null;
@@ -2933,7 +2976,9 @@ function Jam({ easy, onSave, onDone }) {
     const m = new Mic();
     try { await m.start({ aec: false }); } catch (e) { setMicErr(true); return; }
     const cal = micCal(), T0 = performance.now();
-    const st = { mic: m, onsets: [], segs: [], cur: null, curT: 0, cand: null, candT: 0, n: 0, chk: 0, env: 0.01, prev: 0, lastOn: -1, last: 0, meta: { bpm: 0 }, T0 };
+    const css = getComputedStyle(document.documentElement), tok = (n, d) => css.getPropertyValue(n).trim() || d;
+    const col = { line: tok('--brass', '#f2c230'), ink: tok('--text', '#222'), grid: tok('--line', '#888'), font: tok('--f-display', 'system-ui') };
+    const st = { mic: m, onsets: [], segs: [], marks: [], noise: Array.from({ length: 240 }, () => (Math.random() - 0.5) * 2.2), cur: null, curT: 0, cand: null, candT: 0, n: 0, chk: 0, env: 0.01, prev: 0, lastOn: -1, last: 0, meta: { bpm: 0 }, T0 };
     S.current = st;
     try { if (navigator.wakeLock) st.wake = await navigator.wakeLock.request('screen'); } catch (e) {}
     // spela in samtidigt som appen lyssnar
@@ -2955,13 +3000,13 @@ function Jam({ easy, onSave, onDone }) {
     const loop = (tt) => {
       st.raf = requestAnimationFrame(loop);
       const t = (tt - T0) / 1000; m.read(); const r = m.rms();
-      if (lvl.current) lvl.current.style.width = Math.min(100, r * 600) + '%';
       // anslag: ljudet stiger snabbt över rummets nivå
       if (r > cal.onset * 0.7 && r > st.env * 1.8 && r > st.prev * 1.15 && t - st.lastOn > 0.09) {
-        st.lastOn = t; st.onsets.push({ t, s: r });
-        if (dot.current && dot.current.animate) dot.current.animate([{ transform: 'scale(1.7)', opacity: 1 }, { transform: 'scale(1)', opacity: 0.3 }], { duration: 260 });
+        st.lastOn = t; st.onsets.push({ t, s: r, h: Math.max(0.3, Math.min(1, r / Math.max(0.02, cal.strum || 0.08))) });
+        if (dot.current && dot.current.animate) dot.current.animate([{ transform: 'scale(1.45)' }, { transform: 'scale(1)' }], { duration: 220, easing: 'ease-out' });
       }
       st.env = st.env * 0.9 + r * 0.1; st.prev = r;
+      if (cvR.current) drawEkg(cvR.current, st, t, col);
       if (tt - st.chk < 70) return; st.chk = tt;
       if (r < cal.gate * 2) {
         st.cand = null; st.n = 0;
@@ -2976,7 +3021,7 @@ function Jam({ easy, onSave, onDone }) {
       if (st.n >= 3 && k !== st.cur) {
         const at = Math.max(0, st.candT - 0.08);
         if (st.cur) st.segs.push({ k: st.cur, t0: st.curT, t1: at });
-        st.cur = k; st.curT = at; setNow(k); setTrail((l) => [...l, k].slice(-10));
+        st.cur = k; st.curT = at; st.marks.push({ t: at, name: CHORD_DB[k].name }); if (st.marks.length > 40) st.marks.shift(); setNow(k); setTrail((l) => [...l, k].slice(-10));
       }
     };
     st.raf = requestAnimationFrame(loop);
@@ -3028,12 +3073,12 @@ function Jam({ easy, onSave, onDone }) {
       ${phase === 'run' ? html`<div className="chal">
         <div className="jam-rec"><i></i>Spelar in ${fmtDur(live.secs)}</div>
         <div className="count">${now ? CHORD_DB[now].name : '…'}</div>
+        <canvas className="jam-ekg" ref=${cvR} aria-hidden="true"></canvas>
         <div className="jam-live">
-          <span className="jam-dot" ref=${dot}></span>
+          <span className="jam-heart" ref=${dot}>♥</span>
           <span><b>${live.bpm || '–'}</b> BPM</span>
         </div>
-        <div className="chal-mic"><div className="gh-lvl cc-lvl" style=${{ width: '100%' }}><i ref=${lvl}></i></div>
-          <small className="muted" style=${{ minHeight: 20 }}>${trail.length ? trail.map((k) => CHORD_DB[k].name).join(' · ') : 'Appen lyssnar. Spela på.'}</small></div>
+        <small className="muted" style=${{ minHeight: 20 }}>${trail.length ? trail.map((k) => CHORD_DB[k].name).join(' · ') : 'Appen lyssnar. Spela på.'}</small>
         <button className="play stop" onClick=${finish}>${I.stop}Klar, visa vad jag spelade</button></div>` : null}
       ${phase === 'done' && res ? html`<div className="jam-res">
         <span className="ls-kicker">Din jam · ${fmtDur(res.dur)}</span>
