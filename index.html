@@ -3106,7 +3106,6 @@ function Jam({ easy, onSave, onDone }) {
   const setSkin = (v) => { setSkinS(v); skinR.current = v; try { localStorage.setItem('ng-jam-skin', v); } catch (e) {} };
   const [intro, setIntro] = useState(0);
   const dockR = useRef(null);
-  const [geo, setGeo] = useState(null);
   // scenläge: hela sidan byter till ringens tema medan du jammar, och tonar tillbaka när du är klar
   React.useLayoutEffect(() => {
     const el = document.documentElement;
@@ -3117,17 +3116,16 @@ function Jam({ easy, onSave, onDone }) {
     return () => { el.classList.remove('jam-stage'); el.removeAttribute('data-jam'); if (meta && old) meta.setAttribute('content', old); };
   }, [phase, skin]);
   // introt landar som en liten mikrofon ovanför ringen: mät var den ska hamna
-  // mät precis innan mikrofonen börjar röra sig (vid 1,66 s), när sidan har scrollat klart och allt ligger still
-  useEffect(() => {
-    if (!intro) return;
-    const measure = () => {
-      if (!dockR.current) return;
-      const r = dockR.current.getBoundingClientRect(), S = Math.min(window.innerWidth * 0.64, 260);
-      setGeo({ dx: r.left + r.width / 2 - window.innerWidth / 2, dy: r.top + r.height / 2 - window.innerHeight * 0.36, ds: r.width / S });
-    };
-    measure(); const a = setTimeout(measure, 700), b = setTimeout(measure, 1450);
-    return () => { clearTimeout(a); clearTimeout(b); };
-  }, [intro]);
+  // introt landar där mikrofonen i raden sitter: positionen följs varje bildruta, så den hamnar rätt även om sidan flyttar sig
+  const introR = useRef(null);
+  const trackDock = () => {
+    const I = introR.current, D = dockR.current; if (!I || !D) return;
+    const r = D.getBoundingClientRect(), S = Math.min(window.innerWidth * 0.64, 260);
+    I.style.setProperty('--dx', r.left + r.width / 2 - window.innerWidth / 2 + 'px');
+    I.style.setProperty('--dy', r.top + r.height / 2 - window.innerHeight * 0.36 + 'px');
+    I.style.setProperty('--ds', String(r.width / S));
+  };
+  React.useLayoutEffect(() => { if (intro) trackDock(); }, [intro]);
   useEffect(() => { if (phase !== 'run' && intro) setIntro(0); }, [phase]);
   const loadRecs = () => RecDB.list('jam').then((l) => setRecs((l || []).sort((a, b) => b.at - a.at))).catch(() => setRecs([]));
   const halt = () => {
@@ -3183,6 +3181,7 @@ function Jam({ easy, onSave, onDone }) {
       }
       st.env = st.env * 0.9 + r * 0.1; st.prev = r;
       if (cvR.current) drawRing(cvR.current, st, t, skinR.current, easy);
+      trackDock();
       if (tt - st.chk < 70) return; st.chk = tt;
       if (r < cal.gate * 2) {
         st.cand = null; st.n = 0;
@@ -3252,7 +3251,7 @@ function Jam({ easy, onSave, onDone }) {
   const barTxt = (b) => [].concat(b).map((k) => CHORD_DB[k].name).join(' · ');
 
   const SK = RING_SKINS[skin] || RING_SKINS.neon, glow = INTRO_GLOW[skin] || INTRO_GLOW.neon;
-  const introEl = intro ? ReactDOM.createPortal(html`<div key=${intro} className="jam-intro" aria-hidden="true" style=${{ '--a': glow[0], '--b': glow[1], '--dx': (geo ? geo.dx : 0) + 'px', '--dy': (geo ? geo.dy : -200) + 'px', '--ds': geo ? geo.ds : 0.25 }}>
+  const introEl = intro ? ReactDOM.createPortal(html`<div key=${intro} className="jam-intro" aria-hidden="true" ref=${introR} style=${{ '--a': glow[0], '--b': glow[1] }}>
     <div className="ji-group">
     <div className="ji-rays"></div>
     <div className="ji-ring"></div>
