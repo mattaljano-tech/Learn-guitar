@@ -2132,9 +2132,26 @@ class Engine {
     g.gain.setValueAtTime(accent ? 0.32 : 0.18, t); g.gain.setTargetAtTime(0.0001, t + 0.001, 0.012);
     o.connect(g); g.connect(this.master); o.start(t); o.stop(t + 0.1);
   }
-  // Beatstudion: trummor med valbar karaktär (djup, snärtig, tight …)
-  drum(kind, t, vel = 1, ch = '') {
+  // riktiga inspelade trummor (Pearl Master Studio, AVL Drumkits, Berklee), laddas första gången de behövs
+  loadDrums() {
+    if (this.drumReq || !this.ctx) return; this.drumReq = true; this.drumBufs = this.drumBufs || {};
+    const names = new Set(); Object.values(DRUM_FILES).forEach((m) => Object.values(m).forEach((n) => n && names.add(n)));
+    names.forEach((n) => fetch('audio/drums/' + n + '.mp3').then((r) => { if (!r.ok) throw 0; return r.arrayBuffer(); })
+      .then((b) => new Promise((res, rej) => this.ctx.decodeAudioData(b, res, rej))).then((buf) => { this.drumBufs[n] = buf; }).catch(() => {}));
+  }
+  // Beatstudion: trummor med valbar karaktär (djup, snärtig, tight …). Riktiga ljud om de finns, annars elektroniska.
+  drum(kind, t, vel = 1, ch = '', kit = this.kit || 'riktig') {
     const c = this.ctx, d = this.bus.d;
+    if (kit !== 'elektronisk') {
+      const m = DRUM_FILES[kind], f = m && (ch in m ? m[ch] : m._), buf = f && this.drumBufs && this.drumBufs[f];
+      if (!this.drumReq) this.loadDrums();
+      if (buf) {
+        const src = c.createBufferSource(), g = c.createGain(); src.buffer = buf; src.playbackRate.value = 1 + (Math.random() - 0.5) * 0.02;
+        g.gain.value = vel * (DRUM_GAIN[kind] || 1); src.connect(g); g.connect(d);
+        if (['snare', 'rim', 'clap', 'tom', 'crash', 'ride'].includes(kind)) g.connect(this.dSend);
+        src.start(t); return;
+      }
+    }
     const tone = (f0, f1, dec, a, type = 'sine') => {
       const o = c.createOscillator(), g = c.createGain(); o.type = type; o.frequency.setValueAtTime(f0, t);
       if (f1) o.frequency.exponentialRampToValueAtTime(f1, t + dec * 0.4);
@@ -2202,7 +2219,7 @@ class Engine {
     src.connect(g); g.connect(this.bus.d); src.start(t); src.stop(t + end + 0.12);
   }
   band(style, step, t, sd, root) {
-    if (style && style.startsWith('beat:')) { const b = MY_BEATS.find((x) => x.id === style.slice(5)); if (b) for (const k of [0, 1]) beatStep(b, step * 2 + k, t + k * (sd / 2) * (1 + (b.swing || 0)), sd / 2, root); return; }
+    if (style && style.startsWith('beat:')) { const b = MY_BEATS.find((x) => x.id === style.slice(5)); if (b) this.kit = b.kit || 'riktig'; if (b) for (const k of [0, 1]) beatStep(b, step * 2 + k, t + k * (sd / 2) * (1 + (b.swing || 0)), sd / 2, root); return; }
     const r = root, fifth = r * 1.4983, oct = r * 2;
     if (style === 'reggae') { // One Drop: allt landar på 3
       this.hat(t, step % 2 ? 0.85 : 0.45);
@@ -3552,6 +3569,13 @@ const PAD_KINDS = {
   clave: { name: 'Clave' },
   sample: { name: 'Eget ljud' },
 };
+// vilket inspelat ljud varje trumma och karaktär använder; null = alltid elektronisk
+const DRUM_FILES = {
+  kick: { _: 'kick', djup: 'kick-deep', tight: 'kick-tight', snartig: 'kick', lofi: null }, snare: { _: 'snare', tight: 'snare-tight', kant: 'rim', borste: 'snare-brush' },
+  rim: { _: 'rim' }, clap: { _: 'clap' }, hat: { _: 'hat', luftig: 'hat-semi' }, ohat: { _: 'ohat', tight: 'hat-semi' }, shaker: { _: 'shaker' },
+  cowbell: { _: 'cowbell' }, tom: { _: 'tom-lo', hog: 'tom-hi' }, tamb: { _: 'tamb' }, ride: { _: 'ride', klocka: 'ride-bell' }, crash: { _: 'crash' }, wood: { _: 'wood-lo', hog: 'wood-hi' },
+};
+const DRUM_GAIN = { kick: 1.25, snare: 0.9, rim: 0.85, clap: 0.8, hat: 0.6, ohat: 0.55, shaker: 0.55, cowbell: 0.5, tom: 0.85, tamb: 0.55, ride: 0.5, crash: 0.55, wood: 0.6 };
 const BASS_CH = [['dub', 'Dub'], ['rund', 'Rund'], ['snartig', 'Snärtig'], ['sub', 'Sub'], ['synt', 'Synt']];
 const PAD_COLORS = ['#ff5c8a', '#ffb84d', '#ffd23f', '#2ee6b8', '#33d6ff', '#8a5cff', '#ff8a4c', '#e2e2ea'];
 const BEAT_PROGS = [['G', 'C', 'Em', 'D'], ['Am', 'F', 'C', 'G'], ['Em', 'C', 'G', 'D'], ['A', 'D'], ['Em', 'D'], ['C', 'G', 'Am', 'F'], ['Dm', 'A']];
@@ -3692,7 +3716,8 @@ function BeatStudio({ toast }) {
   const [tipStyle, setTipStyle] = useState(null);
   const [showHow, setShowHow] = useState(false);
   const run = useRef(null);
-  useEffect(() => { loadBeatSamples(beat); return () => stop(); }, []);
+  useEffect(() => { loadBeatSamples(beat); engine.init(); engine.loadDrums(); return () => stop(); }, []);
+  useEffect(() => { engine.kit = beat.kit || 'riktig'; }, [beat.kit]);
 
   const stop = () => {
     const st = run.current; if (!st) return; run.current = null;
@@ -3816,6 +3841,8 @@ function BeatStudio({ toast }) {
         <button className=${'play' + (playing ? ' stop' : '')} onClick=${() => (playing ? stop() : play())}>${playing ? I.stop : I.play}${playing ? 'Stopp' : 'Spela'}</button>
         <div className="bs-tempo"><${Bpm} value=${beat.bpm} set=${(v) => setBeat((b) => ({ ...b, bpm: v }))} min=${50} max=${180} /></div>
       </div>
+      <div className="bs-line"><span className="label" style=${{ margin: 0 }}>Trumset</span>
+        <div className="seg" role="group" aria-label="Trumset">${[['riktig', 'Riktiga trummor'], ['elektronisk', 'Elektroniska']].map(([id, l]) => html`<button key=${id} aria-pressed=${(beat.kit || 'riktig') === id} onClick=${() => setBeat((b) => ({ ...b, kit: id }))}>${l}</button>`)}</div></div>
       <label className="slider bs-swing"><span>Gung</span><input type="range" min="0" max="0.35" step="0.01" value=${beat.swing || 0} onInput=${(e) => setBeat((b) => ({ ...b, swing: +e.target.value }))} onChange=${() => {}} /><span>${Math.round((beat.swing || 0) / 0.35 * 100)}</span></label>
       <label className="slider bs-swing" title="Gör slagen lite ojämna i tid och styrka, som en riktig trummis"><span>Mänskligt</span><input type="range" min="0" max="1" step="0.01" value=${beat.human || 0} onInput=${(e) => setBeat((b) => ({ ...b, human: +e.target.value }))} onChange=${() => {}} /><span>${Math.round((beat.human || 0) * 100)}</span></label>
       <div className="bs-line"><div className="label" style=${{ flex: 1 }}>Börja från ett färdigt komp</div>
