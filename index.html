@@ -956,6 +956,8 @@ html.jam-stage .jam-mode{display:none}
 .bs-how-btn{margin-left:6px;color:var(--brass);font-weight:700;text-decoration:underline;text-underline-offset:3px;padding:0}
 .bs-how{display:grid;gap:6px;padding:12px;border-radius:12px;background:var(--surface-2)}
 .bs-how p{margin:0;font-size:13.5px;line-height:1.45}
+.jam-comp{display:grid;gap:8px;width:min(420px,100%);text-align:left}
+.jam-check{display:flex;align-items:center;gap:8px;font-size:14px}
 .bs-surprise{display:grid;gap:6px;padding:12px;border-radius:12px;background:var(--surface-2)}
 .bs-card{display:grid;gap:12px}
 .bs-h{display:flex;align-items:center;gap:10px;font-family:var(--f-display);font-weight:700;font-size:17px}
@@ -3320,6 +3322,9 @@ function Jam({ easy, onSave, onDone }) {
   const skinR = useRef(skin);
   const setSkin = (v) => { setSkinS(v); skinR.current = v; try { localStorage.setItem('ng-jam-skin', v); } catch (e) {} };
   const [intro, setIntro] = useState(0);
+  const [comp, setCompS] = useState(() => { try { return localStorage.getItem('ng-jam-comp') || ''; } catch (e) { return ''; } });
+  const setComp = (v) => { setCompS(v); try { localStorage.setItem('ng-jam-comp', v); } catch (e) {} };
+  const [compGtr, setCompGtr] = useState(false);
   const dockR = useRef(null);
   // scenläge: hela sidan byter till ringens tema medan du jammar, och tonar tillbaka när du är klar
   React.useLayoutEffect(() => {
@@ -3346,6 +3351,7 @@ function Jam({ easy, onSave, onDone }) {
     const st = S.current; if (!st) return; S.current = null;
     cancelAnimationFrame(st.raf); clearInterval(st.iv);
     try { if (st.mr && st.mr.state !== 'inactive') st.mr.stop(); } catch (e) {}
+    if (st.comp) st.comp.stop(); try { if (st.dest) engine.master.disconnect(st.dest); } catch (e) {}
     st.mic.stop();
     try { st.wake && st.wake.release(); } catch (e) {}
     return st;
@@ -3357,14 +3363,21 @@ function Jam({ easy, onSave, onDone }) {
     setMicErr(false); setRes(null); setNow(null); setTrail([]); setLive({ bpm: 0, secs: 0 });
     const m = new Mic();
     try { await m.start({ aec: false }); } catch (e) { setMicErr(true); return; }
-    const cal = micCal(), T0 = performance.now();
+    const cal = micCal(), T0 = performance.now(), ctx0 = engine.ctx.currentTime;
     const st = { mic: m, onsets: [], segs: [], cur: null, curT: 0, cand: null, candT: 0, n: 0, chk: 0, env: 0.01, prev: 0, lastOn: -1, last: 0, meta: { bpm: 0 }, T0, grid: null, streak: 0, best: 0 };
     S.current = st;
     try { if (navigator.wakeLock) st.wake = await navigator.wakeLock.request('screen'); } catch (e) {}
     // spela in samtidigt som appen lyssnar
     try {
       const mime = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm'].find((x) => window.MediaRecorder && MediaRecorder.isTypeSupported(x)) || '';
-      const mr = new MediaRecorder(m.stream, mime ? { mimeType: mime } : undefined), chunks = [], at = Date.now(), meta = st.meta;
+      const bt = getBeat(comp);
+      if (bt) {
+        st.comp = playBeatLoop(bt, { gtr: compGtr });
+        st.grid = { T: 60 / bt.bpm, ph: st.comp.t0 - ctx0, sixteen: false }; st.gridFixed = true;
+        st.dest = engine.ctx.createMediaStreamDestination(); engine.master.connect(st.dest); m.src.connect(st.dest);
+      }
+      const recStream = st.dest ? st.dest.stream : m.stream;
+      const mr = new MediaRecorder(recStream, mime ? { mimeType: mime } : undefined), chunks = [], at = Date.now(), meta = st.meta;
       mr.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
       mr.onstop = async () => {
         const dur = (Date.now() - at) / 1000; if (dur < 2 || !chunks.length) return;
@@ -3415,7 +3428,7 @@ function Jam({ easy, onSave, onDone }) {
     st.raf = requestAnimationFrame(loop);
     st.iv = setInterval(() => {
       const t = (performance.now() - T0) / 1000, rec = st.onsets.filter((o) => o.t > t - 12), tp = jamTempo(rec);
-      if (tp) st.grid = tp; else if (!rec.length) st.grid = null;
+      if (!st.gridFixed) { if (tp) st.grid = tp; else if (!rec.length) st.grid = null; }
       // märk när du byter mellan åttondelar och sextondelar, eller byter tempo, och det håller i sig
       if (tp && rec.length >= 12) {
         const L = st.feelNow, six = tp.sixteen, b = tp.bpm;
@@ -3425,7 +3438,7 @@ function Jam({ easy, onSave, onDone }) {
           if (st.pend.n >= 3) { cheer(six !== L.six ? (six ? 'Nu: sextondelar' : 'Nu: åttondelar') : 'Nytt tempo: ' + Math.round(b) + ' BPM'); st.feelNow = { six, bpm: b }; st.pend = null; }
         } else { st.pend = null; L.bpm = L.bpm * 0.8 + b * 0.2; }
       }
-      setLive({ bpm: tp ? Math.round(tp.bpm) : 0, secs: t });
+      setLive({ bpm: st.gridFixed ? Math.round(60 / st.grid.T) : tp ? Math.round(tp.bpm) : 0, secs: t });
     }, 1000);
     setPhase('run'); window.scrollTo({ top: 0, behavior: 'instant' });
     if (!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) setIntro(Date.now());
@@ -3493,6 +3506,16 @@ function Jam({ easy, onSave, onDone }) {
     <section className="card jam">
       ${phase === 'idle' ? html`<div className="chal">
         <p className="lead">Lägg telefonen nära gitarren och spela minst 8 takter i jämnt tempo. Byt gärna ackord på första slaget i takten, då hittar appen taktarten lättare.</p>
+        <div className="jam-comp">
+          <label className="label" htmlFor="jam-comp">Komp i bakgrunden</label>
+          <select id="jam-comp" className="bs-select" value=${comp} onChange=${(e) => setComp(e.target.value)}>
+            <option value="">Inget komp</option>
+            <option value="draft">Det som ligger i Beatstudion nu</option>
+            ${MY_BEATS.map((b) => html`<option key=${b.id} value=${b.id}>${b.name} · ${b.bpm} BPM</option>`)}
+          </select>
+          ${comp ? html`<label className="jam-check"><input type="checkbox" checked=${compGtr} onChange=${(e) => setCompGtr(e.target.checked)} /> Gitarr med i kompet</label>
+          <small className="muted">Använd hörlurar, så hör mikrofonen bara din gitarr. Inspelningen får både din gitarr och kompet.</small>` : null}
+        </div>
         <div className="row" style=${{ gap: 10, alignItems: 'center', justifyContent: 'center' }}><span className="label">Ringens färg</span>${SkinPick}</div>
         <button className="play" onClick=${start}>${I.play}Börja jamma</button></div>` : null}
       ${phase === 'run' ? html`<div className="jam-run">
@@ -3736,7 +3759,29 @@ function surpriseBeat(old, tempo = 'mellan') {
   return { ...old, gtr, gtrVol: 0.7, gtrMute: false, id: 'b' + Date.now(), name: name + ' ' + bpm, bpm, swing: Math.round(swing * 100) / 100, pads, rows, bass, bassCh, bassLen, bassVol: 0.75, bassMute: false, kit: 'riktig', human: Math.max(old.human || 0, 0.3) };
 }
 
-function BeatStudio({ toast }) {
+const minorOf = (k) => !!(CHORD_DB[k] && /^[A-G][#b]?m(?!aj)/.test(CHORD_DB[k].name));
+// hämta ett komp: 'draft' = det som ligger i Beatstudion just nu, annars ett sparat
+function getBeat(id) {
+  if (!id) return null;
+  if (id === 'draft') { try { const d = JSON.parse(localStorage.getItem('ng-beat-draft')); return d && d.pads ? d : beatFromPreset(BEAT_PRESETS[0]); } catch (e) { return beatFromPreset(BEAT_PRESETS[0]); } }
+  return MY_BEATS.find((b) => b.id === id) || null;
+}
+// spela ett komp i loop i bakgrunden; t0 = när första slaget ligger (AudioContext-tid)
+function playBeatLoop(beat, { gtr = false } = {}) {
+  engine.stop(); engine.init(); engine.loadDrums(); loadBeatSamples(beat); engine.kit = beat.kit || 'riktig';
+  const c = engine.ctx, b = gtr ? beat : { ...beat, gtrMute: true }, st = { next: c.currentTime + 0.12, step: 0, bar: 0 }; st.t0 = st.next;
+  const tick = () => {
+    while (st.next < c.currentTime + 0.12) {
+      const sd16 = 60 / b.bpm / 4, prog = BEAT_PROGS[b.prog || 0], key = prog[st.bar % prog.length];
+      beatStep(b, st.step, st.next + (st.step % 2 ? sd16 * (b.swing || 0) : 0), sd16, CHORD_DB[key].root, minorOf(key), key);
+      st.next += sd16; if (++st.step === 16) { st.step = 0; st.bar++; }
+    }
+  };
+  st.iv = setInterval(tick, 25); tick();
+  return { stop: () => clearInterval(st.iv), t0: st.t0, bpm: b.bpm, name: beat.name };
+}
+
+function BeatStudio({ toast, onJam }) {
   const [beat, setBeatS] = useState(() => { try { const d = JSON.parse(localStorage.getItem('ng-beat-draft')); if (d && d.pads) return d; } catch (e) {} return beatFromPreset(BEAT_PRESETS[0]); });
   const beatR = useRef(beat);
   const setBeat = (fn) => setBeatS((old) => { const nb = typeof fn === 'function' ? fn(old) : fn; beatR.current = nb; try { localStorage.setItem('ng-beat-draft', JSON.stringify(nb)); } catch (e) {} return nb; });
@@ -3985,6 +4030,7 @@ function BeatStudio({ toast }) {
         <input type="text" className="jam-name" aria-label="Namn på kompet" value=${beat.name || ''} onInput=${(e) => setBeat((b) => ({ ...b, name: e.target.value }))} onChange=${() => {}} />
         <button className="btn primary" onClick=${save}>Spara</button>
       </div>
+      ${onJam ? html`<button className="btn" onClick=${() => { stop(); const known = MY_BEATS.some((x) => x.id === beat.id); try { localStorage.setItem('ng-jam-comp', known ? beat.id : 'draft'); } catch (e) {} onJam(); }}>🎙 Jamma till kompet och spela in</button>` : null}
       ${saved.length ? html`<div className="bs-presets">${saved.map((b) => html`<span key=${b.id} className="bs-saved"><button className=${'chip' + (b.id === beat.id ? ' on' : '')} onClick=${() => open(b)}>${b.name}</button><button className="bs-del" aria-label=${'Ta bort ' + b.name} onClick=${() => remove(b)}>×</button></span>`)}</div>` : html`<small className="muted">Sparade komp kan du välja som kompband under Låtar.</small>`}
     </section>
     </div>
@@ -6719,7 +6765,7 @@ function App() {
     onSave=${(s) => { const list = [...custom, s]; setCustom(list); saveCustom(list); pickSong(s); setTab('spela'); window.scrollTo({ top: 0 }); toast({ x: '♪', t: 'Sparad som låt', s: s.title + ' ligger nu under Låtar.' }); }} />`;
   const JamTab = html`<div className="jam-modes">
     <div className="seg jam-mode" role="group" aria-label="Jamma eller Beatstudio">${[['jam', 'Jamma'], ['beat', 'Beatstudio']].map(([id, l]) => html`<button key=${id} aria-pressed=${jamMode === id} onClick=${() => { stopAll(); setJamMode(id); }}>${l}</button>`)}</div>
-    ${jamMode === 'beat' ? html`<${BeatStudio} toast=${toast} />` : JamOnly}
+    ${jamMode === 'beat' ? html`<${BeatStudio} toast=${toast} onJam=${() => setJamMode('jam')} />` : JamOnly}
   </div>`;
 
   const TABS = [['vag', 'Min väg', 'Väg'], ['spela', 'Spela låtar', 'Låtar'], ['spel', 'Spel', 'Spel'], ['skank', 'Skank-skola', 'Skank'], ['ackord', 'Ackordtabell', 'Ackord'], ['byten', 'Ackordbyten', 'Byten'], ['stam', 'Stämning', 'Stäm']];
