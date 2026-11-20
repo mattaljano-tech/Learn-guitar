@@ -2,7 +2,7 @@
 <html lang="sv">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="description" content="Öva gitarr med kompband, 3D-grepp, skank-skola och stämmare.">
 <meta name="theme-color" content="#100e0c">
 <meta name="mobile-web-app-capable" content="yes">
@@ -19,7 +19,7 @@ img{max-width:100%}
 [hidden]{display:none!important}
 html{-webkit-tap-highlight-color:transparent}
 /* Känns som en riktig app på telefonen */
-html,body{overscroll-behavior-y:none}
+html,body{overscroll-behavior-y:none;overflow-x:clip}
 button,a,[role="tab"],.bar,.dg,.song,.chip{touch-action:manipulation;-webkit-user-select:none;user-select:none}
 input,select,textarea{font-size:16px}
 @media (display-mode: standalone){
@@ -432,8 +432,8 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 .sk-hands .panel p{margin:0;font-size:13px;line-height:1.35;color:var(--text)}
 .sk-hands .panel:last-child svg{max-width:200px;margin:0 auto}
 .sk-mute{font-size:78px;text-align:center;line-height:1.6}
-.sk-ctl{display:grid;gap:12px;border-top:1px solid var(--line);padding-top:14px}
-.sk-opt{display:grid;gap:6px}
+.sk-ctl{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;border-top:1px solid var(--line);padding-top:14px}
+.sk-opt{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;min-width:0}
 .sk-lab{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .sk-grip{flex-wrap:wrap}
 .sk-tip{margin:0;font-size:13px}
@@ -1476,6 +1476,8 @@ details.card.more{padding:18px 0 0}
 :root:is([data-skin="salvia"],[data-skin="riddim"],[data-skin="neon"],[data-skin="sol"],[data-skin="svartvit"]) .card.hand3d{background:var(--surface);border-color:transparent}
 .practice .beatcard,.practice .pr-chords{padding-left:0;padding-right:0}
 .seg{justify-self:start;width:max-content;max-width:100%}
+.seg.sk-grip{flex-wrap:wrap;overflow-x:visible}
+.seg.sk-grip button{flex:none}
 /* Ackordbyten: steg som en lista, tips som text */
 .bx-steps li,.bx-steps li.on{background:transparent;border-color:transparent}
 .bx-steps li.on{background:color-mix(in oklab,var(--leaf) 9%,transparent)}
