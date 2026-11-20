@@ -2149,6 +2149,48 @@ class Engine {
     names.forEach((n) => fetch('audio/drums/' + n + '.mp3').then((r) => { if (!r.ok) throw 0; return r.arrayBuffer(); })
       .then((b) => new Promise((res, rej) => this.ctx.decodeAudioData(b, res, rej))).then((buf) => { this.drumBufs[n] = buf; }).catch(() => {}));
   }
+  // Elgitarr: en ljusare sträng (Karplus–Strong med mindre dämpning) genom en liten förstärkare, ren eller med crunch
+  ksEl(freq) {
+    const key = 'e' + Math.round(freq * 10); if (this.cache.has(key)) return this.cache.get(key);
+    const LK = 0.94, sr = this.ctx.sampleRate, N = Math.max(4, Math.floor(sr / freq - 0.5 - (1 - LK) / LK)), f0 = sr / (N + 0.5 + (1 - LK) / LK);
+    const len = Math.floor(2.8 * sr), out = new Float32Array(len), buf = new Float32Array(N);
+    let prev = 0, mean = 0; for (let i = 0; i < N; i++) { prev += (Math.random() * 2 - 1 - prev) * 0.65; buf[i] = prev; mean += prev; } mean /= N;
+    const tmp = Float32Array.from(buf, (v) => v - mean), pp = Math.max(1, Math.floor(N * 0.13)); for (let i = 0; i < N; i++) buf[i] = tmp[i] - 0.8 * tmp[(i - pp + N) % N];
+    const decay = Math.pow(0.001, 1 / (2.6 * sr)); let idx = 0, peak = 0, lp = 0;
+    for (let i = 0; i < len; i++) { const a = buf[idx], n = idx + 1 === N ? 0 : idx + 1; out[i] = a; if (Math.abs(a) > peak) peak = Math.abs(a); lp += LK * (0.5 * (a + buf[n]) - lp); buf[idx] = decay * lp; idx = n; }
+    const fade = Math.floor(0.05 * sr); for (let i = 0; i < len; i++) { out[i] = (out[i] / (peak || 1)) * 0.5; if (i > len - fade) out[i] *= (len - i) / fade; }
+    const ab = this.ctx.createBuffer(1, len, sr); ab.copyToChannel(out, 0);
+    const res = { buf: ab, rate: freq / f0 }; this.cache.set(key, res); return res;
+  }
+  ampIn(tone) {
+    this.amps = this.amps || {}; if (this.amps[tone]) return this.amps[tone];
+    const c = this.ctx, crunch = tone === 'crunch', inp = c.createGain(), hp = c.createBiquadFilter(), ws = c.createWaveShaper(), mid = c.createBiquadFilter(), lp = c.createBiquadFilter(), out = c.createGain(), send = c.createGain();
+    inp.gain.value = crunch ? 3.2 : 1.1; hp.type = 'highpass'; hp.frequency.value = 95;
+    const k = crunch ? 6 : 1.4, curve = new Float32Array(1024); for (let i = 0; i < 1024; i++) { const x = i / 512 - 1; curve[i] = Math.tanh(k * x) / Math.tanh(k); } ws.curve = curve; ws.oversample = '2x';
+    mid.type = 'peaking'; mid.frequency.value = crunch ? 850 : 1200; mid.Q.value = 0.8; mid.gain.value = crunch ? 4 : 2;
+    lp.type = 'lowpass'; lp.frequency.value = crunch ? 3600 : 5600; lp.Q.value = 0.6; out.gain.value = crunch ? 0.3 : 0.62; send.gain.value = 0.28;
+    inp.connect(hp); hp.connect(ws); ws.connect(mid); mid.connect(lp); lp.connect(out); out.connect(this.bus.g); out.connect(send); send.connect(this.verb);
+    return (this.amps[tone] = inp);
+  }
+  elNote(freq, t, { vel = 1, dur = null, pan = 0 } = {}, tone = 'ren') {
+    if (this.transpose) freq *= Math.pow(2, this.transpose / 12);
+    const c = this.ctx, k = this.ksEl(freq), src = c.createBufferSource(), g = c.createGain();
+    src.buffer = k.buf; src.playbackRate.value = k.rate; g.gain.setValueAtTime(0.42 * vel, t);
+    const end = dur ? t + dur + 0.2 : t + k.buf.duration / k.rate; if (dur) g.gain.setTargetAtTime(0, t + dur, 0.014);
+    src.connect(g);
+    if (c.createStereoPanner) { const pn = c.createStereoPanner(); pn.pan.value = pan; g.connect(pn); pn.connect(this.ampIn(tone)); } else g.connect(this.ampIn(tone));
+    src.start(t); src.stop(end);
+  }
+  strumEl(frets, t, dir = 'D', { vel = 1, stagger = 0.011, strings = null, dur = null, tone = 'ren' } = {}) {
+    let order = [0, 1, 2, 3, 4, 5]; if (dir === 'U') order.reverse(); if (strings) order = order.filter((i) => strings.includes(i));
+    let k = 0; const hit = [];
+    for (const i of order) {
+      const f = frets[i]; if (f < 0) continue; if (dir === 'U' && i < 2 && !strings) continue;
+      const st = STRINGS[i]; this.elNote(fq(st.freq, f), t + k * stagger * (0.85 + Math.random() * 0.3), { vel: vel * (dir === 'U' ? 0.7 : 1) * (0.86 + Math.random() * 0.14), dur, pan: (i - 2.5) * 0.08 }, tone);
+      hit.push(i); k++;
+    }
+    this.queue.push({ t, type: 'pluck', strings: hit });
+  }
   // Beatstudion: trummor med valbar karaktär (djup, snärtig, tight …). Riktiga ljud om de finns, annars elektroniska.
   drum(kind, t, vel = 1, ch = '', kit = this.kit || 'riktig') {
     const c = this.ctx, d = this.bus.d;
@@ -3717,8 +3759,13 @@ const GTR_PATTERNS = {
 function beatStep(b, s, t, sd16, root, minor = false, key = null) {
   const gc = (b.gtr || [])[s];
   if (gc && key && !b.gtrMute && CHORD_DB[key]) {
-    const fr = voicing(key, false).frets, gv = b.gtrVol ?? 0.7;
-    if (gc === 'D') engine.strum(fr, t, 'D', { vel: gv * (s % 4 === 0 ? 1 : 0.85) });
+    const fr = voicing(key, false).frets, gv = b.gtrVol ?? 0.7, el = b.gtrTone === 'ren' || b.gtrTone === 'crunch', tone = b.gtrTone;
+    if (el) {
+      if (gc === 'D') engine.strumEl(fr, t, 'D', { vel: gv * (s % 4 === 0 ? 1 : 0.85), tone });
+      else if (gc === 'U') engine.strumEl(fr, t, 'U', { vel: gv * 0.8, tone });
+      else if (gc === 'X') { engine.strumEl(fr, t, 'D', { vel: gv * 0.5, dur: 0.035, stagger: 0.005, tone }); engine.noiseHit(t, { freq: 1100, q: 0.8, vel: 0.25, decay: 0.02, dest: engine.bus.g }); }
+      else if (gc === 'S') engine.strumEl(fr, t, 'D', { vel: gv * 1.1, strings: [2, 3, 4, 5], dur: 0.09, stagger: 0.006, tone });
+    } else if (gc === 'D') engine.strum(fr, t, 'D', { vel: gv * (s % 4 === 0 ? 1 : 0.85) });
     else if (gc === 'U') engine.strum(fr, t, 'U', { vel: gv * 0.8 });
     else if (gc === 'X') engine.chuck(fr, t);
     else if (gc === 'S') engine.chop(fr, t, { vel: gv });
@@ -3800,7 +3847,8 @@ function surpriseBeat(old, tempo = 'mellan') {
   const gp = { reggae: R() < 0.7 ? 'reggae' : 'steppers', folk: 'pop', pop: R() < 0.6 ? 'pop' : 'attondelar', ballad: 'ballad', bossa: 'bossa' }[style] || 'pop';
   const gtr = [...GTR_PATTERNS[gp][0]].map((c) => (c === '.' ? '' : c));
   const bpm = lo + Math.round(R() * (hi - lo));
-  return { ...old, gtr, gtrVol: 0.7, gtrMute: false, id: 'b' + Date.now(), name: name + ' ' + bpm, bpm, swing: Math.round(swing * 100) / 100, pads, rows, bass, bassCh, bassLen, bassVol: 0.75, bassMute: false, kit: 'riktig', human: Math.max(old.human || 0, 0.3) };
+  const gtrTone = style === 'reggae' ? (R() < 0.7 ? 'ren' : 'nylon') : style === 'pop' ? (R() < 0.35 ? 'ren' : 'nylon') : 'nylon';
+  return { ...old, gtr, gtrTone, gtrVol: 0.7, gtrMute: false, id: 'b' + Date.now(), name: name + ' ' + bpm, bpm, swing: Math.round(swing * 100) / 100, pads, rows, bass, bassCh, bassLen, bassVol: 0.75, bassMute: false, kit: 'riktig', human: Math.max(old.human || 0, 0.3) };
 }
 
 const minorOf = (k) => !!(CHORD_DB[k] && /^[A-G][#b]?m(?!aj)/.test(CHORD_DB[k].name));
@@ -3939,7 +3987,7 @@ function BeatStudio({ toast, onJam }) {
   const nowChord = playing ? progK[bar % progK.length] : keyK, nowPcs = chordPcs(nowChord, false);
   const hitTone = (i) => {
     engine.init(); const t = engine.ctx.currentTime + 0.005, f = keyHz * Math.pow(2, scale[i] / 12);
-    if (toneInst === 'bas') engine.bassAs(f, t, 0.55, 1, beat.bassCh); else engine.note(f * 2, t, { vel: 1, dur: 1.4 });
+    if (toneInst === 'bas') engine.bassAs(f, t, 0.55, 1, beat.bassCh); else if (toneInst === 'el') engine.elNote(f * 2, t, { vel: 1, dur: 1.4 }, beat.gtrTone === 'crunch' ? 'crunch' : 'ren'); else engine.note(f * 2, t, { vel: 1, dur: 1.4 });
     setFlash((fl) => ({ ...fl, ['t' + i]: Date.now() }));
     try { navigator.vibrate && navigator.vibrate(8); } catch (e) {}
   };
@@ -3991,6 +4039,7 @@ function BeatStudio({ toast, onJam }) {
       <div className="bs-h"><b>1</b>Välj ljud</div>
       <div className="bs-presets" role="group" aria-label="Ljud">${rowsAll.map((r) => html`<button key=${r.id} type="button" className=${'chip bs-snd' + (sel === r.key ? ' on' : '') + (r.mute ? ' bs-muted' : '')} style=${{ '--pc': r.col }} onClick=${() => pickSound(r.key)}><i className="bs-dot"></i>${r.name}</button>`)}</div>
       ${sel === 'gtr' ? html`<div className="bs-opts">
+        <div className="seg" role="group" aria-label="Gitarrljud">${[['nylon', 'Nylon'], ['ren', 'Elgitarr ren'], ['crunch', 'Elgitarr crunch']].map(([id, l]) => html`<button key=${id} aria-pressed=${(beat.gtrTone || 'nylon') === id} onClick=${() => { setBeat((b) => ({ ...b, gtrTone: id })); engine.init(); const fr = voicing(BEAT_PROGS[beat.prog || 0][0], false).frets; if (id === 'nylon') engine.strum(fr, engine.ctx.currentTime + 0.02, 'D', { vel: 0.8 }); else engine.strumEl(fr, engine.ctx.currentTime + 0.02, 'D', { vel: 0.8, tone: id }); }}>${l}</button>`)}</div>
         <div className="label">Färdiga gitarrkomp</div>
         <div className="bs-presets">${Object.entries(GTR_PATTERNS).map(([id, [pat, l]]) => html`<button key=${id} className="chip" onClick=${() => setBeat((b) => ({ ...b, gtr: [...pat].map((c) => (c === '.' ? '' : c)), gtrMute: false }))}>${l}</button>`)}</div>
         <div className="label">Ackord, en takt var</div>
@@ -4053,7 +4102,7 @@ function BeatStudio({ toast, onJam }) {
       <summary className="bs-h">Spela live med padsen</summary>
       <div className="bs-modebar">
         <div className="seg" role="group" aria-label="Vad padsen spelar">${[['drums', 'Trummor'], ['tones', 'Toner']].map(([id, l]) => html`<button key=${id} aria-pressed=${padMode === id} onClick=${() => setPadMode(id)}>${l}</button>`)}</div>
-        ${padMode === 'tones' ? html`<div className="seg" role="group" aria-label="Instrument">${[['gitarr', 'Gitarr'], ['bas', 'Bas']].map(([id, l]) => html`<button key=${id} aria-pressed=${toneInst === id} onClick=${() => setToneInst(id)}>${l}</button>`)}</div>`
+        ${padMode === 'tones' ? html`<div className="seg" role="group" aria-label="Instrument">${[['gitarr', 'Nylon'], ['el', 'Elgitarr'], ['bas', 'Bas']].map(([id, l]) => html`<button key=${id} aria-pressed=${toneInst === id} onClick=${() => setToneInst(id)}>${l}</button>`)}</div>`
           : html`<button className=${'chip' + (recMode ? ' on' : '')} onClick=${() => setRecMode(!recMode)} title="Slå på padsen medan kompet spelar, så hamnar slagen i takten">● Spela in i takten</button>`}
       </div>
       ${padMode === 'tones' ? html`<section className="bs-pads" aria-label="Tonpads">${scale.map((semi, i) => { const pc = (keyPc + semi) % 12, inCh = nowPcs.has(pc); return html`<button key=${i} type="button"
