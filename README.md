@@ -34,3 +34,7 @@ Mikrofonen (stämmaren och ackordkollen) fungerar här, eftersom appen ligger p�
 - `icons/` – appikoner
 - `hand/` – 3D-handens ackordbyten, ett kort WebM-klipp per byte (renderade i Blender)
 - `audio/nylon/` – inspelade nylongitarrtoner till kompet. Källa: [tonejs-instruments](https://github.com/nbrosowsky/tonejs-instruments) av Nicholaus P. Brosowsky, licens [CC-BY 3.0](https://creativecommons.org/licenses/by/3.0/). Klippta, mono och normaliserade.
+- `audio/drums/` – riktiga trumljud till Beatstudion, klippta, mono och normaliserade:
+  - Bastrumma, virvel, hi-hat, ride, crash och pukor från *Pearl Master Studio Pack 1* av enoe, licens [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), via [oramics/sampled](https://github.com/oramics/sampled).
+  - Djup och tight bastrumma, kantslag, handklapp, halvöppen hi-hat, ride-klocka, tamburin, koskälla och maracas från *AVL Drumkits 1.1* (Glen MacArthur), licens [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/), via [oramics/sampled](https://github.com/oramics/sampled). De bearbetade ljudfilerna delas under samma licens.
+  - Borstvirvel och träkloss från *OLPC Berklee Sound Library*, licens [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), via [Tonejs/audio](https://github.com/Tonejs/audio).
