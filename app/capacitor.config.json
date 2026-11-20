@@ -1,0 +1,14 @@
+{
+  "appId": "se.mattaljano.nylongitarr",
+  "appName": "NylonGitarr",
+  "webDir": "www",
+  "backgroundColor": "#06050e",
+  "android": {
+    "backgroundColor": "#06050e",
+    "allowMixedContent": false,
+    "adjustMarginsForEdgeToEdge": "force"
+  },
+  "plugins": {
+    "StatusBar": { "overlaysWebView": false, "backgroundColor": "#06050e", "style": "DARK" }
+  }
+}

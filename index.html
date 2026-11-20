@@ -1600,6 +1600,24 @@ const { useState, useEffect, useRef, useMemo } = React;
 /* Datalagring: allt sparas under nycklar som börjar med ng- (inspelningar och samplingar i IndexedDB 'ng-rec').
    Lagringen är versionsmärkt, så att en framtida ändring av formatet kan flytta gammal data utan att något går förlorat. */
 const NG_SCHEMA = 2;
+// Körs appen som riktig Android-app (Capacitor)? Då sparas och delas filer via appens egna funktioner.
+const NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+const blobB64 = (b) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1] || ''); r.onerror = rej; r.readAsDataURL(b); });
+async function saveFile(blob, name, title) {
+  if (NATIVE) {
+    const P = window.Capacitor.Plugins, data = await blobB64(blob);
+    const w = await P.Filesystem.writeFile({ path: name, data, directory: 'CACHE' });
+    try { await P.Share.share({ title: title || name, url: w.uri, dialogTitle: title || 'Spara eller dela' }); } catch (e) { if (!/cancel/i.test(String(e && e.message))) throw e; return false; }
+    return true;
+  }
+  const file = new File([blob], name, { type: blob.type });
+  const touch = window.matchMedia && matchMedia('(pointer: coarse)').matches;
+  if (touch && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: title || name }); return true; } catch (e) { if (e && e.name === 'AbortError') return false; }
+  }
+  const url = URL.createObjectURL(file), a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000);
+  return true;
+}
 (function migrate() {
   try {
     const v = +(localStorage.getItem('ng-schema') || 1);
@@ -5714,7 +5732,7 @@ function RecItem({ r, onDel }) {
   return html`<li className="rec-item">
     <div className="rec-meta"><b>${when}</b><span>${fmtDur(r.dur)}${r.bpm ? ' · ' + r.bpm + ' BPM' : ''}</span></div>
     <audio controls preload="none" src=${url}></audio>
-    <a className="rec-x" href=${url} download=${r.title + ' ' + when.replace(/[: ]/g, '-') + '.' + ext} title="Ladda ner" aria-label="Ladda ner inspelningen">↓</a>
+    <a className="rec-x" href=${url} download=${r.title + ' ' + when.replace(/[: ]/g, '-') + '.' + ext} onClick=${NATIVE ? (e) => { e.preventDefault(); saveFile(r.blob, r.title + ' ' + when.replace(/[: ]/g, '-') + '.' + ext, 'Inspelning').catch(() => {}); } : undefined} title="Ladda ner" aria-label="Ladda ner inspelningen">↓</a>
     <button className="rec-x" onClick=${() => onDel(r.id)} title="Ta bort" aria-label="Ta bort inspelningen">×</button>
   </li>`;
 }
@@ -5751,13 +5769,7 @@ function DataSettings() {
     setBusy(true); setMsg('');
     try {
       const d = await makeBackup(), day = d.at.slice(0, 10), name = 'nylongitarr-sakerhetskopia-' + day + '.json';
-      const file = new File([JSON.stringify(d)], name, { type: 'application/json' });
-      const touch = window.matchMedia && matchMedia('(pointer: coarse)').matches;
-      let shared = false;
-      if (touch && navigator.canShare && navigator.canShare({ files: [file] })) {
-        try { await navigator.share({ files: [file], title: 'NylonGitarr säkerhetskopia' }); shared = true; } catch (e) { if (e && e.name === 'AbortError') { setBusy(false); return; } }
-      }
-      if (!shared) { const url = URL.createObjectURL(file), a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000); }
+      if (!(await saveFile(new Blob([JSON.stringify(d)], { type: 'application/json' }), name, 'NylonGitarr säkerhetskopia'))) { setBusy(false); return; }
       const now = new Date().toISOString(); try { localStorage.setItem('ng-backup-at', now); } catch (e) {} setLast(now);
       const i = backupInfo(d); setMsg('Sparad: ' + i.beats + ' beats, ' + i.songs + ' egna låtar, ' + i.recs + ' inspelningar och ' + i.samples + ' samplingar. Lägg filen någonstans säkert, t.ex. i Google Drive.');
     } catch (e) { setMsg('Säkerhetskopian gick inte att skapa. Försök igen.'); }
@@ -7180,12 +7192,19 @@ ReactDOM.createRoot(document.getElementById('root')).render(html`<${App} />`);
 /* Appens statusfält följer valt färgtema */
 (function () {
   var meta = document.querySelector('meta[name="theme-color"]');
-  var sync = function () { try { var c = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim(); if (c) meta.setAttribute('content', c); } catch (e) {} };
+  var sync = function () {
+    try {
+      var c = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim(); if (!c) return; meta.setAttribute('content', c);
+      var SB = NATIVE && window.Capacitor.Plugins.StatusBar;
+      if (SB) { var m = /#([0-9a-f]{6})/i.exec(c), n = m ? parseInt(m[1], 16) : 0, lum = ((n >> 16) * 299 + ((n >> 8) & 255) * 587 + (n & 255) * 114) / 1000;
+        SB.setOverlaysWebView({ overlay: false }).catch(function () {}); if (m) SB.setBackgroundColor({ color: '#' + m[1] }).catch(function () {}); SB.setStyle({ style: lum > 140 ? 'LIGHT' : 'DARK' }).catch(function () {}); }
+    } catch (e) {}
+  };
   new MutationObserver(sync).observe(document.documentElement, { attributes: true, attributeFilter: ['data-skin'] });
   window.addEventListener('load', sync);
 })();
 /* Offline och installation */
-if ('serviceWorker' in navigator) {
+if ('serviceWorker' in navigator && !NATIVE) {
   window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
   var hadSW = !!navigator.serviceWorker.controller, swReloaded = false;
   // Ingen automatisk omladdning: sidan hämtas alltid färsk från nätet, så nya versionen gäller nästa gång appen öppnas.
