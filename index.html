@@ -942,6 +942,51 @@ html.jam-stage,html.jam-stage body{overflow-x:clip}
 .ji-waves path{opacity:0;transform-box:fill-box;transform-origin:center;animation:jiWave .7s ease-out 2 both}
 @keyframes jiWave{0%{opacity:0;transform:scale(.7)}35%{opacity:1}100%{opacity:0;transform:scale(1.25)}}
 @media (prefers-reduced-motion:reduce){html,body,html header.top,html .bottomnav{transition:none}}
+.jam-modes{display:grid;gap:14px}
+.jam-mode{justify-self:start}
+html.jam-stage .jam-mode{display:none}
+.bs{display:grid;gap:14px}
+.bs-top{display:grid;gap:12px}
+.bs-transport{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.bs-tempo{flex:1;min-width:200px}
+.bs-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.bs-swing{flex:1;min-width:180px}
+.bs-presets{display:flex;gap:6px;flex-wrap:wrap}
+.bs-pads{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.bs-pad{position:relative;overflow:hidden;aspect-ratio:1;border-radius:16px;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;gap:2px;padding:10px;text-align:left;
+  background:color-mix(in oklab,var(--pc) 16%,var(--surface));border:1.5px solid color-mix(in oklab,var(--pc) 45%,transparent);color:var(--text);touch-action:manipulation;user-select:none;-webkit-user-select:none;transition:transform .06s ease}
+.bs-pad b{font-size:13.5px;line-height:1.15;font-weight:700}
+.bs-pad small{font-size:11.5px;color:var(--muted)}
+.bs-pad:active{transform:scale(.96)}
+.bs-pad.sel{border-color:var(--pc);box-shadow:0 0 0 2px color-mix(in oklab,var(--pc) 40%,transparent)}
+.bs-pad.hit{background:color-mix(in oklab,var(--pc) 34%,var(--surface))}
+.bs-glow{position:absolute;inset:0;background:radial-gradient(circle at 50% 55%,color-mix(in oklab,var(--pc) 70%,transparent),transparent 70%);opacity:0;animation:bsGlow .35s ease-out;pointer-events:none}
+@keyframes bsGlow{from{opacity:1}to{opacity:0}}
+.bs-edit{display:grid;gap:12px}
+.bs-tabs{display:flex;gap:6px}
+.bs-steps{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px}
+.bs-step{height:44px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-weight:800;font-size:14px;touch-action:manipulation}
+.bs-step.beat{border-color:color-mix(in oklab,var(--text) 35%,transparent)}
+.bs-step.on{background:var(--pc);border-color:var(--pc);color:#111}
+.bs-step.ghost{background:color-mix(in oklab,var(--pc) 40%,var(--surface-2))}
+.bs-step.now{outline:2px solid var(--text);outline-offset:1px}
+.bs-opts{display:grid;gap:10px}
+.bs-select{height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);padding:0 10px;font:inherit}
+.bs-sample{display:grid;gap:8px}
+.bs-over{display:grid;gap:6px}
+.bs-orow{display:grid;grid-template-columns:96px 1fr;align-items:center;gap:8px;padding:3px 4px;border-radius:8px;text-align:left;color:var(--text)}
+.bs-orow.sel{background:var(--surface-2)}
+.bs-oname{font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bs-ocells{display:grid;grid-template-columns:repeat(16,minmax(0,1fr));gap:3px}
+.bs-ocells i{height:12px;border-radius:3px;background:var(--surface-3)}
+.bs-ocells i.beat{box-shadow:inset 0 0 0 1px color-mix(in oklab,var(--text) 25%,transparent)}
+.bs-ocells i.on{background:var(--pc)}
+.bs-ocells i.ghost{background:color-mix(in oklab,var(--pc) 45%,var(--surface-3))}
+.bs-ocells i.now{outline:1.5px solid var(--text)}
+.bs-save{display:grid;gap:10px}
+.bs-saved{display:inline-flex;align-items:center}
+.bs-del{width:32px;height:32px;border-radius:50%;color:var(--muted);font-size:18px}
+@media (prefers-reduced-motion:reduce){.bs-glow{animation:none}}
 .jam-run{display:grid;gap:12px}
 .jam-parts{list-style:none;margin:0;padding:0;display:grid;gap:10px}
 .jam-parts li{display:grid;gap:8px;padding:12px;border-radius:12px;background:var(--surface-2)}
@@ -2046,7 +2091,59 @@ class Engine {
     g.gain.setValueAtTime(accent ? 0.32 : 0.18, t); g.gain.setTargetAtTime(0.0001, t + 0.001, 0.012);
     o.connect(g); g.connect(this.master); o.start(t); o.stop(t + 0.1);
   }
+  // Beatstudion: trummor med valbar karaktär (djup, snärtig, tight …)
+  drum(kind, t, vel = 1, ch = '') {
+    const c = this.ctx, d = this.bus.d;
+    const tone = (f0, f1, dec, a, type = 'sine') => {
+      const o = c.createOscillator(), g = c.createGain(); o.type = type; o.frequency.setValueAtTime(f0, t);
+      if (f1) o.frequency.exponentialRampToValueAtTime(f1, t + dec * 0.4);
+      g.gain.setValueAtTime(a * vel, t); g.gain.exponentialRampToValueAtTime(0.001, t + dec);
+      o.connect(g); g.connect(d); o.start(t); o.stop(t + dec + 0.05);
+    };
+    if (kind === 'kick') {
+      if (ch === 'snartig') { tone(210, 52, 0.22, 1); this.noiseHit(t, { type: 'highpass', freq: 3000, q: 0.7, vel: 0.3 * vel, decay: 0.004 }); }
+      else if (ch === 'tight') { tone(135, 55, 0.14, 0.95); this.noiseHit(t, { type: 'lowpass', freq: 3000, q: 0.5, vel: 0.16 * vel, decay: 0.004 }); }
+      else { tone(120, 38, 0.65, 1.05); tone(58, 0, 0.5, 0.25); }
+    } else if (kind === 'snare') {
+      if (ch === 'kant') this.rim(t, vel);
+      else if (ch === 'tight') { tone(240, 180, 0.08, 0.35, 'triangle'); this.noiseHit(t, { freq: 4200, q: 1, vel: 0.5 * vel, decay: 0.03, send: true, hp: 1500 }); }
+      else { tone(200, 160, 0.14, 0.4, 'triangle'); this.noiseHit(t, { freq: 2600, q: 0.8, vel: 0.55 * vel, decay: 0.07, send: true, hp: 900 }); }
+    } else if (kind === 'rim') this.rim(t, vel);
+    else if (kind === 'clap') { for (const dt of [0, 0.011, 0.023]) this.noiseHit(t + dt, { freq: 1400, q: 1.1, vel: 0.45 * vel, decay: dt === 0.023 ? 0.06 : 0.008, send: true, hp: 600 }); }
+    else if (kind === 'hat') this.noiseHit(t, { freq: 10500, q: 0.8, vel: 0.3 * vel, decay: ch === 'luftig' ? 0.03 : 0.012, hp: ch === 'luftig' ? 5500 : 7800 });
+    else if (kind === 'ohat') this.noiseHit(t, { freq: 9000, q: 0.7, vel: 0.28 * vel, decay: ch === 'luftig' ? 0.2 : 0.09, hp: 6000 });
+    else if (kind === 'shaker') this.shaker(t, vel * 1.2);
+    else if (kind === 'cowbell') { tone(587, 0, 0.25, 0.16, 'square'); tone(845, 0, 0.25, 0.12, 'square'); }
+    else if (kind === 'tom') tone(ch === 'hog' ? 230 : 130, ch === 'hog' ? 165 : 88, 0.35, 0.8);
+  }
+  // bas med karaktär: dub (djup och mjuk), rund (som kompbandet) eller snärtig (funk)
+  bassAs(freq, t, len, vel = 1, ch = 'rund') {
+    if (ch !== 'dub' && ch !== 'snartig') return this.bass(freq, t, len, vel);
+    if (this.transpose) freq *= Math.pow(2, this.transpose / 12);
+    const c = this.ctx, o = c.createOscillator(), lp = c.createBiquadFilter(), g = c.createGain();
+    lp.type = 'lowpass';
+    if (ch === 'dub') {
+      o.type = 'sine'; lp.frequency.value = 260; lp.Q.value = 0.7;
+      const sub = c.createOscillator(), sg = c.createGain(); sub.type = 'sine'; sub.frequency.value = freq / 2; sg.gain.value = 0.35;
+      sub.connect(sg); sg.connect(lp); sub.start(t); sub.stop(t + len + 0.4);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.75 * vel, t + 0.02); g.gain.setTargetAtTime(0.0001, t + len, 0.06);
+    } else {
+      o.type = 'sawtooth'; lp.Q.value = 5; lp.frequency.setValueAtTime(2400, t); lp.frequency.setTargetAtTime(360, t + 0.004, 0.045);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.5 * vel, t + 0.005); g.gain.setTargetAtTime(0.25 * vel, t + 0.03, 0.08); g.gain.setTargetAtTime(0.0001, t + len, 0.02);
+    }
+    o.frequency.value = freq; o.connect(lp); lp.connect(g); g.connect(this.shaper);
+    o.start(t); o.stop(t + len + 0.4);
+  }
+  // egna inspelade ljud i samplern
+  sampleHit(buf, t, vel = 1, { semi = 0, len = 0 } = {}) {
+    const c = this.ctx, src = c.createBufferSource(), g = c.createGain(), rate = Math.pow(2, semi / 12);
+    src.buffer = buf; src.playbackRate.value = rate; g.gain.setValueAtTime(vel, t);
+    const full = buf.duration / rate, end = len ? Math.min(full, len) : full;
+    if (end < full) g.gain.setTargetAtTime(0.0001, t + Math.max(0.01, end - 0.03), 0.01);
+    src.connect(g); g.connect(this.bus.d); src.start(t); src.stop(t + end + 0.12);
+  }
   band(style, step, t, sd, root) {
+    if (style && style.startsWith('beat:')) { const b = MY_BEATS.find((x) => x.id === style.slice(5)); if (b) for (const k of [0, 1]) beatStep(b, step * 2 + k, t + k * (sd / 2) * (1 + (b.swing || 0)), sd / 2, root); return; }
     const r = root, fifth = r * 1.4983, oct = r * 2;
     if (style === 'reggae') { // One Drop: allt landar på 3
       this.hat(t, step % 2 ? 0.85 : 0.45);
@@ -3370,6 +3467,253 @@ function Jam({ easy, onSave, onDone }) {
       <div className="section-head" style=${{ margin: 0 }}><h3>Dina jam-inspelningar</h3><p>De senaste 20 sparas på den här enheten.</p></div>
       <ul className="rec-list">${recs.map((r) => html`<${RecItem} key=${r.id} r=${r} onDel=${(id) => RecDB.del(id).then(loadRecs)} />`)}</ul>
     </section>` : null}
+  </div>`;
+}
+
+/* ---------------------------------------------------------------- beatstudion */
+// Beatstudion: en enkel beatmaker och sampler. 8 pads med trummor eller egna ljud, 16 rutor per takt och en bas som följer ackorden.
+const PAD_KINDS = {
+  kick: { name: 'Bastrumma', ch: [['djup', 'Djup'], ['snartig', 'Snärtig'], ['tight', 'Tight']] },
+  snare: { name: 'Virvel', ch: [['full', 'Full'], ['tight', 'Tight'], ['kant', 'Kantslag']] },
+  rim: { name: 'Kantslag' },
+  clap: { name: 'Handklapp' },
+  hat: { name: 'Hi-hat', ch: [['tight', 'Tight'], ['luftig', 'Luftig']] },
+  ohat: { name: 'Öppen hi-hat', ch: [['tight', 'Kort'], ['luftig', 'Luftig']] },
+  shaker: { name: 'Shaker' },
+  cowbell: { name: 'Koskälla' },
+  tom: { name: 'Puka', ch: [['lag', 'Låg'], ['hog', 'Hög']] },
+  sample: { name: 'Eget ljud' },
+};
+const BASS_CH = [['dub', 'Dub'], ['rund', 'Rund'], ['snartig', 'Snärtig']];
+const PAD_COLORS = ['#ff5c8a', '#ffb84d', '#ffd23f', '#2ee6b8', '#33d6ff', '#8a5cff', '#ff8a4c', '#e2e2ea'];
+const BEAT_PROGS = [['G', 'C', 'Em', 'D'], ['Am', 'F', 'C', 'G'], ['Em', 'C', 'G', 'D'], ['A', 'D'], ['Em', 'D'], ['C', 'G', 'Am', 'F'], ['Dm', 'A']];
+const DEFAULT_PADS = () => [
+  { id: 'p1', kind: 'kick', ch: 'djup', vol: 0.95 }, { id: 'p2', kind: 'snare', ch: 'full', vol: 0.85 },
+  { id: 'p3', kind: 'rim', vol: 0.8 }, { id: 'p4', kind: 'hat', ch: 'tight', vol: 0.75 },
+  { id: 'p5', kind: 'ohat', ch: 'tight', vol: 0.7 }, { id: 'p6', kind: 'clap', vol: 0.8 },
+  { id: 'p7', kind: 'shaker', vol: 0.7 }, { id: 'p8', kind: 'sample', vol: 0.9, semi: 0, lenI: 0 },
+];
+// färdiga komp: en rad per pad (bastrumma, virvel, kantslag, hi-hat, öppen hi-hat, handklapp, shaker), x = slag, o = svagt slag; basen: R = grundton, 5 = kvint, 8 = oktav
+const BEAT_PRESETS = [
+  { name: 'One drop', bpm: 74, swing: 0.12, ch: { p1: 'djup' }, bassCh: 'dub', rows: ['........x.......', '................', '........x.......', 'o.x.o.x.o.x.o.x.'], bass: 'R.....5.R...8...' },
+  { name: 'Rockers', bpm: 80, swing: 0.1, ch: { p1: 'djup' }, bassCh: 'dub', rows: ['x.......x.......', '................', '........x.......', 'x.x.x.x.x.x.x.x.'], bass: 'R..R..5.R...8.5.' },
+  { name: 'Steppers', bpm: 84, swing: 0.08, ch: { p1: 'tight' }, bassCh: 'rund', rows: ['x...x...x...x...', '................', '........x.......', '..x...x...x...x.', '..............x.'], bass: 'R.R.R.R.R.R.8.5.' },
+  { name: 'Dub', bpm: 70, swing: 0.15, ch: { p1: 'djup', p5: 'luftig' }, bassCh: 'dub', rows: ['........x.......', '................', '........x.......', '................', '......x.......x.', '................', 'o.x.o.x.o.x.o.x.'], bass: 'R.......5...R...' },
+  { name: 'Pop', bpm: 100, swing: 0, ch: { p1: 'snartig' }, bassCh: 'rund', rows: ['x.....x.x.......', '....x.......x...', '................', 'x.x.x.x.x.x.x.x.'], bass: 'R.....R.R...5...' },
+  { name: 'Ballad', bpm: 70, swing: 0, ch: { p1: 'djup' }, bassCh: 'rund', rows: ['x.........x.....', '........x.......', '................', 'x...x...x...x...', '................', '................', 'x.o.x.o.x.o.x.o.'], bass: 'R.......5.......' },
+  { name: 'Rock', bpm: 112, swing: 0, ch: { p1: 'snartig', p2: 'full' }, bassCh: 'snartig', rows: ['x.....x.x.....x.', '....x.......x...', '................', 'x.x.x.x.x.x.x.x.'], bass: 'R.R.R.R.R.R.R.R.' },
+  { name: 'Funk', bpm: 96, swing: 0.05, ch: { p1: 'snartig', p2: 'tight' }, bassCh: 'snartig', rows: ['x..x......x.....', '....x..o.o..x...', '................', 'xoxoxoxoxoxoxoxo'], bass: 'R..8..R...5.R.8.' },
+  { name: 'Hiphop', bpm: 88, swing: 0.22, ch: { p1: 'djup', p2: 'tight' }, bassCh: 'dub', rows: ['x......x..x.....', '....x.......x...', '................', 'x.x.x.x.x.x.x.x.'], bass: 'R......R..5.....' },
+];
+const emptyRows = (pads) => Object.fromEntries(pads.map((p) => [p.id, new Array(16).fill(0)]));
+function beatFromPreset(pr, keepPads) {
+  const pads = (keepPads || DEFAULT_PADS()).map((p) => ({ ...p, ...(pr.ch[p.id] && p.kind !== 'sample' ? { ch: pr.ch[p.id] } : {}) }));
+  const rows = emptyRows(pads);
+  pr.rows.forEach((r, i) => { const p = pads[i]; if (p) rows[p.id] = [...r].map((c) => (c === 'x' ? 2 : c === 'o' ? 1 : 0)); });
+  return { id: 'b' + Date.now(), name: pr.name, bpm: pr.bpm, swing: pr.swing, pads, rows, bass: [...pr.bass].map((c) => (c === '.' ? '' : c)), bassCh: pr.bassCh, bassVol: 0.9, prog: 0 };
+}
+let MY_BEATS = (() => { try { return JSON.parse(localStorage.getItem('ng-beats') || '[]'); } catch (e) { return []; } })();
+const saveBeats = (list) => { MY_BEATS = list; try { localStorage.setItem('ng-beats', JSON.stringify(list)); } catch (e) {} };
+const SMP_BUF = {};
+// klipp bort tystnad i början och slutet och jämna ut volymen
+function trimBuf(buf) {
+  const d = buf.getChannelData(0), sr = buf.sampleRate; let peak = 0;
+  for (let i = 0; i < d.length; i++) peak = Math.max(peak, Math.abs(d[i]));
+  if (!peak) return buf;
+  let a = 0, b = d.length - 1; while (a < d.length && Math.abs(d[a]) < peak * 0.08) a++; while (b > a && Math.abs(d[b]) < peak * 0.03) b--;
+  a = Math.max(0, a - Math.round(sr * 0.004)); b = Math.min(d.length - 1, b + Math.round(sr * 0.05));
+  const out = engine.ctx.createBuffer(1, b - a + 1, sr), o = out.getChannelData(0), g = 0.9 / peak, fade = Math.min(400, o.length);
+  for (let i = 0; i < o.length; i++) o[i] = d[a + i] * g * (i > o.length - fade ? (o.length - i) / fade : 1);
+  return out;
+}
+async function loadSample(id) {
+  if (!id) return null; if (SMP_BUF[id]) return SMP_BUF[id];
+  engine.init();
+  const r = ((await RecDB.list('sample')) || []).find((x) => x.id === id); if (!r) return null;
+  const buf = await engine.ctx.decodeAudioData(await r.blob.arrayBuffer());
+  return (SMP_BUF[id] = trimBuf(buf));
+}
+const loadBeatSamples = (b) => b && b.pads.forEach((p) => p.kind === 'sample' && p.rec && loadSample(p.rec).catch(() => {}));
+function playPad(p, t, vel = 1) {
+  if (p.kind === 'sample') { const b = SMP_BUF[p.rec]; if (b) engine.sampleHit(b, t, vel * (p.vol ?? 0.9), { semi: p.semi || 0, len: [0, 0.45, 0.18][p.lenI || 0] }); return; }
+  engine.drum(p.kind, t, vel * (p.vol ?? 0.85), p.ch || '');
+}
+// ett sextondelssteg: trummor från padsen och basen på ackordets grundton, kvint eller oktav
+function beatStep(b, s, t, sd16, root) {
+  for (const p of b.pads) { const v = (b.rows[p.id] || [])[s]; if (v) playPad(p, t, v === 1 ? 0.4 : 1); }
+  const c = b.bass[s];
+  if (c && root) {
+    let n = 1; while (n < 4 && s + n < 16 && !b.bass[s + n]) n++;
+    engine.bassAs(root * ({ R: 1, 5: 1.4983, 8: 2 }[c] || 1), t, n * sd16 * 0.92, b.bassVol ?? 0.9, b.bassCh);
+  }
+}
+
+function BeatStudio({ toast }) {
+  const [beat, setBeatS] = useState(() => { try { const d = JSON.parse(localStorage.getItem('ng-beat-draft')); if (d && d.pads) return d; } catch (e) {} return beatFromPreset(BEAT_PRESETS[0]); });
+  const beatR = useRef(beat);
+  const setBeat = (fn) => setBeatS((old) => { const nb = typeof fn === 'function' ? fn(old) : fn; beatR.current = nb; try { localStorage.setItem('ng-beat-draft', JSON.stringify(nb)); } catch (e) {} return nb; });
+  const [sel, setSel] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const [cur, setCur] = useState(-1);
+  const [bar, setBar] = useState(0);
+  const [recMode, setRecMode] = useState(false);
+  const [saved, setSaved] = useState(MY_BEATS);
+  const [smpRec, setSmpRec] = useState(null);
+  const [flash, setFlash] = useState({});
+  const run = useRef(null);
+  useEffect(() => { loadBeatSamples(beat); return () => stop(); }, []);
+
+  const stop = () => {
+    const st = run.current; if (!st) return; run.current = null;
+    clearInterval(st.iv); cancelAnimationFrame(st.raf); setPlaying(false); setCur(-1);
+  };
+  const play = () => {
+    engine.stop(); engine.init(); stop();
+    const c = engine.ctx, st = { next: c.currentTime + 0.06, step: 0, bar: 0, marks: [] }; run.current = st;
+    const tick = () => {
+      while (st.next < c.currentTime + 0.12) {
+        const b = beatR.current, sd16 = 60 / b.bpm / 4, prog = BEAT_PROGS[b.prog || 0], key = prog[st.bar % prog.length];
+        const t = st.next + (st.step % 2 ? sd16 * (b.swing || 0) : 0);
+        beatStep(b, st.step, t, sd16, b.bassOff ? 0 : CHORD_DB[key].root);
+        st.marks.push({ t: st.next, step: st.step, bar: st.bar, sd16 }); if (st.marks.length > 48) st.marks.shift();
+        st.next += sd16; if (++st.step === 16) { st.step = 0; st.bar++; }
+      }
+    };
+    st.iv = setInterval(tick, 25); tick();
+    let last = -1;
+    const draw = () => {
+      st.raf = requestAnimationFrame(draw);
+      const now = c.currentTime; let m = null; for (const x of st.marks) if (x.t <= now) m = x;
+      if (m && m.step !== last) { last = m.step; setCur(m.step); setBar(m.bar); }
+    };
+    st.raf = requestAnimationFrame(draw);
+    setPlaying(true);
+  };
+
+  const hitPad = (i) => {
+    engine.init(); const p = beat.pads[i], c = engine.ctx;
+    playPad(p, c.currentTime + 0.005, 1); setSel(i);
+    setFlash((f) => ({ ...f, [p.id]: Date.now() }));
+    try { navigator.vibrate && navigator.vibrate(8); } catch (e) {}
+    // spela in i rutnätet: slaget hamnar på närmaste sextondel
+    const st = run.current;
+    if (recMode && st && st.marks.length) {
+      const m = st.marks.filter((x) => x.t <= c.currentTime).pop(); if (!m) return;
+      const s = (m.step + Math.round((c.currentTime - m.t) / m.sd16) + 16) % 16;
+      setBeat((b) => ({ ...b, rows: { ...b.rows, [p.id]: b.rows[p.id].map((v, k) => (k === s ? 2 : v)) } }));
+    }
+  };
+  const tapStep = (k) => {
+    if (sel === 'bass') { const order = ['', 'R', '5', '8']; setBeat((b) => ({ ...b, bass: b.bass.map((v, j) => (j === k ? order[(order.indexOf(v) + 1) % 4] : v)) })); return; }
+    const p = beat.pads[sel];
+    setBeat((b) => ({ ...b, rows: { ...b.rows, [p.id]: b.rows[p.id].map((v, j) => (j === k ? [2, 0, 1][v] : v)) } }));
+    if (!playing && beat.rows[p.id][k] === 0) { engine.init(); playPad(p, engine.ctx.currentTime + 0.005, 1); }
+  };
+  const setPad = (i, ch) => setBeat((b) => ({ ...b, pads: b.pads.map((p, j) => (j === i ? { ...p, ...ch } : p)) }));
+  const loadPreset = (i) => setBeat((b) => ({ ...beatFromPreset(BEAT_PRESETS[i], b.pads.map((p) => ({ ...p }))), prog: b.prog || 0 }));
+  const clear = () => setBeat((b) => ({ ...b, rows: emptyRows(b.pads), bass: new Array(16).fill('') }));
+
+  // spela in ett eget ljud till en pad
+  const recordSample = async (i) => {
+    if (smpRec) { smpRec.stop(); return; }
+    const m = new Mic();
+    try { await m.start({ aec: false }); } catch (e) { toast && toast({ x: '🎙', t: 'Mikrofonen är blockerad', s: 'Tillåt mikrofonen för appen och försök igen.' }); return; }
+    const mime = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm'].find((x) => window.MediaRecorder && MediaRecorder.isTypeSupported(x)) || '';
+    const mr = new MediaRecorder(m.stream, mime ? { mimeType: mime } : undefined), chunks = [], at = Date.now();
+    mr.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+    const ctl = { stop: () => { try { if (mr.state !== 'inactive') mr.stop(); } catch (e) {} } };
+    mr.onstop = async () => {
+      m.stop(); clearTimeout(ctl.to); setSmpRec(null);
+      if (!chunks.length) return;
+      const blob = new Blob(chunks, { type: mr.mimeType || 'audio/webm' }), id = 'smp-' + at, old = beatR.current.pads[i].rec;
+      try {
+        await RecDB.put({ id, song: 'sample', title: 'Eget ljud', at, dur: (Date.now() - at) / 1000, blob });
+        const buf = await loadSample(id);
+        if (old && !MY_BEATS.some((b) => b.pads.some((p) => p.rec === old))) { RecDB.del(old).catch(() => {}); delete SMP_BUF[old]; }
+        setPad(i, { kind: 'sample', rec: id });
+        if (buf) engine.sampleHit(buf, engine.ctx.currentTime + 0.02, 1);
+      } catch (e) { toast && toast({ x: '⚠️', t: 'Ljudet gick inte att spara' }); }
+    };
+    mr.start(); ctl.to = setTimeout(ctl.stop, 3000); setSmpRec(ctl);
+  };
+
+  const save = () => {
+    const b = { ...beatR.current, name: (beatR.current.name || 'Mitt komp').trim() };
+    const list = MY_BEATS.some((x) => x.id === b.id) ? MY_BEATS.map((x) => (x.id === b.id ? b : x)) : [...MY_BEATS, b];
+    saveBeats(list); setSaved(list);
+    toast && toast({ x: '♪', t: 'Kompet är sparat', s: 'Välj det under Låtar, i Mixer och känsla.' });
+  };
+  const open = (b) => { setBeat({ ...b, pads: b.pads.map((p) => ({ ...p })), rows: { ...b.rows }, bass: [...b.bass] }); loadBeatSamples(b); };
+  const remove = (b) => { const list = MY_BEATS.filter((x) => x.id !== b.id); saveBeats(list); setSaved(list); };
+
+  const p = sel === 'bass' ? null : beat.pads[sel], kind = p && PAD_KINDS[p.kind];
+  const prog = BEAT_PROGS[beat.prog || 0], steps = sel === 'bass' ? beat.bass : beat.rows[p.id];
+  const stepLbl = (v) => (sel === 'bass' ? v : v === 1 ? '·' : '');
+
+  return html`<div className="bs">
+    <section className="card bs-top">
+      <div className="bs-transport">
+        <button className=${'play' + (playing ? ' stop' : '')} onClick=${() => (playing ? stop() : play())}>${playing ? I.stop : I.play}${playing ? 'Stopp' : 'Spela'}</button>
+        <div className="bs-tempo"><${Bpm} value=${beat.bpm} set=${(v) => setBeat((b) => ({ ...b, bpm: v }))} min=${50} max=${180} /></div>
+      </div>
+      <div className="bs-row">
+        <label className="slider bs-swing"><span>Gung</span><input type="range" min="0" max="0.35" step="0.01" value=${beat.swing || 0} onInput=${(e) => setBeat((b) => ({ ...b, swing: +e.target.value }))} onChange=${() => {}} /><span>${Math.round((beat.swing || 0) / 0.35 * 100)}</span></label>
+        <button className=${'chip' + (recMode ? ' on' : '')} onClick=${() => setRecMode(!recMode)} title="Slå på padsen medan kompet spelar, så hamnar slagen i rutnätet">● Spela in i rutnätet</button>
+      </div>
+      <div className="bs-presets" role="group" aria-label="Färdiga komp">${BEAT_PRESETS.map((pr, i) => html`<button key=${pr.name} className="chip" onClick=${() => loadPreset(i)}>${pr.name}</button>`)}</div>
+    </section>
+
+    <section className="bs-pads" aria-label="Pads">${beat.pads.map((pd, i) => html`<button key=${pd.id} type="button"
+      className=${'bs-pad' + (sel === i ? ' sel' : '') + (playing && beat.rows[pd.id][cur] ? ' hit' : '')}
+      style=${{ '--pc': PAD_COLORS[i] }} onPointerDown=${(e) => { e.preventDefault(); hitPad(i); }}
+      onKeyDown=${(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); hitPad(i); } }}>
+      <span key=${flash[pd.id] || 0} className="bs-glow"></span><b>${PAD_KINDS[pd.kind].name}</b><small>${pd.kind === 'sample' ? (pd.rec ? 'inspelat' : 'tom, spela in') : (PAD_KINDS[pd.kind].ch || []).find((x) => x[0] === pd.ch)?.[1] || ''}</small></button>`)}</section>
+
+    <section className="card bs-edit">
+      <div className="bs-tabs" role="tablist">
+        <button role="tab" aria-selected=${sel !== 'bass'} className=${'chip' + (sel !== 'bass' ? ' on' : '')} onClick=${() => setSel(sel === 'bass' ? 0 : sel)}>${p ? PAD_KINDS[p.kind].name : 'Trummor'}</button>
+        <button role="tab" aria-selected=${sel === 'bass'} className=${'chip' + (sel === 'bass' ? ' on' : '')} onClick=${() => setSel('bass')}>Bas</button>
+      </div>
+      <div className="bs-steps" role="group" aria-label="Rutor i takten">${steps.map((v, k) => html`<button key=${k} type="button"
+        className=${'bs-step' + (v ? ' on' : '') + (v === 1 ? ' ghost' : '') + (k === cur ? ' now' : '') + (k % 4 === 0 ? ' beat' : '')}
+        style=${{ '--pc': sel === 'bass' ? 'var(--brass)' : PAD_COLORS[sel] }} aria-pressed=${!!v}
+        aria-label=${'Ruta ' + (k + 1)} onClick=${() => tapStep(k)}>${stepLbl(v)}</button>`)}</div>
+      <small className="muted">${sel === 'bass' ? 'Tryck för grundton (R), kvint (5), oktav (8) eller tyst. Basen följer ackorden.' : 'Tryck en gång för ett slag, två för ett svagt slag, tre för att ta bort.'}</small>
+      ${sel === 'bass' ? html`<div className="bs-opts">
+        <div className="seg" role="group" aria-label="Basljud">${BASS_CH.map(([id, l]) => html`<button key=${id} aria-pressed=${beat.bassCh === id} onClick=${() => setBeat((b) => ({ ...b, bassCh: id }))}>${l}</button>`)}</div>
+        <label className="slider"><span>Volym</span><input type="range" min="0" max="1.2" step="0.01" value=${beat.bassVol ?? 0.9} onInput=${(e) => setBeat((b) => ({ ...b, bassVol: +e.target.value }))} onChange=${() => {}} /><span>${Math.round((beat.bassVol ?? 0.9) * 100)}</span></label>
+        <div className="label">Ackord, en takt var</div>
+        <div className="bs-presets">${BEAT_PROGS.map((pg, i) => html`<button key=${i} className=${'chip' + ((beat.prog || 0) === i ? ' on' : '')} onClick=${() => setBeat((b) => ({ ...b, prog: i }))}>${pg.map((k) => CHORD_DB[k].name).join(' ')}</button>`)}</div>
+        ${playing ? html`<span className="muted" style=${{ fontSize: 13 }}>Nu: ${CHORD_DB[prog[bar % prog.length]].name}</span>` : null}
+      </div>` : html`<div className="bs-opts">
+        <label className="label" htmlFor="bs-kind">Ljud på padden</label>
+        <select id="bs-kind" className="bs-select" value=${p.kind} onChange=${(e) => setPad(sel, { kind: e.target.value, ch: (PAD_KINDS[e.target.value].ch || [[]])[0][0] })}>${Object.entries(PAD_KINDS).map(([id, k]) => html`<option key=${id} value=${id}>${k.name}</option>`)}</select>
+        ${kind.ch ? html`<div className="seg" role="group" aria-label="Karaktär">${kind.ch.map(([id, l]) => html`<button key=${id} aria-pressed=${p.ch === id} onClick=${() => { setPad(sel, { ch: id }); engine.init(); engine.drum(p.kind, engine.ctx.currentTime + 0.005, p.vol ?? 0.85, id); }}>${l}</button>`)}</div>` : null}
+        ${p.kind === 'sample' ? html`<div className="bs-sample">
+          <button className=${'btn' + (smpRec ? ' primary' : '')} onClick=${() => recordSample(sel)}>${smpRec ? '■ Stoppa inspelningen' : p.rec ? '● Spela in ett nytt ljud' : '● Spela in ett ljud'}</button>
+          <small className="muted">Knacka på gitarren, spela en kort slinga eller säg något. Högst 3 sekunder, tystnaden klipps bort.</small>
+          <label className="slider"><span>Tonhöjd</span><input type="range" min="-12" max="12" step="1" value=${p.semi || 0} onInput=${(e) => setPad(sel, { semi: +e.target.value })} onChange=${() => {}} /><span>${(p.semi > 0 ? '+' : '') + (p.semi || 0)}</span></label>
+          <div className="seg" role="group" aria-label="Längd">${['Hela', 'Mellan', 'Kort'].map((l, k) => html`<button key=${l} aria-pressed=${(p.lenI || 0) === k} onClick=${() => setPad(sel, { lenI: k })}>${l}</button>`)}</div>
+        </div>` : null}
+        <label className="slider"><span>Volym</span><input type="range" min="0" max="1.2" step="0.01" value=${p.vol ?? 0.85} onInput=${(e) => setPad(sel, { vol: +e.target.value })} onChange=${() => {}} /><span>${Math.round((p.vol ?? 0.85) * 100)}</span></label>
+      </div>`}
+    </section>
+
+    <section className="card bs-over" aria-label="Hela takten">
+      <div className="label">Hela takten</div>
+      ${[...beat.pads.map((pd, i) => ({ id: pd.id, i, name: PAD_KINDS[pd.kind].name, cells: beat.rows[pd.id], col: PAD_COLORS[i] })), { id: 'bass', i: 'bass', name: 'Bas', cells: beat.bass, col: 'var(--brass)' }].map((r) => html`<button key=${r.id} type="button" className=${'bs-orow' + (sel === r.i ? ' sel' : '')} onClick=${() => setSel(r.i)}>
+        <span className="bs-oname">${r.name}</span><span className="bs-ocells">${r.cells.map((v, k) => html`<i key=${k} className=${(v ? 'on' : '') + (v === 1 ? ' ghost' : '') + (k === cur ? ' now' : '') + (k % 4 === 0 ? ' beat' : '')} style=${{ '--pc': r.col }}></i>`)}</span></button>`)}
+      <div className="row" style=${{ gap: 8, flexWrap: 'wrap' }}><button className="btn" onClick=${clear}>Rensa takten</button></div>
+    </section>
+
+    <section className="card bs-save">
+      <div className="label">Spara kompet</div>
+      <div className="row" style=${{ gap: 8 }}>
+        <input type="text" className="jam-name" aria-label="Namn på kompet" value=${beat.name || ''} onInput=${(e) => setBeat((b) => ({ ...b, name: e.target.value }))} onChange=${() => {}} />
+        <button className="btn primary" onClick=${save}>Spara</button>
+      </div>
+      ${saved.length ? html`<div className="bs-presets">${saved.map((b) => html`<span key=${b.id} className="bs-saved"><button className=${'chip' + (b.id === beat.id ? ' on' : '')} onClick=${() => open(b)}>${b.name}</button><button className="bs-del" aria-label=${'Ta bort ' + b.name} onClick=${() => remove(b)}>×</button></span>`)}</div>` : html`<small className="muted">Sparade komp kan du välja som kompband för låtarna.</small>`}
+    </section>
   </div>`;
 }
 
@@ -5001,6 +5345,7 @@ function App() {
   const [bpm, setBpm] = useState(song.bpm);
   const [ladderOn, setLadderOn] = useState(false);
   const [style, setStyle] = useState('acoustic');
+  const [jamMode, setJamMode] = useState('jam');
   const [countIn, setCountIn] = useState(true);
   const [autoGuitar, setAutoGuitar] = useState(true);
   const [swing, setSwing] = useState(0.08);
@@ -5522,6 +5867,11 @@ function App() {
           </div>
           <div className="mixer">
             <div className="label">Känsla</div>
+            <label className="slider"><span>Komp</span>
+              <select className="bs-select" aria-label="Kompband" value=${style} onChange=${(e) => { const v = e.target.value; setStyle(v); if (v.startsWith('beat:')) loadBeatSamples(MY_BEATS.find((b) => 'beat:' + b.id === v)); }}>
+                ${STYLES.filter((x) => x.id !== 'click').map((x) => html`<option key=${x.id} value=${x.id}>${x.label}</option>`)}
+                ${MY_BEATS.map((b) => html`<option key=${b.id} value=${'beat:' + b.id}>${b.name} (eget)</option>`)}
+              </select></label>
             <label className="slider"><span>Gung</span>
               <input type="range" id="swing" min="0" max="0.3" step="0.01" value=${swing} onInput=${(e) => setSwing(+e.target.value)} onChange=${() => {}} />
               <span>${Math.round(swing / 0.3 * 100)}</span></label>
@@ -6090,9 +6440,13 @@ function App() {
           award(cnt * 2 + (rec ? 20 : 0), rec ? 'Nytt rekord: ' + cnt + ' byten!' : cnt + ' byten på en minut', (n) => { n.best[k] = Math.max(n.best[k] || 0, cnt); addTag(n, 'chal:' + k + ':' + cnt); }); }} />`}
   </div>`;
 
-  const JamTab = html`<${Jam} easy=${easy}
+  const JamOnly = html`<${Jam} easy=${easy}
     onDone=${(r, secs) => award(secs >= 60 ? 30 : 15, 'Jam: ' + fmtDur(secs) + (r.bpm ? ' · ' + r.bpm + ' BPM' : ''), (n) => { n.jams = (n.jams || 0) + 1; addTag(n, 'jam'); })}
     onSave=${(s) => { const list = [...custom, s]; setCustom(list); saveCustom(list); pickSong(s); setTab('spela'); window.scrollTo({ top: 0 }); toast({ x: '♪', t: 'Sparad som låt', s: s.title + ' ligger nu under Låtar.' }); }} />`;
+  const JamTab = html`<div className="jam-modes">
+    <div className="seg jam-mode" role="group" aria-label="Jamma eller Beatstudio">${[['jam', 'Jamma'], ['beat', 'Beatstudio']].map(([id, l]) => html`<button key=${id} aria-pressed=${jamMode === id} onClick=${() => { stopAll(); setJamMode(id); }}>${l}</button>`)}</div>
+    ${jamMode === 'beat' ? html`<${BeatStudio} toast=${toast} />` : JamOnly}
+  </div>`;
 
   const TABS = [['vag', 'Min väg', 'Väg'], ['spela', 'Spela låtar', 'Låtar'], ['spel', 'Spel', 'Spel'], ['skank', 'Skank-skola', 'Skank'], ['ackord', 'Ackordtabell', 'Ackord'], ['byten', 'Ackordbyten', 'Byten'], ['stam', 'Stämning', 'Stäm']];
   const NAV = [['vag', 'Idag', 'Idag'], ['spela', 'Låtar', 'Låtar'], ['jam', 'Jamma', 'Jamma'], ['skank', 'Rytm', 'Rytm'], ['bib', 'Bibliotek', 'Bibliotek']];
