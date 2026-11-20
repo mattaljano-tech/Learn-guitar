@@ -945,9 +945,36 @@ html.jam-stage,html.jam-stage body{overflow-x:clip}
 .jam-modes{display:grid;gap:14px}
 .jam-mode{justify-self:start}
 html.jam-stage .jam-mode{display:none}
-.bs{display:grid;gap:14px}
+.bs{display:grid;gap:14px;align-items:start}
+.bs-col{display:grid;gap:14px;min-width:0}
+@media (min-width:980px){.bs{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}}
+.bs-card{display:grid;gap:12px}
+.bs-h{display:flex;align-items:center;gap:10px;font-family:var(--f-display);font-weight:700;font-size:17px}
+.bs-h b{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--text);color:var(--bg);font-size:14px;flex:none}
+.bs-hint{margin:0;font-size:13.5px;color:var(--muted)}
+.bs-snd .bs-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--pc);margin-right:6px}
+.bs-snd{border-color:color-mix(in oklab,var(--pc) 55%,var(--line))}
+.bs-snd.bs-muted{opacity:.5}
+.bs-line{display:flex;align-items:center;gap:10px}
+.bs-line .slider{flex:1}
+.bs-mute{flex:none;min-width:40px;height:30px;border-radius:999px;font-size:12px;font-weight:700;background:var(--surface-3);color:var(--text)}
+.bs-mute.off{background:transparent;border:1px dashed var(--line);color:var(--muted)}
+.bs-swap summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
+.bs-swap .bs-select{margin-top:8px;width:100%}
+.bs-bar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.bs-grp{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+.bs-nc{display:grid;gap:3px;justify-items:center;min-width:0}
+.bs-nc .bs-step{width:100%}
+.bs-nc span{font-size:11px;color:var(--muted)}
+.bs-nc span.bs-b{font-weight:800;color:var(--text);font-size:12.5px}
+.bs-live summary{list-style:none;cursor:pointer}
+.bs-live summary::after{content:"›";margin-left:auto;transition:transform .2s}
+.bs-live[open] summary::after{transform:rotate(90deg)}
+.bs-live[open]{display:grid;gap:12px}
+.bs-live .bs-pads{max-width:420px}
 .bs-top{display:grid;gap:12px}
 .bs-transport{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.bs-top{display:grid;gap:10px}
 .bs-tempo{flex:1;min-width:200px}
 .bs-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .bs-swing{flex:1;min-width:180px}
@@ -978,15 +1005,17 @@ html.jam-stage .jam-mode{display:none}
 .bs-select{height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);padding:0 10px;font:inherit}
 .bs-sample{display:grid;gap:8px}
 .bs-over{display:grid;gap:6px}
-.bs-orow{display:grid;grid-template-columns:96px 1fr;align-items:center;gap:8px;padding:3px 4px;border-radius:8px;text-align:left;color:var(--text)}
+.bs-orow{display:grid;grid-template-columns:auto 88px 1fr;align-items:center;gap:8px;padding:3px 4px;border-radius:8px;color:var(--text)}
+.bs-orow.bs-muted .bs-ocells{opacity:.35}
+.bs-oname{text-align:left;color:var(--text);padding:0}
 .bs-orow.bs-sel{background:var(--surface-2)}
 .bs-oname{font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bs-ocells{display:grid;grid-template-columns:repeat(16,minmax(0,1fr));gap:3px}
-.bs-ocells i.bs-c{height:12px;border-radius:3px;background:var(--surface-3)}
-.bs-ocells i.bs-beat{box-shadow:inset 0 0 0 1px color-mix(in oklab,var(--text) 25%,transparent)}
-.bs-ocells i.bs-on{background:var(--pc)}
-.bs-ocells i.bs-ghost{background:color-mix(in oklab,var(--pc) 45%,var(--surface-3))}
-.bs-ocells i.bs-now{outline:1.5px solid var(--text)}
+.bs-ocells .bs-c{height:22px;min-width:0;padding:0;border-radius:4px;background:var(--surface-3)}
+.bs-ocells .bs-beat{box-shadow:inset 0 0 0 1px color-mix(in oklab,var(--text) 25%,transparent)}
+.bs-ocells .bs-on{background:var(--pc)}
+.bs-ocells .bs-ghost{background:color-mix(in oklab,var(--pc) 45%,var(--surface-3))}
+.bs-ocells .bs-now{outline:1.5px solid var(--text)}
 .bs-save{display:grid;gap:10px}
 .bs-saved{display:inline-flex;align-items:center}
 .bs-del{width:32px;height:32px;border-radius:50%;color:var(--muted);font-size:18px}
@@ -3544,9 +3573,9 @@ function playPad(p, t, vel = 1) {
 }
 // ett sextondelssteg: trummor från padsen och basen på ackordets grundton, kvint eller oktav
 function beatStep(b, s, t, sd16, root) {
-  for (const p of b.pads) { const v = (b.rows[p.id] || [])[s]; if (v) playPad(p, t, v === 1 ? 0.4 : 1); }
+  for (const p of b.pads) { const v = (b.rows[p.id] || [])[s]; if (v && !p.mute) playPad(p, t, v === 1 ? 0.4 : 1); }
   const c = b.bass[s];
-  if (c && root) {
+  if (c && root && !b.bassMute) {
     let n = 1; while (n < 4 && s + n < 16 && !b.bass[s + n]) n++;
     engine.bassAs(root * ({ R: 1, 5: 1.4983, 8: 2 }[c] || 1), t, n * sd16 * 0.92, b.bassVol ?? 0.9, b.bassCh);
   }
@@ -3668,69 +3697,87 @@ function BeatStudio({ toast }) {
   const prog = BEAT_PROGS[beat.prog || 0], steps = sel === 'bass' ? beat.bass : beat.rows[p.id];
   const stepLbl = (v) => (sel === 'bass' ? v : v === 1 ? '·' : '');
 
+  const LBL = ['1', 'e', '&', 'a', '2', 'e', '&', 'a', '3', 'e', '&', 'a', '4', 'e', '&', 'a'];
+  const rowsAll = [...beat.pads.map((pd, i) => ({ key: i, id: pd.id, name: PAD_KINDS[pd.kind].name, cells: beat.rows[pd.id], col: PAD_COLORS[i], mute: !!pd.mute })), { key: 'bass', id: 'bass', name: 'Bas', cells: beat.bass, col: 'var(--brass)', mute: !!beat.bassMute }];
+  const selRow = rowsAll.find((r) => r.key === sel) || rowsAll[0];
+  const toggleMute = (key) => (key === 'bass' ? setBeat((b) => ({ ...b, bassMute: !b.bassMute })) : setPad(key, { mute: !beat.pads[key].mute }));
+  const tapCell = (key, k) => { if (key !== sel) setSel(key); if (key === 'bass') { const order = ['', 'R', '5', '8']; setBeat((b) => ({ ...b, bass: b.bass.map((v, j) => (j === k ? order[(order.indexOf(v) + 1) % 4] : v)) })); return; } const pd = beat.pads[key]; setBeat((b) => ({ ...b, rows: { ...b.rows, [pd.id]: b.rows[pd.id].map((v, j) => (j === k ? [2, 0, 1][v] : v)) } })); if (!playing && !beat.rows[pd.id][k]) { engine.init(); playPad(pd, engine.ctx.currentTime + 0.005, 1); } };
+  const pickSound = (key) => { setSel(key); if (key !== 'bass') { engine.init(); playPad(beat.pads[key], engine.ctx.currentTime + 0.005, 1); } };
+  const MuteBtn = (r) => html`<button type="button" className=${'bs-mute' + (r.mute ? ' off' : '')} aria-pressed=${!r.mute} aria-label=${(r.mute ? 'Slå på ' : 'Stäng av ') + r.name} onClick=${() => toggleMute(r.key)}>${r.mute ? 'Av' : 'På'}</button>`;
+
   return html`<div className="bs">
+    <div className="bs-col">
     <section className="card bs-top">
       <div className="bs-transport">
         <button className=${'play' + (playing ? ' stop' : '')} onClick=${() => (playing ? stop() : play())}>${playing ? I.stop : I.play}${playing ? 'Stopp' : 'Spela'}</button>
         <div className="bs-tempo"><${Bpm} value=${beat.bpm} set=${(v) => setBeat((b) => ({ ...b, bpm: v }))} min=${50} max=${180} /></div>
       </div>
-      <div className="bs-row">
-        <label className="slider bs-swing"><span>Gung</span><input type="range" min="0" max="0.35" step="0.01" value=${beat.swing || 0} onInput=${(e) => setBeat((b) => ({ ...b, swing: +e.target.value }))} onChange=${() => {}} /><span>${Math.round((beat.swing || 0) / 0.35 * 100)}</span></label>
-        <button className=${'chip' + (recMode ? ' on' : '')} onClick=${() => setRecMode(!recMode)} title="Slå på padsen medan kompet spelar, så hamnar slagen i rutnätet">● Spela in i rutnätet</button>
-      </div>
-      <div className="bs-presets" role="group" aria-label="Färdiga komp">${BEAT_PRESETS.map((pr, i) => html`<button key=${pr.name} className="chip" onClick=${() => loadPreset(i)}>${pr.name}</button>`)}</div>
+      <label className="slider bs-swing"><span>Gung</span><input type="range" min="0" max="0.35" step="0.01" value=${beat.swing || 0} onInput=${(e) => setBeat((b) => ({ ...b, swing: +e.target.value }))} onChange=${() => {}} /><span>${Math.round((beat.swing || 0) / 0.35 * 100)}</span></label>
+      <div className="label">Börja från ett färdigt komp</div>
+      <div className="bs-presets" role="group" aria-label="Färdiga komp">${BEAT_PRESETS.map((pr, i) => html`<button key=${pr.name} className=${'chip' + (beat.name === pr.name ? ' on' : '')} onClick=${() => loadPreset(i)}>${pr.name}</button>`)}</div>
     </section>
 
-    <div className="bs-modebar">
-      <div className="seg" role="group" aria-label="Vad padsen spelar">${[['drums', 'Trummor'], ['tones', 'Toner']].map(([id, l]) => html`<button key=${id} aria-pressed=${padMode === id} onClick=${() => setPadMode(id)}>${l}</button>`)}</div>
-      ${padMode === 'tones' ? html`<div className="seg" role="group" aria-label="Instrument">${[['gitarr', 'Gitarr'], ['bas', 'Bas']].map(([id, l]) => html`<button key=${id} aria-pressed=${toneInst === id} onClick=${() => setToneInst(id)}>${l}</button>`)}</div>` : null}
-    </div>
-    ${padMode === 'tones' ? html`<section className="bs-pads" aria-label="Tonpads">${scale.map((semi, i) => { const pc = (keyPc + semi) % 12, inCh = nowPcs.has(pc); return html`<button key=${i} type="button"
-      className=${'bs-pad bs-tone' + (inCh ? ' bs-inch' : '')} style=${{ '--pc': PAD_COLORS[i] }}
-      onPointerDown=${(e) => { e.preventDefault(); hitTone(i); }} onKeyDown=${(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); hitTone(i); } }}>
-      <span key=${flash['t' + i] || 0} className="bs-glow"></span><b>${NOTE_N[pc]}${i === 7 ? '\u2032' : ''}</b><small>${inCh ? 'i ' + CHORD_DB[nowChord].name : ['1', '2', '3', '4', '5', '6', '7', '8'][i]}</small></button>`; })}</section>
-    <small className="muted">${(/^[A-G][#b]?/.exec(keyName) || ['C'])[0]}-${minor ? 'moll' : 'dur'}. Tonerna som passar ackordet just nu är markerade och följer med när ackordet byts.</small>` : html`<section className="bs-pads" aria-label="Pads">${beat.pads.map((pd, i) => html`<button key=${pd.id} type="button"
-      className=${'bs-pad' + (sel === i ? ' bs-sel' : '') + (playing && beat.rows[pd.id][cur] ? ' bs-hit' : '')}
-      style=${{ '--pc': PAD_COLORS[i] }} onPointerDown=${(e) => { e.preventDefault(); hitPad(i); }}
-      onKeyDown=${(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); hitPad(i); } }}>
-      <span key=${flash[pd.id] || 0} className="bs-glow"></span><b>${PAD_KINDS[pd.kind].name}</b><small>${pd.kind === 'sample' ? (pd.rec ? 'inspelat' : 'tom, spela in') : (PAD_KINDS[pd.kind].ch || []).find((x) => x[0] === pd.ch)?.[1] || ''}</small></button>`)}</section>`}
-
-    <section className="card bs-edit">
-      <div className="bs-tabs" role="tablist">
-        <button role="tab" aria-selected=${sel !== 'bass'} className=${'chip' + (sel !== 'bass' ? ' on' : '')} onClick=${() => setSel(sel === 'bass' ? 0 : sel)}>${p ? PAD_KINDS[p.kind].name : 'Trummor'}</button>
-        <button role="tab" aria-selected=${sel === 'bass'} className=${'chip' + (sel === 'bass' ? ' on' : '')} onClick=${() => setSel('bass')}>Bas</button>
-      </div>
-      <div className="bs-steps" role="group" aria-label="Rutor i takten">${steps.map((v, k) => html`<button key=${k} type="button"
-        className=${'bs-step' + (v ? ' bs-on' : '') + (v === 1 ? ' bs-ghost' : '') + (k === cur ? ' bs-now' : '') + (k % 4 === 0 ? ' bs-beat' : '')}
-        style=${{ '--pc': sel === 'bass' ? 'var(--brass)' : PAD_COLORS[sel] }} aria-pressed=${!!v}
-        aria-label=${'Ruta ' + (k + 1)} onClick=${() => tapStep(k)}>${stepLbl(v)}</button>`)}</div>
-      <small className="muted">${sel === 'bass' ? 'Tryck för grundton (R), kvint (5), oktav (8) eller tyst. Basen följer ackorden.' : 'Tryck en gång för ett slag, två för ett svagt slag, tre för att ta bort.'}</small>
+    <section className="card bs-card">
+      <div className="bs-h"><b>1</b>Välj ljud</div>
+      <div className="bs-presets" role="group" aria-label="Ljud">${rowsAll.map((r) => html`<button key=${r.id} type="button" className=${'chip bs-snd' + (sel === r.key ? ' on' : '') + (r.mute ? ' bs-muted' : '')} style=${{ '--pc': r.col }} onClick=${() => pickSound(r.key)}><i className="bs-dot"></i>${r.name}</button>`)}</div>
       ${sel === 'bass' ? html`<div className="bs-opts">
         <div className="seg" role="group" aria-label="Basljud">${BASS_CH.map(([id, l]) => html`<button key=${id} aria-pressed=${beat.bassCh === id} onClick=${() => setBeat((b) => ({ ...b, bassCh: id }))}>${l}</button>`)}</div>
-        <label className="slider"><span>Volym</span><input type="range" min="0" max="1.2" step="0.01" value=${beat.bassVol ?? 0.9} onInput=${(e) => setBeat((b) => ({ ...b, bassVol: +e.target.value }))} onChange=${() => {}} /><span>${Math.round((beat.bassVol ?? 0.9) * 100)}</span></label>
         <div className="label">Ackord, en takt var</div>
         <div className="bs-presets">${BEAT_PROGS.map((pg, i) => html`<button key=${i} className=${'chip' + ((beat.prog || 0) === i ? ' on' : '')} onClick=${() => setBeat((b) => ({ ...b, prog: i }))}>${pg.map((k) => CHORD_DB[k].name).join(' ')}</button>`)}</div>
-        ${playing ? html`<span className="muted" style=${{ fontSize: 13 }}>Nu: ${CHORD_DB[prog[bar % prog.length]].name}</span>` : null}
+        <div className="bs-line"><label className="slider"><span>Volym</span><input type="range" min="0" max="1.2" step="0.01" value=${beat.bassVol ?? 0.9} onInput=${(e) => setBeat((b) => ({ ...b, bassVol: +e.target.value }))} onChange=${() => {}} /><span>${Math.round((beat.bassVol ?? 0.9) * 100)}</span></label>${MuteBtn(selRow)}</div>
       </div>` : html`<div className="bs-opts">
-        <label className="label" htmlFor="bs-kind">Ljud på padden</label>
-        <select id="bs-kind" className="bs-select" value=${p.kind} onChange=${(e) => setPad(sel, { kind: e.target.value, ch: (PAD_KINDS[e.target.value].ch || [[]])[0][0] })}>${Object.entries(PAD_KINDS).map(([id, k]) => html`<option key=${id} value=${id}>${k.name}</option>`)}</select>
-        ${kind.ch ? html`<div className="seg" role="group" aria-label="Karaktär">${kind.ch.map(([id, l]) => html`<button key=${id} aria-pressed=${p.ch === id} onClick=${() => { setPad(sel, { ch: id }); engine.init(); engine.drum(p.kind, engine.ctx.currentTime + 0.005, p.vol ?? 0.85, id); }}>${l}</button>`)}</div>` : null}
+        ${kind.ch ? html`<div className="seg" role="group" aria-label="Hur det låter">${kind.ch.map(([id, l]) => html`<button key=${id} aria-pressed=${p.ch === id} onClick=${() => { setPad(sel, { ch: id }); engine.init(); engine.drum(p.kind, engine.ctx.currentTime + 0.005, p.vol ?? 0.85, id); }}>${l}</button>`)}</div>` : null}
         ${p.kind === 'sample' ? html`<div className="bs-sample">
           <button className=${'btn' + (smpRec ? ' primary' : '')} onClick=${() => recordSample(sel)}>${smpRec ? '■ Stoppa inspelningen' : p.rec ? '● Spela in ett nytt ljud' : '● Spela in ett ljud'}</button>
           <small className="muted">Knacka på gitarren, spela en kort slinga eller säg något. Högst 3 sekunder, tystnaden klipps bort.</small>
           <label className="slider"><span>Tonhöjd</span><input type="range" min="-12" max="12" step="1" value=${p.semi || 0} onInput=${(e) => setPad(sel, { semi: +e.target.value })} onChange=${() => {}} /><span>${(p.semi > 0 ? '+' : '') + (p.semi || 0)}</span></label>
           <div className="seg" role="group" aria-label="Längd">${['Hela', 'Mellan', 'Kort'].map((l, k) => html`<button key=${l} aria-pressed=${(p.lenI || 0) === k} onClick=${() => setPad(sel, { lenI: k })}>${l}</button>`)}</div>
         </div>` : null}
-        <label className="slider"><span>Volym</span><input type="range" min="0" max="1.2" step="0.01" value=${p.vol ?? 0.85} onInput=${(e) => setPad(sel, { vol: +e.target.value })} onChange=${() => {}} /><span>${Math.round((p.vol ?? 0.85) * 100)}</span></label>
+        <div className="bs-line"><label className="slider"><span>Volym</span><input type="range" min="0" max="1.2" step="0.01" value=${p.vol ?? 0.85} onInput=${(e) => setPad(sel, { vol: +e.target.value })} onChange=${() => {}} /><span>${Math.round((p.vol ?? 0.85) * 100)}</span></label>${MuteBtn(selRow)}</div>
+        <details className="bs-swap"><summary>Byt till ett annat ljud</summary>
+          <select className="bs-select" aria-label="Ljud" value=${p.kind} onChange=${(e) => setPad(sel, { kind: e.target.value, ch: (PAD_KINDS[e.target.value].ch || [[]])[0][0] })}>${Object.entries(PAD_KINDS).map(([id, k]) => html`<option key=${id} value=${id}>${k.name.replace('­', '')}</option>`)}</select></details>
       </div>`}
     </section>
 
-    <section className="card bs-over" aria-label="Hela takten">
-      <div className="label">Hela takten</div>
-      ${[...beat.pads.map((pd, i) => ({ id: pd.id, i, name: PAD_KINDS[pd.kind].name, cells: beat.rows[pd.id], col: PAD_COLORS[i] })), { id: 'bass', i: 'bass', name: 'Bas', cells: beat.bass, col: 'var(--brass)' }].map((r) => html`<button key=${r.id} type="button" className=${'bs-orow' + (sel === r.i ? ' bs-sel' : '')} onClick=${() => setSel(r.i)}>
-        <span className="bs-oname">${r.name}</span><span className="bs-ocells">${r.cells.map((v, k) => html`<i key=${k} className=${'bs-c' + (v ? ' bs-on' : '') + (v === 1 ? ' bs-ghost' : '') + (k === cur ? ' bs-now' : '') + (k % 4 === 0 ? ' bs-beat' : '')} style=${{ '--pc': r.col }}></i>`)}</span></button>`)}
-      <div className="row" style=${{ gap: 8, flexWrap: 'wrap' }}><button className="btn" onClick=${clear}>Rensa takten</button></div>
+    <section className="card bs-card">
+      <div className="bs-h"><b>2</b>Placera ${selRow.name.replace('­', '').toLowerCase()}</div>
+      <p className="bs-hint">${sel === 'bass' ? 'Tryck där basen ska spela: R är ackordets grundton, 5 kvinten och 8 oktaven. Basen följer ackorden.' : 'Tryck där den ska slå. Igen för ett svagare slag, en tredje gång för att ta bort.'}</p>
+      <div className="bs-bar">${[0, 1, 2, 3].map((g) => html`<div key=${g} className="bs-grp">${[0, 1, 2, 3].map((j) => { const k = g * 4 + j, v = steps[k]; return html`<div key=${k} className="bs-nc">
+        <button type="button" className=${'bs-step' + (v ? ' bs-on' : '') + (v === 1 ? ' bs-ghost' : '') + (k === cur ? ' bs-now' : '')} style=${{ '--pc': selRow.col }} aria-pressed=${!!v} aria-label=${'Slag ' + LBL[k] + ', ruta ' + (k + 1)} onClick=${() => tapStep(k)}>${stepLbl(v)}</button>
+        <span className=${j === 0 ? 'bs-b' : ''}>${LBL[k]}</span></div>`; })}</div>`)}</div>
+      ${sel === 'bass' && playing ? html`<span className="muted" style=${{ fontSize: 13 }}>Ackord nu: ${CHORD_DB[prog[bar % prog.length]].name}</span>` : null}
     </section>
+    </div>
+
+    <div className="bs-col">
+    <section className="card bs-over" aria-label="Hela kompet">
+      <div className="bs-h"><b>3</b>Hela kompet</div>
+      <p className="bs-hint">Tryck på ett namn för att välja det, i en ruta för att ändra den, eller På/Av för att stänga av en del.</p>
+      ${rowsAll.map((r) => html`<div key=${r.id} className=${'bs-orow' + (sel === r.key ? ' bs-sel' : '') + (r.mute ? ' bs-muted' : '')}>
+        ${MuteBtn(r)}
+        <button type="button" className="bs-oname" onClick=${() => setSel(r.key)}>${r.name.replace('­', '')}</button>
+        <span className="bs-ocells">${r.cells.map((v, k) => html`<button type="button" key=${k} aria-label=${r.name.replace('­', '') + ', ruta ' + (k + 1)} className=${'bs-c' + (v ? ' bs-on' : '') + (v === 1 ? ' bs-ghost' : '') + (k === cur ? ' bs-now' : '') + (k % 4 === 0 ? ' bs-beat' : '')} style=${{ '--pc': r.col }} onClick=${() => tapCell(r.key, k)}></button>`)}</span></div>`)}
+      <div className="row" style=${{ gap: 8 }}><button className="btn" onClick=${clear}>Rensa takten</button></div>
+    </section>
+
+    <details className="card bs-live">
+      <summary className="bs-h">Spela live med padsen</summary>
+      <div className="bs-modebar">
+        <div className="seg" role="group" aria-label="Vad padsen spelar">${[['drums', 'Trummor'], ['tones', 'Toner']].map(([id, l]) => html`<button key=${id} aria-pressed=${padMode === id} onClick=${() => setPadMode(id)}>${l}</button>`)}</div>
+        ${padMode === 'tones' ? html`<div className="seg" role="group" aria-label="Instrument">${[['gitarr', 'Gitarr'], ['bas', 'Bas']].map(([id, l]) => html`<button key=${id} aria-pressed=${toneInst === id} onClick=${() => setToneInst(id)}>${l}</button>`)}</div>`
+          : html`<button className=${'chip' + (recMode ? ' on' : '')} onClick=${() => setRecMode(!recMode)} title="Slå på padsen medan kompet spelar, så hamnar slagen i takten">● Spela in i takten</button>`}
+      </div>
+      ${padMode === 'tones' ? html`<section className="bs-pads" aria-label="Tonpads">${scale.map((semi, i) => { const pc = (keyPc + semi) % 12, inCh = nowPcs.has(pc); return html`<button key=${i} type="button"
+        className=${'bs-pad bs-tone' + (inCh ? ' bs-inch' : '')} style=${{ '--pc': PAD_COLORS[i] }}
+        onPointerDown=${(e) => { e.preventDefault(); hitTone(i); }} onKeyDown=${(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); hitTone(i); } }}>
+        <span key=${flash['t' + i] || 0} className="bs-glow"></span><b>${NOTE_N[pc]}${i === 7 ? '′' : ''}</b><small>${inCh ? 'i ' + CHORD_DB[nowChord].name : ''}</small></button>`; })}</section>
+      <small className="muted">${(/^[A-G][#b]?/.exec(keyName) || ['C'])[0]}-${minor ? 'moll' : 'dur'}. Tonerna som passar ackordet just nu är markerade.</small>`
+      : html`<section className="bs-pads" aria-label="Pads">${beat.pads.map((pd, i) => html`<button key=${pd.id} type="button"
+        className=${'bs-pad' + (sel === i ? ' bs-sel' : '') + (playing && beat.rows[pd.id][cur] && !pd.mute ? ' bs-hit' : '')}
+        style=${{ '--pc': PAD_COLORS[i] }} onPointerDown=${(e) => { e.preventDefault(); hitPad(i); }}
+        onKeyDown=${(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); hitPad(i); } }}>
+        <span key=${flash[pd.id] || 0} className="bs-glow"></span><b>${PAD_KINDS[pd.kind].name}</b></button>`)}</section>`}
+    </details>
 
     <section className="card bs-save">
       <div className="label">Spara kompet</div>
@@ -3738,8 +3785,9 @@ function BeatStudio({ toast }) {
         <input type="text" className="jam-name" aria-label="Namn på kompet" value=${beat.name || ''} onInput=${(e) => setBeat((b) => ({ ...b, name: e.target.value }))} onChange=${() => {}} />
         <button className="btn primary" onClick=${save}>Spara</button>
       </div>
-      ${saved.length ? html`<div className="bs-presets">${saved.map((b) => html`<span key=${b.id} className="bs-saved"><button className=${'chip' + (b.id === beat.id ? ' on' : '')} onClick=${() => open(b)}>${b.name}</button><button className="bs-del" aria-label=${'Ta bort ' + b.name} onClick=${() => remove(b)}>×</button></span>`)}</div>` : html`<small className="muted">Sparade komp kan du välja som kompband för låtarna.</small>`}
+      ${saved.length ? html`<div className="bs-presets">${saved.map((b) => html`<span key=${b.id} className="bs-saved"><button className=${'chip' + (b.id === beat.id ? ' on' : '')} onClick=${() => open(b)}>${b.name}</button><button className="bs-del" aria-label=${'Ta bort ' + b.name} onClick=${() => remove(b)}>×</button></span>`)}</div>` : html`<small className="muted">Sparade komp kan du välja som kompband under Låtar.</small>`}
     </section>
+    </div>
   </div>`;
 }
 
