@@ -2143,10 +2143,12 @@ class Engine {
     };
     if (kind === 'kick') {
       if (ch === 'snartig') { tone(210, 52, 0.22, 1); this.noiseHit(t, { type: 'highpass', freq: 3000, q: 0.7, vel: 0.3 * vel, decay: 0.004 }); }
+      else if (ch === 'lofi') { tone(100, 45, 0.32, 1); this.noiseHit(t, { type: 'lowpass', freq: 700, q: 0.8, vel: 0.25 * vel, decay: 0.02 }); }
       else if (ch === 'tight') { tone(135, 55, 0.14, 0.95); this.noiseHit(t, { type: 'lowpass', freq: 3000, q: 0.5, vel: 0.16 * vel, decay: 0.004 }); }
       else { tone(120, 38, 0.65, 1.05); tone(58, 0, 0.5, 0.25); }
     } else if (kind === 'snare') {
       if (ch === 'kant') this.rim(t, vel);
+      else if (ch === 'borste') this.noiseHit(t, { freq: 3200, q: 0.6, vel: 0.32 * vel, decay: 0.13, send: true, hp: 700 });
       else if (ch === 'tight') { tone(240, 180, 0.08, 0.35, 'triangle'); this.noiseHit(t, { freq: 4200, q: 1, vel: 0.5 * vel, decay: 0.03, send: true, hp: 1500 }); }
       else { tone(200, 160, 0.14, 0.4, 'triangle'); this.noiseHit(t, { freq: 2600, q: 0.8, vel: 0.55 * vel, decay: 0.07, send: true, hp: 900 }); }
     } else if (kind === 'rim') this.rim(t, vel);
@@ -2156,10 +2158,19 @@ class Engine {
     else if (kind === 'shaker') this.shaker(t, vel * 1.2);
     else if (kind === 'cowbell') { tone(587, 0, 0.25, 0.16, 'square'); tone(845, 0, 0.25, 0.12, 'square'); }
     else if (kind === 'tom') tone(ch === 'hog' ? 230 : 130, ch === 'hog' ? 165 : 88, 0.35, 0.8);
+    else if (kind === 'b808') { tone(150, 46, ch === 'lang' ? 1.5 : 0.65, 1.1); this.noiseHit(t, { type: 'lowpass', freq: 1800, q: 0.5, vel: 0.12 * vel, decay: 0.004 }); }
+    else if (kind === 'conga') { const f = ch === 'hog' ? 340 : ch === 'oppen' ? 260 : 210; tone(f * 1.08, f, ch === 'oppen' ? 0.4 : 0.22, 0.7); this.noiseHit(t, { freq: 2000, q: 1, vel: 0.08 * vel, decay: 0.006 }); }
+    else if (kind === 'bongo') tone(ch === 'hog' ? 560 : 410, ch === 'hog' ? 520 : 380, 0.13, 0.6);
+    else if (kind === 'tamb') { for (const dt of [0, 0.007, 0.015]) this.noiseHit(t + dt, { freq: 9000, q: 1.2, vel: 0.16 * vel, decay: 0.03, hp: 6000 }); }
+    else if (kind === 'ride') { if (ch === 'klocka') { tone(880, 0, 0.6, 0.1, 'square'); tone(1320, 0, 0.5, 0.07, 'square'); } this.noiseHit(t, { freq: 7600, q: 0.5, vel: 0.17 * vel, decay: 0.32, hp: 4500, send: true }); }
+    else if (kind === 'crash') this.noiseHit(t, { freq: 6000, q: 0.4, vel: 0.36 * vel, decay: 0.85, hp: 3500, send: true });
+    else if (kind === 'snap') this.noiseHit(t, { freq: 2900, q: 3, vel: 0.5 * vel, decay: 0.014, send: true });
+    else if (kind === 'wood') tone(ch === 'hog' ? 1250 : 880, 0, 0.06, 0.45, 'triangle');
+    else if (kind === 'clave') tone(2500, 0, 0.05, 0.4);
   }
   // bas med karaktär: dub (djup och mjuk), rund (som kompbandet) eller snärtig (funk)
   bassAs(freq, t, len, vel = 1, ch = 'rund') {
-    if (ch !== 'dub' && ch !== 'snartig') return this.bass(freq, t, len, vel);
+    if (!['dub', 'snartig', 'sub', 'synt'].includes(ch)) return this.bass(freq, t, len, vel);
     if (this.transpose) freq *= Math.pow(2, this.transpose / 12);
     const c = this.ctx, o = c.createOscillator(), lp = c.createBiquadFilter(), g = c.createGain();
     lp.type = 'lowpass';
@@ -2168,6 +2179,13 @@ class Engine {
       const sub = c.createOscillator(), sg = c.createGain(); sub.type = 'sine'; sub.frequency.value = freq / 2; sg.gain.value = 0.35;
       sub.connect(sg); sg.connect(lp); sub.start(t); sub.stop(t + len + 0.4);
       g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.75 * vel, t + 0.02); g.gain.setTargetAtTime(0.0001, t + len, 0.06);
+    } else if (ch === 'sub') {
+      o.type = 'sine'; lp.frequency.value = 400; o.frequency.setValueAtTime(freq * 1.06, t); o.frequency.exponentialRampToValueAtTime(freq, t + 0.05);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.9 * vel, t + 0.012); g.gain.setTargetAtTime(0.0001, t + len, 0.09);
+      o.connect(lp); lp.connect(g); g.connect(this.shaper); o.start(t); o.stop(t + len + 0.6); return;
+    } else if (ch === 'synt') {
+      o.type = 'square'; lp.Q.value = 2; lp.frequency.setValueAtTime(1500, t); lp.frequency.setTargetAtTime(600, t + 0.01, 0.1);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.32 * vel, t + 0.008); g.gain.setTargetAtTime(0.0001, t + len, 0.03);
     } else {
       o.type = 'sawtooth'; lp.Q.value = 5; lp.frequency.setValueAtTime(2400, t); lp.frequency.setTargetAtTime(360, t + 0.004, 0.045);
       g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.5 * vel, t + 0.005); g.gain.setTargetAtTime(0.25 * vel, t + 0.03, 0.08); g.gain.setTargetAtTime(0.0001, t + len, 0.02);
@@ -3514,8 +3532,9 @@ function Jam({ easy, onSave, onDone }) {
 /* ---------------------------------------------------------------- beatstudion */
 // Beatstudion: en enkel beatmaker och sampler. 8 pads med trummor eller egna ljud, 16 rutor per takt och en bas som följer ackorden.
 const PAD_KINDS = {
-  kick: { name: 'Bas\u00adtrumma', ch: [['djup', 'Djup'], ['snartig', 'Snärtig'], ['tight', 'Tight']] },
-  snare: { name: 'Virvel', ch: [['full', 'Full'], ['tight', 'Tight'], ['kant', 'Kantslag']] },
+  kick: { name: 'Bas\u00adtrumma', ch: [['djup', 'Djup'], ['snartig', 'Snärtig'], ['tight', 'Tight'], ['lofi', 'Lo-fi']] },
+  snare: { name: 'Virvel', ch: [['full', 'Full'], ['tight', 'Tight'], ['kant', 'Kantslag'], ['borste', 'Borste']] },
+  b808: { name: '808-bas', ch: [['kort', 'Kort'], ['lang', 'Lång']] },
   rim: { name: 'Kant\u00adslag' },
   clap: { name: 'Hand\u00adklapp' },
   hat: { name: 'Hi-hat', ch: [['tight', 'Tight'], ['luftig', 'Luftig']] },
@@ -3523,9 +3542,17 @@ const PAD_KINDS = {
   shaker: { name: 'Shaker' },
   cowbell: { name: 'Kos\u00adkälla' },
   tom: { name: 'Puka', ch: [['lag', 'Låg'], ['hog', 'Hög']] },
+  conga: { name: 'Conga', ch: [['lag', 'Låg'], ['hog', 'Hög'], ['oppen', 'Öppen']] },
+  bongo: { name: 'Bongo', ch: [['lag', 'Låg'], ['hog', 'Hög']] },
+  tamb: { name: 'Tamburin' },
+  ride: { name: 'Ride', ch: [['vanlig', 'Vanlig'], ['klocka', 'Klocka']] },
+  crash: { name: 'Crash' },
+  snap: { name: 'Finger\u00adknäpp' },
+  wood: { name: 'Trä\u00adkloss', ch: [['lag', 'Låg'], ['hog', 'Hög']] },
+  clave: { name: 'Clave' },
   sample: { name: 'Eget ljud' },
 };
-const BASS_CH = [['dub', 'Dub'], ['rund', 'Rund'], ['snartig', 'Snärtig']];
+const BASS_CH = [['dub', 'Dub'], ['rund', 'Rund'], ['snartig', 'Snärtig'], ['sub', 'Sub'], ['synt', 'Synt']];
 const PAD_COLORS = ['#ff5c8a', '#ffb84d', '#ffd23f', '#2ee6b8', '#33d6ff', '#8a5cff', '#ff8a4c', '#e2e2ea'];
 const BEAT_PROGS = [['G', 'C', 'Em', 'D'], ['Am', 'F', 'C', 'G'], ['Em', 'C', 'G', 'D'], ['A', 'D'], ['Em', 'D'], ['C', 'G', 'Am', 'F'], ['Dm', 'A']];
 const DEFAULT_PADS = () => [
@@ -3581,7 +3608,8 @@ function playPad(p, t, vel = 1) {
 }
 // ett sextondelssteg: trummor från padsen och basen på ackordets grundton, kvint eller oktav
 function beatStep(b, s, t, sd16, root) {
-  for (const p of b.pads) { const v = (b.rows[p.id] || [])[s]; if (v && !p.mute) playPad(p, t, v === 1 ? 0.4 : 1); }
+  const h = b.human || 0, wob = () => (h ? (Math.random() - 0.5) * 0.024 * h : 0);
+  for (const p of b.pads) { const v = (b.rows[p.id] || [])[s]; if (v && !p.mute) playPad(p, t + wob(), (v === 1 ? 0.4 : 1) * (1 - h * 0.3 * Math.random())); }
   const c = b.bass[s];
   if (c && root && !b.bassMute) {
     let n = 1; while (n < 4 && s + n < 16 && !b.bass[s + n]) n++;
@@ -3600,10 +3628,52 @@ const BEAT_TIPS = {
   shaker: { pop: [[0, 2, 4, 6, 8, 10, 12, 14], 'Shakern fyller ut, gärna på varje åttondel som hi-hatten.'], reggae: [[2, 6, 10, 14], 'Shakern på &-rutorna förstärker reggaens baktakt.'] },
   cowbell: { pop: [[0, 6, 12], 'Koskällan låter bäst sparsamt, på 1 och ett par ställen till.'], reggae: [[2, 10], 'Koskällan sparsamt, på ett par &-rutor.'] },
   tom: { pop: [[12, 13, 14, 15], 'Pukor passar som en liten upptakt i slutet av takten, på 4 e & a.'], reggae: [[12, 14], 'Pukor i slutet av takten leder in i nästa.'] },
+  b808: { pop: [[0, 10], '808-basen är en djup, lång bastrumma. Lägg den på 1 och gärna en till strax efter 3.'], reggae: [[0, 8], '808 på 1 och 3 ger tungt dubtryck.'] },
+  conga: { pop: [[6, 10, 14], 'Congan gungar bäst mellan slagen, på &-rutorna.'], reggae: [[2, 6, 10, 14], 'Conga på baktakten, &-rutorna, passar reggae.'] },
+  bongo: { pop: [[2, 3, 10, 11], 'Bongon gillar snabba par: & och a efter ett slag.'], reggae: [[6, 14], 'Bongo sparsamt på ett par &-rutor.'] },
+  tamb: { pop: [[4, 12], 'Tamburinen på 2 och 4 lyfter refrängen.'], reggae: [[2, 6, 10, 14], 'Tamburin på baktakten ger reggaekänsla.'] },
+  ride: { pop: [[0, 2, 4, 6, 8, 10, 12, 14], 'Ride används som en lugnare hi-hat, på varje åttondel.'], reggae: [[2, 6, 10, 14], 'Ride på &-rutorna är ett mjukt alternativ till hi-hat.'] },
+  crash: { pop: [[0], 'Crash bara på 1, och helst bara i början av en ny del.'], reggae: [[0], 'Crash sparsamt, på 1.'] },
+  snap: { pop: [[4, 12], 'Fingerknäppet på 2 och 4 är mysigt i lugna låtar.'], reggae: [[8], 'Ett knäpp på 3 passar reggae.'] },
+  wood: { pop: [[0, 3, 6, 10, 12], 'Träklossen låter bra i ett mönster som 1, a, &, & och 4.'], reggae: [[2, 10], 'Träkloss på ett par &-rutor.'] },
+  clave: { pop: [[0, 3, 6, 10, 12], 'Clave-rytmen 3-2: 1, a, &, & och 4. Klassisk latinkänsla.'], reggae: [[0, 6, 12], 'Clave sparsamt i reggae.'] },
   sample: { pop: [[4, 12], 'Ett eget ljud fungerar ofta som virvel på 2 och 4.'], reggae: [[8], 'Prova ditt eget ljud på 3.'] },
   bass: { pop: ['R.....R.R...5...', 'Basen spelar grundtonen (R) på 1, där ackordet byts. På 3 kan den spela grundtonen igen eller kvinten (5).'], reggae: ['R.....5.R...8...', 'Reggaebas: grundton (R) på 1 och 3 och kvint (5) och oktav (8) emellan. Lämna gärna luft, tystnaden är en del av reggae.'] },
 };
 const REGGAE_PRESETS = ['One drop', 'Rockers', 'Steppers', 'Dub'];
+
+// Överraska mig: ett nytt komp som följer reglerna för stilen, med lite slump
+function surpriseBeat(old) {
+  const R = Math.random, pick = (a) => a[Math.floor(R() * a.length)], some = (a, pr) => a.filter(() => R() < pr);
+  const style = pick(['pop', 'reggae', 'hiphop', 'funk']);
+  const pads = old.pads.map((p) => (p.kind === 'sample' ? { ...p } : { ...p, ch: PAD_KINDS[p.kind].ch ? pick(PAD_KINDS[p.kind].ch)[0] : p.ch }));
+  const rows = emptyRows(pads), byKind = (k) => pads.find((p) => p.kind === k), put = (k, steps, v = 2) => { const p = byKind(k); if (p) steps.forEach((x) => { if (!rows[p.id][x] || v === 2) rows[p.id][x] = v; }); };
+  const e8 = [0, 2, 4, 6, 8, 10, 12, 14], off = [2, 6, 10, 14], bass = new Array(16).fill('');
+  let bpm = 100, swing = 0, name = 'Överraskning';
+  if (style === 'reggae') {
+    bpm = 68 + Math.round(R() * 18); swing = 0.1 + R() * 0.08; name = 'Reggae-överraskning';
+    const k = pick([[8], [0, 8], [0, 4, 8, 12]]); put('kick', k); put('rim', [8]); put('hat', off); put('hat', some([1, 3, 5, 7, 9, 11, 13, 15], 0.2), 1);
+    if (R() < 0.5) put('ohat', [14]); if (R() < 0.4) put('shaker', e8, 1);
+    bass[0] = 'R'; [6, 8, 12, 14].forEach((x) => { if (R() < 0.45) bass[x] = pick(['R', '5', '8']); }); if (!bass[8] && R() < 0.6) bass[8] = 'R';
+  } else if (style === 'hiphop') {
+    bpm = 82 + Math.round(R() * 12); swing = 0.18 + R() * 0.1; name = 'Hiphop-överraskning';
+    put('kick', [0, ...some([3, 7, 10, 14], 0.5)]); put('snare', [4, 12]); put('hat', e8); put('hat', some([1, 3, 5, 7, 9, 11, 13, 15], 0.2), 1);
+    if (R() < 0.3) put('clap', [12]); bass[0] = 'R'; [7, 10, 14].forEach((x) => { if (R() < 0.4) bass[x] = pick(['R', '5']); });
+  } else if (style === 'funk') {
+    bpm = 92 + Math.round(R() * 14); swing = R() * 0.08; name = 'Funk-överraskning';
+    put('kick', [0, ...some([3, 6, 10, 14], 0.55)]); put('snare', [4, 12]); put('snare', some([7, 9, 15], 0.45), 1);
+    for (let x = 0; x < 16; x++) put('hat', [x], x % 2 ? 1 : 2); if (R() < 0.4) put('ohat', [6]);
+    bass[0] = 'R'; [3, 6, 8, 10, 13, 14].forEach((x) => { if (R() < 0.45) bass[x] = pick(['R', '8', '5']); });
+  } else {
+    bpm = 92 + Math.round(R() * 26); name = 'Pop-överraskning';
+    put('kick', [0, 8, ...some([6, 10, 14, 3], 0.35)]); put('snare', [4, 12]); put('snare', some([7, 15], 0.2), 1);
+    if (R() < 0.3) for (let x = 0; x < 16; x++) put('hat', [x], x % 2 ? 1 : 2); else put('hat', e8);
+    if (R() < 0.4) put('ohat', [14]); if (R() < 0.25) put('clap', [12]); if (R() < 0.3) put('shaker', e8, 1);
+    bass[0] = 'R'; bass[8] = R() < 0.5 ? 'R' : '5'; [6, 10, 14].forEach((x) => { if (R() < 0.3) bass[x] = pick(['R', '5', '8']); });
+  }
+  const bassCh = style === 'reggae' ? pick(['dub', 'rund', 'sub']) : style === 'hiphop' ? pick(['sub', 'dub']) : style === 'funk' ? pick(['snartig', 'synt']) : pick(['rund', 'snartig', 'synt']);
+  return { ...old, id: 'b' + Date.now(), name, bpm, swing: Math.round(swing * 100) / 100, pads, rows, bass, bassCh, bassMute: false };
+}
 
 function BeatStudio({ toast }) {
   const [beat, setBeatS] = useState(() => { try { const d = JSON.parse(localStorage.getItem('ng-beat-draft')); if (d && d.pads) return d; } catch (e) {} return beatFromPreset(BEAT_PRESETS[0]); });
@@ -3747,7 +3817,9 @@ function BeatStudio({ toast }) {
         <div className="bs-tempo"><${Bpm} value=${beat.bpm} set=${(v) => setBeat((b) => ({ ...b, bpm: v }))} min=${50} max=${180} /></div>
       </div>
       <label className="slider bs-swing"><span>Gung</span><input type="range" min="0" max="0.35" step="0.01" value=${beat.swing || 0} onInput=${(e) => setBeat((b) => ({ ...b, swing: +e.target.value }))} onChange=${() => {}} /><span>${Math.round((beat.swing || 0) / 0.35 * 100)}</span></label>
-      <div className="label">Börja från ett färdigt komp</div>
+      <label className="slider bs-swing" title="Gör slagen lite ojämna i tid och styrka, som en riktig trummis"><span>Mänskligt</span><input type="range" min="0" max="1" step="0.01" value=${beat.human || 0} onInput=${(e) => setBeat((b) => ({ ...b, human: +e.target.value }))} onChange=${() => {}} /><span>${Math.round((beat.human || 0) * 100)}</span></label>
+      <div className="bs-line"><div className="label" style=${{ flex: 1 }}>Börja från ett färdigt komp</div>
+        <button className="btn primary" onClick=${() => { setBeat((b) => surpriseBeat(b)); setTipStyle(null); }}>✦ Överraska mig</button></div>
       <div className="bs-presets" role="group" aria-label="Färdiga komp">${BEAT_PRESETS.map((pr, i) => html`<button key=${pr.name} className=${'chip' + (beat.name === pr.name ? ' on' : '')} onClick=${() => loadPreset(i)}>${pr.name}</button>`)}</div>
     </section>
 
@@ -3768,7 +3840,7 @@ function BeatStudio({ toast }) {
           <div className="seg" role="group" aria-label="Längd">${['Hela', 'Mellan', 'Kort'].map((l, k) => html`<button key=${l} aria-pressed=${(p.lenI || 0) === k} onClick=${() => setPad(sel, { lenI: k })}>${l}</button>`)}</div>
         </div>` : null}
         <div className="bs-line"><label className="slider"><span>Volym</span><input type="range" min="0" max="1.2" step="0.01" value=${p.vol ?? 0.85} onInput=${(e) => setPad(sel, { vol: +e.target.value })} onChange=${() => {}} /><span>${Math.round((p.vol ?? 0.85) * 100)}</span></label>${MuteBtn(selRow)}</div>
-        <details className="bs-swap"><summary>Byt till ett annat ljud</summary>
+        <details className="bs-swap"><summary>Byt till ett annat ljud, till exempel conga, 808 eller tamburin</summary>
           <select className="bs-select" aria-label="Ljud" value=${p.kind} onChange=${(e) => setPad(sel, { kind: e.target.value, ch: (PAD_KINDS[e.target.value].ch || [[]])[0][0] })}>${Object.entries(PAD_KINDS).map(([id, k]) => html`<option key=${id} value=${id}>${k.name.replace('­', '')}</option>`)}</select></details>
       </div>`}
     </section>
