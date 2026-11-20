@@ -957,6 +957,8 @@ html.jam-stage .jam-mode{display:none}
 .bs-how{display:grid;gap:6px;padding:12px;border-radius:12px;background:var(--surface-2)}
 .bs-how p{margin:0;font-size:13.5px;line-height:1.45}
 .jam-comp{display:grid;gap:8px;width:min(420px,100%);text-align:left}
+.jam-comp-live{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center}
+.jam-comp-live .bs-select{min-width:0;max-width:230px}
 .jam-check{display:flex;align-items:center;gap:8px;font-size:14px}
 .bs-surprise{display:grid;gap:6px;padding:12px;border-radius:12px;background:var(--surface-2)}
 .bs-card{display:grid;gap:12px}
@@ -3359,6 +3361,14 @@ function Jam({ easy, onSave, onDone }) {
   useEffect(() => { loadRecs(); return () => { halt(); }; }, []);
 
   const cheer = (txt) => { const el = cheerR.current; if (!el) return; el.textContent = txt; if (el.animate) el.animate([{ opacity: 0, transform: 'translate(-50%, 6px)' }, { opacity: 1, transform: 'translate(-50%, 0)', offset: 0.15 }, { opacity: 1, offset: 0.8 }, { opacity: 0, transform: 'translate(-50%, 0)' }], { duration: 2400, fill: 'forwards' }); };
+  // starta, byt eller stäng av kompet; takthållaren följer kompets tempo
+  const startComp = (st, id, gtr) => {
+    if (st.comp) { st.comp.stop(); st.comp = null; }
+    const bt = getBeat(id);
+    if (bt) { st.comp = playBeatLoop(bt, { gtr }); st.grid = { T: 60 / bt.bpm, ph: st.comp.t0 - st.ctx0, sixteen: false }; st.gridFixed = true; }
+    else { st.gridFixed = false; st.grid = null; }
+  };
+  const changeComp = (id, gtr = compGtr) => { setComp(id); setCompGtr(gtr); const st = S.current; if (st) startComp(st, id, gtr); };
   const start = async () => {
     setMicErr(false); setRes(null); setNow(null); setTrail([]); setLive({ bpm: 0, secs: 0 });
     const m = new Mic();
@@ -3370,13 +3380,10 @@ function Jam({ easy, onSave, onDone }) {
     // spela in samtidigt som appen lyssnar
     try {
       const mime = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm'].find((x) => window.MediaRecorder && MediaRecorder.isTypeSupported(x)) || '';
-      const bt = getBeat(comp);
-      if (bt) {
-        st.comp = playBeatLoop(bt, { gtr: compGtr });
-        st.grid = { T: 60 / bt.bpm, ph: st.comp.t0 - ctx0, sixteen: false }; st.gridFixed = true;
-        st.dest = engine.ctx.createMediaStreamDestination(); engine.master.connect(st.dest); m.src.connect(st.dest);
-      }
-      const recStream = st.dest ? st.dest.stream : m.stream;
+      st.ctx0 = ctx0;
+      st.dest = engine.ctx.createMediaStreamDestination(); engine.master.connect(st.dest); m.src.connect(st.dest);
+      startComp(st, comp, compGtr);
+      const recStream = st.dest.stream;
       const mr = new MediaRecorder(recStream, mime ? { mimeType: mime } : undefined), chunks = [], at = Date.now(), meta = st.meta;
       mr.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
       mr.onstop = async () => {
@@ -3534,6 +3541,15 @@ function Jam({ easy, onSave, onDone }) {
           ${SkinPick}
         </div>
         <small className="muted" style=${{ minHeight: 20, textAlign: 'center' }}>${trail.length ? trail.map((k) => CHORD_DB[k].name).join(' · ') : 'Appen lyssnar. Spela på.'}</small>
+        <div className="jam-comp-live">
+          <label className="label" htmlFor="jam-comp-live">Komp</label>
+          <select id="jam-comp-live" className="bs-select" value=${comp} onChange=${(e) => changeComp(e.target.value)}>
+            <option value="">Inget komp</option>
+            <option value="draft">Beatstudion nu</option>
+            ${MY_BEATS.map((b) => html`<option key=${b.id} value=${b.id}>${b.name} · ${b.bpm} BPM</option>`)}
+          </select>
+          ${comp ? html`<label className="jam-check"><input type="checkbox" checked=${compGtr} onChange=${(e) => changeComp(comp, e.target.checked)} /> Gitarr</label>` : null}
+        </div>
         <button className="play stop" style=${{ justifySelf: 'center' }} onClick=${finish}>${I.stop}Klar, visa vad jag spelade</button></div>` : null}
       ${phase === 'done' && res ? html`<div className="jam-res">
         <span className="ls-kicker">Din jam · ${fmtDur(res.dur)}</span>
