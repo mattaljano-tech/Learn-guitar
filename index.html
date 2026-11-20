@@ -1132,6 +1132,7 @@ html.jam-stage .jam-mode{display:none}
   .pa-msg{top:10px}
   .pa-dots{bottom:10px}
   .now{padding-right:96px}
+  .now .song-tools{margin-right:-96px}
   .pick-song{display:inline-flex;position:absolute;top:0;right:0;z-index:5;align-items:center;gap:6px;padding:8px 13px;border-radius:999px;font-size:13px;font-weight:800;color:var(--brass);background:var(--surface);border:1px solid color-mix(in oklab,var(--brass) 45%,transparent);box-shadow:0 4px 14px rgba(0,0,0,.08)}
   .pick-song svg{width:15px;height:15px}
   .beatcard{padding:10px 8px}
@@ -1303,6 +1304,16 @@ details.tp-grid>.mixer{margin-top:14px}
 .h2-greet{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px 24px;margin-top:8px}
 .h2-greet .home-h1{font-size:clamp(30px,4.4vw,46px);margin-top:4px}
 .h2-stats{display:flex;gap:10px;flex-wrap:wrap}
+.h2-line{display:flex;flex-wrap:wrap;gap:4px 14px;margin:8px 0 0;color:var(--muted);font-size:15px}
+.h2-line span{display:inline-flex;align-items:center;gap:4px}.h2-line svg{width:15px;height:15px}.h2-line .hot{color:var(--ember);font-weight:700}
+.h2-line span+span::before{content:"·";margin-right:10px;color:var(--faint)}
+.h2-steps.one li:not(.h2-now){display:none}
+.h2-mission .h2-steps.one{grid-template-columns:minmax(0,1fr)!important}
+.h2-mission .h2-more{justify-self:stretch!important}
+
+@media (max-width:760px){.song-tools{gap:6px}.song-tools .rec-btn,.song-tools .focus-btn{padding:0 10px;gap:6px}}
+.h2-more{justify-self:stretch;text-align:left;border:0;background:none;padding:2px 8px 0 46px;color:var(--muted);font-size:14px;text-decoration:underline;text-underline-offset:3px}
+@media (max-width:760px){.desk-only-i{display:none!important}header.top .lvl .mini,header.top .lvl .flame{display:none}}
 .h2-stat{display:grid;grid-template-columns:auto auto;align-items:center;column-gap:8px;padding:10px 14px;border-radius:16px;background:var(--surface);border:1px solid var(--line);min-width:0}
 .h2-stat svg{width:20px;height:20px;color:var(--faint)}
 .h2-stat b{font-family:var(--f-display);font-size:24px;font-weight:800;line-height:1}
@@ -1498,6 +1509,16 @@ details.card.more{padding:18px 0 0}
 
 /* Spela in + övningsläge: knappar i låtraden */
 .song-tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.bs-quick .bs-card,.bs-quick .bs-over,.bs-quick .bs-live{display:none!important}
+.bs-modeseg{margin-bottom:4px}
+.bs-feel-in{display:grid;gap:10px;margin-top:10px}
+.bs-top>.more{border-top:1px solid var(--line);padding-top:10px}
+.jam-more{justify-self:stretch;text-align:left;margin-top:6px}
+.focus-btn.on{background:var(--text);color:var(--bg);border-color:var(--text)}
+.fold-sec{display:grid;gap:12px}
+.fold-btn{display:flex;align-items:center;justify-content:space-between;width:100%;padding:16px 4px;border:0;border-bottom:1px solid var(--line);background:none;color:var(--text);font-size:16px;font-weight:700;text-align:left}
+.fold-btn span{font-size:22px;line-height:1;color:var(--ember);font-weight:500}
+@media (max-width:760px){.now .tags{display:none}.stage>.fold-sec:first-of-type .fold-btn,.practice .fold-sec:first-child .fold-btn{border-top:1px solid var(--line)}}
 .now{grid-template-areas:none}
 .rec-btn,.focus-btn{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--text);font-weight:700;font-size:13.5px}
 .rec-btn:hover,.focus-btn:hover{background:color-mix(in oklab,var(--text) 5%,transparent)}
@@ -3610,11 +3631,11 @@ function Jam({ easy, onSave, onDone }) {
     <defs><linearGradient id=${id} x1="0" y1="0" x2="1" y2="1"><stop offset="0" style=${{ stopColor: '#fff' }} /><stop offset=".45" style=${{ stopColor: 'var(--a)' }} /><stop offset="1" style=${{ stopColor: 'var(--b)' }} /></linearGradient></defs>
     <g stroke=${'url(#' + id + ')'} strokeWidth="3.4"><rect x="23" y="8" width="18" height="30" rx="9" /><path d="M15 30a17 17 0 0 0 34 0M32 47v8M24 57h16" /></g></svg>`;
   return html`<div className=${'jam-wrap' + (intro ? ' intro' : '')} style=${{ display: 'grid', gap: 18 }}>
-    <div className="section-head"><h2>Jamma</h2><p>Spela vad du vill. Appen spelar in dig och räknar ut ackorden, tempot, taktarten och kompet.</p></div>
+    <div className="section-head"><h2>Jamma</h2><p>Spela fritt, så räknar appen ut ackord, tempo och komp.</p></div>
     ${micErr ? MIC_BLOCKED : null}
     <section className="card jam">
       ${phase === 'idle' ? html`<div className="chal">
-        <p className="lead">Lägg telefonen nära gitarren och spela minst 8 takter i jämnt tempo. Byt gärna ackord på första slaget i takten, då hittar appen taktarten lättare.</p>
+        <p className="lead">Lägg telefonen nära gitarren och spela minst 8 takter.</p>
         <div className="jam-comp">
           <label className="label" htmlFor="jam-comp">Komp i bakgrunden</label>
           <select id="jam-comp" className="bs-select" value=${comp} onChange=${(e) => setComp(e.target.value)}>
@@ -3625,8 +3646,10 @@ function Jam({ easy, onSave, onDone }) {
           ${comp ? html`<label className="jam-check"><input type="checkbox" checked=${compGtr} onChange=${(e) => setCompGtr(e.target.checked)} /> Appens gitarr med i kompet</label>
           <small className="muted">Använd hörlurar, så hör mikrofonen bara din gitarr. Inspelningen får både din gitarr och kompet.</small>` : null}
         </div>
-        <div className="row" style=${{ gap: 10, alignItems: 'center', justifyContent: 'center' }}><span className="label">Ringens färg</span>${SkinPick}</div>
-        <button className="play" onClick=${start}>${I.play}Börja jamma</button></div>` : null}
+        <button className="play" onClick=${start}>${I.play}Börja jamma</button>
+        <details className="more jam-more"><summary>Ringens färg och tips</summary>
+          <div style=${{ display: 'grid', gap: 12, marginTop: 10 }}><div className="row" style=${{ gap: 10, alignItems: 'center' }}>${SkinPick}</div>
+          <small className="muted">Spela i jämnt tempo och byt gärna ackord på första slaget i takten, då hittar appen taktarten lättare.</small></div></details></div>` : null}
       ${phase === 'run' ? html`<div className="jam-run">
         <div className="jam-top">
           <div className=${'jam-rec' + (paused ? ' is-paused' : '')}><i></i>${paused ? 'Pausad' : 'Spelar in'} ${fmtDur(Math.max(0, live.secs))}</div>
@@ -3926,6 +3949,8 @@ function BeatStudio({ toast, onJam }) {
   const [tipStyle, setTipStyle] = useState(null);
   const [showHow, setShowHow] = useState(false);
   const [supTempo, setSupTempo] = useState('mellan');
+  const [bsMode, setBsModeS] = useState(() => { try { return localStorage.getItem('ng-bs-mode') || 'snabbt'; } catch (e) { return 'snabbt'; } });
+  const setBsMode = (m) => { setBsModeS(m); try { localStorage.setItem('ng-bs-mode', m); } catch (e) {} };
   const run = useRef(null);
   useEffect(() => { loadBeatSamples(beat); engine.init(); engine.loadDrums(); return () => stop(); }, []);
   useEffect(() => { engine.kit = beat.kit || 'riktig'; }, [beat.kit]);
@@ -4049,17 +4074,20 @@ function BeatStudio({ toast, onJam }) {
   const pickSound = (key) => { setSel(key); if (key !== 'bass' && key !== 'gtr') { engine.init(); playPad(beat.pads[key], engine.ctx.currentTime + 0.005, 1); } };
   const MuteBtn = (r) => html`<button type="button" className=${'bs-mute' + (r.mute ? ' off' : '')} aria-pressed=${!r.mute} aria-label=${(r.mute ? 'Slå på ' : 'Stäng av ') + r.name} onClick=${() => toggleMute(r.key)}>${r.mute ? 'Av' : 'På'}</button>`;
 
-  return html`<div className="bs">
+  return html`<div className=${'bs' + (bsMode === 'snabbt' ? ' bs-quick' : '')}>
     <div className="bs-col">
+    <div className="seg bs-modeseg" role="group" aria-label="Läge">${[['snabbt', 'Snabbt'], ['bygg', 'Bygg själv']].map(([id, l]) => html`<button key=${id} aria-pressed=${bsMode === id} onClick=${() => setBsMode(id)}>${l}</button>`)}</div>
     <section className="card bs-top">
       <div className="bs-transport">
         <button className=${'play' + (playing ? ' stop' : '')} onClick=${() => (playing ? stop() : play())}>${playing ? I.stop : I.play}${playing ? 'Stopp' : 'Spela'}</button>
         <div className="bs-tempo"><${Bpm} value=${beat.bpm} set=${(v) => setBeat((b) => ({ ...b, bpm: v }))} min=${50} max=${180} /></div>
       </div>
+      <details className="more bs-feel"><summary>Känsla: trumset, gung och mänskligt</summary><div className="bs-feel-in">
       <div className="bs-line"><span className="label" style=${{ margin: 0 }}>Trumset</span>
         <div className="seg" role="group" aria-label="Trumset">${[['riktig', 'Riktiga trummor'], ['elektronisk', 'Elektroniska']].map(([id, l]) => html`<button key=${id} aria-pressed=${(beat.kit || 'riktig') === id} onClick=${() => setBeat((b) => ({ ...b, kit: id }))}>${l}</button>`)}</div></div>
       <label className="slider bs-swing"><span>Gung</span><input type="range" min="0" max="0.35" step="0.01" value=${beat.swing || 0} onInput=${(e) => setBeat((b) => ({ ...b, swing: +e.target.value }))} onChange=${() => {}} /><span>${Math.round((beat.swing || 0) / 0.35 * 100)}</span></label>
       <label className="slider bs-swing" title="Gör slagen lite ojämna i tid och styrka, som en riktig trummis"><span>Mänskligt</span><input type="range" min="0" max="1" step="0.01" value=${beat.human || 0} onInput=${(e) => setBeat((b) => ({ ...b, human: +e.target.value }))} onChange=${() => {}} /><span>${Math.round((beat.human || 0) * 100)}</span></label>
+      </div></details>
       <div className="bs-surprise">
         <div className="bs-line" style=${{ flexWrap: 'wrap' }}>
           <div className="seg" role="group" aria-label="Tempo för Överraska mig">${Object.entries(SURPRISE_TEMPI).map(([id, [lo, hi, l]]) => html`<button key=${id} aria-pressed=${supTempo === id} onClick=${() => setSupTempo(id)} title=${lo + '–' + hi + ' BPM'}>${l}</button>`)}</div>
@@ -4067,7 +4095,7 @@ function BeatStudio({ toast, onJam }) {
         </div>
         <small className="muted">${SURPRISE_TEMPI[supTempo][0]}–${SURPRISE_TEMPI[supTempo][1]} BPM, med mjuka akustiska trummor som passar nylongitarr.</small>
       </div>
-      <div className="label">Eller börja från ett färdigt komp</div>
+      <div className="label">Eller ta ett färdigt komp</div>
       <div className="bs-presets" role="group" aria-label="Färdiga komp">${BEAT_PRESETS.map((pr, i) => html`<button key=${pr.name} className=${'chip' + (beat.name === pr.name ? ' on' : '')} onClick=${() => loadPreset(i)}>${pr.name}</button>`)}</div>
     </section>
 
@@ -5933,6 +5961,13 @@ function App() {
   const [sysDark, setSysDark] = useState(() => { try { return matchMedia('(prefers-color-scheme: dark)').matches; } catch (e) { return false; } });
   useEffect(() => { let mq; try { mq = matchMedia('(prefers-color-scheme: dark)'); } catch (e) { return; } const h = (e) => setSysDark(e.matches); mq.addEventListener ? mq.addEventListener('change', h) : mq.addListener(h); return () => (mq.removeEventListener ? mq.removeEventListener('change', h) : mq.removeListener(h)); }, []);
   const [skinOpen, setSkinOpen] = useState(false);
+  const [stepsOpen, setStepsOpen] = useState(false);
+  const [viewOpen, setViewOpen] = useState(false);
+  const [fold, setFold] = useState({});
+  // på mobilen ligger tunga delar hopfällda under en rubrik; på datorn visas allt som vanligt
+  const Fold = (k, title, body) => !narrowM ? body() : html`<section key=${'f' + k} className="fold-sec">
+    <button className="fold-btn" aria-expanded=${!!fold[k]} onClick=${() => setFold((f) => ({ ...f, [k]: !f[k] }))}>${title}<span aria-hidden="true">${fold[k] ? '−' : '+'}</span></button>
+    ${fold[k] ? body() : null}</section>`;
   const ghOpen = false;
   const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : v; } catch (e) { return d; } };
   const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
@@ -6345,7 +6380,9 @@ function App() {
           </div>
           <div className="song-tools">
           ${recBtn}
-          <button className="focus-btn" onClick=${enterFocus} title="Helskärm med bara ackord, slag och hand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>Övningsläge</button>
+          ${narrowM ? html`<button className=${'focus-btn' + (viewOpen ? ' on' : '')} aria-expanded=${viewOpen} onClick=${() => setViewOpen(!viewOpen)}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>Visning</button>
+            <button className=${'focus-btn' + (easy ? ' on' : '')} onClick=${() => setEasy(!easy)} title="Förenklade nybörjargrepp">${I.spark}Lätt</button>` : null}
+          <button className="focus-btn" onClick=${enterFocus} title="Helskärm med bara ackord, slag och hand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>${narrowM ? 'Övning' : 'Övningsläge'}</button>
         </div>
         </div>
         <div className="tp-main now-ctl">
@@ -6354,12 +6391,12 @@ function App() {
         </div>
       </div>
 
-      <section className="viewbar" aria-label="Vad du ser">
+      ${!narrowM || viewOpen ? html`<section className="viewbar" aria-label="Vad du ser">
         <div className="vb-group"><span className="vb-lab">Visa</span>
           ${[['pa', 'Ackord'], ['beat', 'Komp'], ['hand', 'Hand']].map(([k, l]) => html`<button key=${k} className=${'vb-chip' + (views[k] ? ' on' : '')} aria-pressed=${views[k]} onClick=${() => togView(k)}>${l}</button>`)}</div>
         <div className="vb-group"><span className="vb-lab">Takt</span>
           ${[['top', 'Boll i ackord'], ['meter', 'Mätare vid handen']].map(([k, l]) => html`<button key=${k} className=${'vb-chip' + (marker === k ? ' on' : '')} aria-pressed=${marker === k} onClick=${() => pickMarker(k)}>${l}</button>`)}</div>
-      </section>
+      </section>` : null}
       </div>
 
       ${focusOn ? html`<div className="focusbar">
@@ -6384,16 +6421,16 @@ function App() {
           ${song0.alt.legend.map(([l, k]) => html`<div key=${k} className="alt-row"><span>${l}</span><${BeatStrip} pattern=${song0.alt.pats[k]} accents=${song0.alt.accents} cur=${-1} /></div>`)}
           <p className="muted" style=${{ fontSize: 14, margin: '8px 0 0' }}>${song0.alt.note}</p></details>` : null}
       </section>` : null}
-      ${views.hand ? html`<section className="card pr-chords" aria-label="Greppen i låten">
+      ${views.hand && !narrowM ? (() => html`<section className="card pr-chords" aria-label="Greppen i låten">
         <div className="pr-chords-head"><span className="vb-lab">Greppen i låten</span><span className="muted">Klicka för att lyssna</span></div>
         <div className="pr-chords-row">${[...new Set(bars.flatMap(barChords))].map((k) => html`<${Diagram} key=${k} k=${k} easy=${easy} selected=${shownChord === k}
           onClick=${() => { setSelChord(k); hear(k); }} />`)}</div>
-      </section>` : null}
+      </section>`)() : null}
       </div>
 
-      ${views.hand ? html`<${Hand3D} cur=${shownChord} next=${handNext} upcoming=${handUpcoming} easy=${easy} playing=${playing === 'song' && pos.bar >= 0} stepSec=${30 / (origOn ? song.bpm : bpm)}
+      ${views.hand ? Fold('hand', '3D-hand och ackordbyte', () => html`<${Hand3D} cur=${shownChord} next=${handNext} upcoming=${handUpcoming} easy=${easy} playing=${playing === 'song' && pos.bar >= 0} stepSec=${30 / (origOn ? song.bpm : bpm)}
         chords=${[...new Set(bars.flatMap(barChords))]}
-        pulse=${marker === 'top' && views.pa ? null : html`<${HandPulse} bars=${bars} startBar=${startBar} playing=${playing === 'song'} mode="meter" />`} />` : null}
+        pulse=${marker === 'top' && views.pa ? null : html`<${HandPulse} bars=${bars} startBar=${startBar} playing=${playing === 'song'} mode="meter" />`} />`) : null}
       </div>
 
       <section className="card transport" aria-label="Kompband">
@@ -6435,7 +6472,7 @@ function App() {
         </${narrowM ? 'details' : 'div'}>
       </section>
 
-      <section className="card chart" aria-label="Ackordschema">
+      ${Fold('chart', 'Ackordschema', () => html`<section className="card chart" aria-label="Ackordschema">
         <div className="section-head chart-head" style=${{ margin: 0 }}><h3>Ackordschema</h3>
           <p>${pickLoop ? (pickLoop.a == null ? 'Tryck på första takten i loopen.' : 'Tryck på sista takten i loopen.') : 'En ruta är en takt. Klicka för att starta därifrån. Pilarna ← → hoppar en takt.'}</p>
           ${origOn ? null : html`<button className=${'chip' + (pickLoop ? ' on' : '')} onClick=${() => { if (pickLoop) return setPickLoop(null); if (playing) stopAll(); setPickLoop({ a: null }); }}>${pickLoop ? 'Avbryt' : 'Loopa takter'}</button>`}</div>
@@ -6455,20 +6492,20 @@ function App() {
               ${cur ? html`<span className="prog" style=${{ width: ((pos.step + 1) / 8 * 100) + '%' }}></span>` : null}
             </button>`; })}</div>
         </div>`; }); })()}
-      </section>
+      </section>`)}
 
       ${recs.length ? html`<section className="card recs" aria-label="Dina inspelningar">
         <div className="section-head" style=${{ margin: 0 }}><h3>Dina inspelningar</h3><p>Lyssna på hur du låter. De ${Math.min(20, recs.length) === 1 ? 'sparas' : 'sparas'} bara på den här enheten.</p></div>
         <ul className="rec-list">${recs.map((r) => html`<${RecItem} key=${r.id} r=${r} onDel=${delRec} />`)}</ul>
       </section>` : null}
 
-      <div className="tip"><span className="mark">Tips</span><p>${song.tip}</p></div>
+      ${Fold('grips', 'Greppen och tips', () => html`<div style=${{ display: 'grid', gap: 18 }}><div className="tip"><span className="mark">Tips</span><p>${song.tip}</p></div>
 
       <section className="song-chords">
         <div className="section-head"><h3>Greppen i låten</h3><p>Klicka för att lyssna och se greppet på greppbrädan.</p></div>
         <div className="diagrams">${[...new Set(bars.flatMap(barChords))].map((k) => html`<${Diagram} key=${k} k=${k} easy=${easy} selected=${shownChord === k}
           onClick=${() => { setSelChord(k); hear(k); }} />`)}</div>
-      </section>
+      </section></div>`)}
     </div>
   </div>`;
 
@@ -6808,18 +6845,14 @@ function App() {
   };
   const allDone = (prog.planDay || 0) >= PLAN.length;
   const daySong = [...lSteps].reverse().find((st) => st.k === 'song');
-  const jamSongs = (canPlay.length ? canPlay : songs.filter((x) => x.level === 'Superlätt' || x.level === 'Lätt')).slice(0, 6);
+  const jamSongs = (canPlay.length ? canPlay : songs.filter((x) => x.level === 'Superlätt' || x.level === 'Lätt')).slice(0, narrowM ? 3 : 6);
   const homeHead = allDone ? 'Nu är det bara att spela' : lCur < 0 ? 'Dagens lektion är klar!' : doneCount ? 'Du är igång. Kör vidare!' : streak ? streak + (streak === 1 ? ' dag i rad. Håll elden vid liv!' : ' dagar i rad. Håll elden vid liv!') : 'Ta fram gitarren';
   const playSong = (x) => { pickSong(x); goTab('spela'); window.scrollTo({ top: 0 }); };
   const HomeTab = () => html`<div className="home home2">
     <div className="h2-greet">
       <div><span className="ls-kicker">${allDone ? 'Alla 14 dagar klara' : 'Dag ' + lessonDay + ' av ' + PLAN.length}</span>
         <h1 className="home-h1">${homeHead}</h1></div>
-      <div className="h2-stats">
-        <div className=${'h2-stat' + (streak ? ' hot' : '')}><b>${FlameIcon}${streak}</b><span>${streak === 1 ? 'dag i rad' : 'dagar i rad'}</span></div>
-        <div className="h2-stat lvl"><b><small>Nivå</small>${lvl}</b><span>${TITLES[Math.min(lvl - 1, TITLES.length - 1)]}</span><i><em style=${{ width: Math.max(4, pct) + '%' }}></em></i></div>
-        <div className="h2-stat"><b>${I.play}${prog.songs.length}</b><span>${prog.songs.length === 1 ? 'låt spelad' : 'låtar spelade'}</span></div>
-      </div>
+      <p className="h2-line"><span className=${streak ? 'hot' : ''}>${FlameIcon}${streak} ${streak === 1 ? 'dag i rad' : 'dagar i rad'}</span><span>Nivå ${lvl} · ${TITLES[Math.min(lvl - 1, TITLES.length - 1)]}</span><span>${prog.songs.length} ${prog.songs.length === 1 ? 'låt' : 'låtar'}</span></p>
     </div>
 
     <div className="h2-main">
@@ -6831,11 +6864,12 @@ function App() {
         : html`<span className="h2-kick">Dagens mål · ${lp.t}</span>
           <h2>${daySong ? html`Spela <em>${songTitle(daySong.s)}</em>` : lp.t}</h2>
           <div className="h2-prog" aria-label=${doneCount + ' av ' + lSteps.length + ' steg klara'}>${lSteps.map((st, i) => html`<i key=${i} className=${lDone[i] ? 'done' : i === lCur ? 'cur' : ''}></i>`)}</div>
-          <ol className="h2-steps">${lSteps.map((st, i) => html`<li key=${i}><button className=${lDone[i] ? 'done' : i === lCur ? 'cur' : ''} onClick=${() => goMission({ go: stepGo(st) })}>
+          <ol className=${'h2-steps' + (stepsOpen ? '' : ' one')}>${lSteps.map((st, i) => html`<li key=${i} className=${i === (lCur < 0 ? lSteps.length - 1 : lCur) ? 'h2-now' : ''}><button className=${lDone[i] ? 'done' : i === lCur ? 'cur' : ''} onClick=${() => goMission({ go: stepGo(st) })}>
             <span className="n">${lDone[i] ? html`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10" /></svg>` : i + 1}</span>
             <span className="t">${stepShort(st)}</span>${st.k === 'song' ? html`<span className="star">Målet</span>` : null}</button></li>`)}</ol>
+          <button className="h2-more" onClick=${() => setStepsOpen(!stepsOpen)}>${stepsOpen ? 'Visa bara nästa steg' : 'Steg ' + (lCur < 0 ? lSteps.length : lCur + 1) + ' av ' + lSteps.length + ' · Visa alla steg'}</button>
           <button className="ls-btn big h2-go" onClick=${launchLesson}>${I.play}${lCur < 0 ? 'Kör lektionen igen' : doneCount ? 'Fortsätt där du var' : 'Kör igång'}</button>
-          ${daySong ? html`<button className="ls-link h2-skip" onClick=${() => goMission({ go: stepGo(daySong) })}>Hoppa direkt till ${songTitle(daySong.s)}</button>` : null}`}
+`}
       </div>
     </section>
 
@@ -6847,7 +6881,6 @@ function App() {
     </section>
     </div>
 
-    <button className="ls-link" style=${{ justifySelf: 'center' }} onClick=${() => goTab('bib')}>Öppna biblioteket</button>
     <details className="card more home-more"><summary>Dina framsteg, uppdrag och märken</summary>
       <div style=${{ display: 'grid', gap: 22, marginTop: 14 }}>${OldVag}</div>
     </details>
@@ -7023,9 +7056,9 @@ function App() {
           <span className="num">${lvl}</span><span className="mini"><i style=${{ width: pct + '%' }}></i></span>
           <span className="flame mono">${FlameIcon}${streak}</span>
         </button>
-        <button className=${'chip' + (easy ? ' on' : '')} onClick=${() => setEasy(!easy)} title="Växla till förenklade nybörjargrepp">${I.spark}<span className="hide-s">Nybörjargrepp ${easy ? 'på' : 'av'}</span><span className="show-s">Lätt</span></button>
+        <button className=${'chip desk-only-i' + (easy ? ' on' : '')} onClick=${() => setEasy(!easy)} title="Växla till förenklade nybörjargrepp">${I.spark}<span className="hide-s">Nybörjargrepp ${easy ? 'på' : 'av'}</span><span className="show-s">Lätt</span></button>
         <button className="chip" onClick=${() => { setSkinOpen(true); setCodeMsg(''); setCodeOut(''); setCodeAsk(null); }} aria-label="Inställningar" title="Inställningar"><svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
-        <button className=${'chip' + (muted ? ' warn' : '')} onClick=${() => { engine.setMuted(!muted); setMuted(!muted); }} aria-label=${muted ? 'Slå på ljud' : 'Stäng av ljud'}>${muted ? I.mute : I.vol}</button>
+        <button className=${'chip' + (muted ? ' warn' : ' desk-only-i')} onClick=${() => { engine.setMuted(!muted); setMuted(!muted); }} aria-label=${muted ? 'Slå på ljud' : 'Stäng av ljud'}>${muted ? I.mute : I.vol}</button>
       </div>
     </div></header>
     <main className="wrap">
@@ -7049,6 +7082,10 @@ function App() {
         <div className="label">Färgtema</div>
         <div className="skins">${SKINS.map((k) => html`<button key=${k.id} className="skin" aria-pressed=${skin === k.id} style=${{ background: k.bg, color: k.fg }} onClick=${() => setSkinState(k.id)}>
           <span className="sw">${k.sw.map((c) => html`<i key=${c} style=${{ background: c }}></i>`)}</span><b>${k.name}</b><small>${k.sub}</small></button>`)}</div>
+        <div className="set-row"><div><b>Nybörjargrepp</b><small>Förenklade grepp med färre fingrar (knappen Lätt)</small></div>
+          <button className=${'chip' + (easy ? ' on' : '')} onClick=${() => setEasy(!easy)}>${easy ? 'På' : 'Av'}</button></div>
+        <div className="set-row"><div><b>Ljud</b><small>Stäng av allt ljud i appen</small></div>
+          <button className=${'chip' + (muted ? ' warn' : ' on')} onClick=${() => { engine.setMuted(!muted); setMuted(!muted); }}>${muted ? 'Av' : 'På'}</button></div>
         <div className="set-row"><div><b>Vänsterhänt</b><small>Spegelvänder greppbrädor, greppbilder och 3D-handen</small></div>
           <button className=${'chip' + (lefty ? ' on' : '')} onClick=${() => setLefty(!lefty)}>${lefty ? 'På' : 'Av'}</button></div>
         <div className="set-row"><div><b>Gitarrljud</b><small>Inspelade toner från en riktig nylongitarr, eller den gamla syntetiska. Inspelningar: tonejs-instruments (CC-BY 3.0).</small></div>
