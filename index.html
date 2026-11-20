@@ -3612,7 +3612,8 @@ function beatFromPreset(pr, keepPads) {
   const pads = (keepPads || DEFAULT_PADS()).map((p) => ({ ...p, ...(pr.ch[p.id] && p.kind !== 'sample' ? { ch: pr.ch[p.id] } : {}) }));
   const rows = emptyRows(pads);
   pr.rows.forEach((r, i) => { const p = pads[i]; if (p) rows[p.id] = [...r].map((c) => (c === 'x' ? 2 : c === 'o' ? 1 : 0)); });
-  return { id: 'b' + Date.now(), name: pr.name, bpm: pr.bpm, swing: pr.swing, pads, rows, bass: [...pr.bass].map((c) => (c === '.' ? '' : c)), bassCh: pr.bassCh, bassVol: 0.9, prog: 0 };
+  const gp = { 'One drop': 'reggae', Rockers: 'reggae', Steppers: 'steppers', Dub: 'reggae', Pop: 'pop', Ballad: 'ballad', Rock: 'attondelar', Funk: 'attondelar', Hiphop: 'ballad' }[pr.name] || 'pop';
+  return { id: 'b' + Date.now(), name: pr.name, bpm: pr.bpm, swing: pr.swing, pads, rows, bass: [...pr.bass].map((c) => (c === '.' ? '' : c)), bassCh: pr.bassCh, bassVol: 0.9, prog: 0, gtr: [...GTR_PATTERNS[gp][0]].map((c) => (c === '.' ? '' : c)), gtrVol: 0.7 };
 }
 let MY_BEATS = (() => { try { return JSON.parse(localStorage.getItem('ng-beats') || '[]'); } catch (e) { return []; } })();
 const saveBeats = (list) => { MY_BEATS = list; try { localStorage.setItem('ng-beats', JSON.stringify(list)); } catch (e) {} };
@@ -3641,7 +3642,20 @@ function playPad(p, t, vel = 1) {
   engine.drum(p.kind, t, vel * (p.vol ?? 0.85), p.ch || '');
 }
 // ett sextondelssteg: trummor från padsen och basen på ackordets grundton, kvint eller oktav
-function beatStep(b, s, t, sd16, root, minor = false) {
+const GTR_PATTERNS = {
+  pop: ['D...D.U...U.D.U.', 'Pop/folk: ner, ner-upp, upp, ner-upp'], ballad: ['D.......D...D.U.', 'Ballad: lugna nedslag'],
+  attondelar: ['D.U.D.U.D.U.D.U.', 'Åttondelar: ner-upp hela tiden'], reggae: ['....S.......S...', 'Reggae: skank på 2 och 4'],
+  steppers: ['..S...S...S...S.', 'Reggae: skank på varje &'], bossa: ['D..U..D...U..D..', 'Bossa: synkoperat'],
+};
+function beatStep(b, s, t, sd16, root, minor = false, key = null) {
+  const gc = (b.gtr || [])[s];
+  if (gc && key && !b.gtrMute && CHORD_DB[key]) {
+    const fr = voicing(key, false).frets, gv = b.gtrVol ?? 0.7;
+    if (gc === 'D') engine.strum(fr, t, 'D', { vel: gv * (s % 4 === 0 ? 1 : 0.85) });
+    else if (gc === 'U') engine.strum(fr, t, 'U', { vel: gv * 0.8 });
+    else if (gc === 'X') engine.chuck(fr, t);
+    else if (gc === 'S') engine.chop(fr, t, { vel: gv });
+  }
   const h = b.human || 0, wob = () => (h ? (Math.random() - 0.5) * 0.024 * h : 0);
   for (const p of b.pads) { const v = (b.rows[p.id] || [])[s]; if (v && !p.mute) playPad(p, t + wob(), (v === 1 ? 0.4 : 1) * (1 - h * 0.3 * Math.random())); }
   const c = b.bass[s];
@@ -3673,6 +3687,7 @@ const BEAT_TIPS = {
   wood: { pop: [[0, 3, 6, 10, 12], 'Träklossen låter bra i ett mönster som 1, a, &, & och 4.'], reggae: [[2, 10], 'Träkloss på ett par &-rutor.'] },
   clave: { pop: [[0, 3, 6, 10, 12], 'Clave-rytmen 3-2: 1, a, &, & och 4. Klassisk latinkänsla.'], reggae: [[0, 6, 12], 'Clave sparsamt i reggae.'] },
   sample: { pop: [[4, 12], 'Ett eget ljud fungerar ofta som virvel på 2 och 4.'], reggae: [[8], 'Prova ditt eget ljud på 3.'] },
+  gtr: { pop: ['D...D.U...U.D.U.', 'Gitarren kompar ackorden. Folk-kompet passar nästan allt: ner på 1, ner-upp på 2, upp på &-et efter 3 och ner-upp på 4.'], reggae: ['....S.......S...', 'Reggaegitarr spelar bara korta, dämpade ackord (skank, S) på 2 och 4. Lämna resten tomt.'] },
   bass: { pop: ['R.......5...3...', 'Basen spelar grundtonen (R) på 1, där ackordet byts. På 3 passar kvinten (5), och tersen (3) på 4 leder vidare till nästa ackord.'], reggae: ['R.....5.R...8...', 'Reggaebas: grundton (R) på 1 och 3 och kvint (5) och oktav (8) emellan. Lämna gärna luft, tystnaden är en del av reggae.'] },
 };
 const REGGAE_PRESETS = ['One drop', 'Rockers', 'Steppers', 'Dub'];
@@ -3715,8 +3730,10 @@ function surpriseBeat(old, tempo = 'mellan') {
     put('kick', [0, 8, ...some([6, 10], 0.35)]); put('snare', [4, 12]); put('hat', e8); if (R() < 0.3) put('hat', some(odd16, 0.3), 1); if (R() < 0.35) put('ohat', [14]); if (R() < 0.35) put('tamb', [4, 12]);
     Object.assign(bass, pick([{ 0: 'R', 8: 'R' }, { 0: 'R', 8: '5' }, { 0: 'R', 6: 'R', 8: '5' }, { 0: 'R', 4: 'R', 8: '5', 12: '3' }, { 0: 'R', 8: '5', 14: '3' }]));
   }
+  const gp = { reggae: R() < 0.7 ? 'reggae' : 'steppers', folk: 'pop', pop: R() < 0.6 ? 'pop' : 'attondelar', ballad: 'ballad', bossa: 'bossa' }[style] || 'pop';
+  const gtr = [...GTR_PATTERNS[gp][0]].map((c) => (c === '.' ? '' : c));
   const bpm = lo + Math.round(R() * (hi - lo));
-  return { ...old, id: 'b' + Date.now(), name: name + ' ' + bpm, bpm, swing: Math.round(swing * 100) / 100, pads, rows, bass, bassCh, bassLen, bassVol: 0.75, bassMute: false, kit: 'riktig', human: Math.max(old.human || 0, 0.3) };
+  return { ...old, gtr, gtrVol: 0.7, gtrMute: false, id: 'b' + Date.now(), name: name + ' ' + bpm, bpm, swing: Math.round(swing * 100) / 100, pads, rows, bass, bassCh, bassLen, bassVol: 0.75, bassMute: false, kit: 'riktig', human: Math.max(old.human || 0, 0.3) };
 }
 
 function BeatStudio({ toast }) {
@@ -3751,7 +3768,7 @@ function BeatStudio({ toast }) {
       while (st.next < c.currentTime + 0.12) {
         const b = beatR.current, sd16 = 60 / b.bpm / 4, prog = BEAT_PROGS[b.prog || 0], key = prog[st.bar % prog.length];
         const t = st.next + (st.step % 2 ? sd16 * (b.swing || 0) : 0);
-        beatStep(b, st.step, t, sd16, b.bassOff ? 0 : CHORD_DB[key].root, /^[A-G][#b]?m(?!aj)/.test(CHORD_DB[key].name));
+        beatStep(b, st.step, t, sd16, b.bassOff ? 0 : CHORD_DB[key].root, /^[A-G][#b]?m(?!aj)/.test(CHORD_DB[key].name), key);
         st.marks.push({ t: st.next, step: st.step, bar: st.bar, sd16 }); if (st.marks.length > 48) st.marks.shift();
         st.next += sd16; if (++st.step === 16) { st.step = 0; st.bar++; }
       }
@@ -3781,6 +3798,7 @@ function BeatStudio({ toast }) {
     }
   };
   const tapStep = (k) => {
+    if (sel === 'gtr') { cycleGtr(k); return; }
     if (sel === 'bass') { const order = ['', 'R', '3', '5', '8']; setBeat((b) => ({ ...b, bass: b.bass.map((v, j) => (j === k ? order[(order.indexOf(v) + 1) % 5] : v)) })); return; }
     const p = beat.pads[sel];
     setBeat((b) => ({ ...b, rows: { ...b.rows, [p.id]: b.rows[p.id].map((v, j) => (j === k ? [2, 0, 1][v] : v)) } }));
@@ -3823,7 +3841,7 @@ function BeatStudio({ toast }) {
   const open = (b) => { setBeat({ ...b, pads: b.pads.map((p) => ({ ...p })), rows: { ...b.rows }, bass: [...b.bass] }); loadBeatSamples(b); };
   const remove = (b) => { const list = MY_BEATS.filter((x) => x.id !== b.id); saveBeats(list); setSaved(list); };
 
-  const p = sel === 'bass' ? null : beat.pads[sel], kind = p && PAD_KINDS[p.kind];
+  const p = sel === 'bass' || sel === 'gtr' ? null : beat.pads[sel], kind = p && PAD_KINDS[p.kind];
   const progK = BEAT_PROGS[beat.prog || 0], keyK = progK[0], keyName = CHORD_DB[keyK].name, minor = /^[A-G][#b]?m(?!aj)/.test(keyName);
   const keyPc = PC_OF[(/^[A-G][#b]?/.exec(keyName) || ['C'])[0]], keyHz = CHORD_DB[keyK].root;
   const scale = minor ? [0, 2, 3, 5, 7, 8, 10, 12] : [0, 2, 4, 5, 7, 9, 11, 12];
@@ -3836,23 +3854,26 @@ function BeatStudio({ toast }) {
     setFlash((fl) => ({ ...fl, ['t' + i]: Date.now() }));
     try { navigator.vibrate && navigator.vibrate(8); } catch (e) {}
   };
-  const prog = BEAT_PROGS[beat.prog || 0], steps = sel === 'bass' ? beat.bass : beat.rows[p.id];
-  const stepLbl = (v) => (sel === 'bass' ? v : v === 1 ? '·' : '');
+  const prog = BEAT_PROGS[beat.prog || 0], steps = sel === 'bass' ? beat.bass : sel === 'gtr' ? (beat.gtr || new Array(16).fill('')) : beat.rows[p.id];
+  const stepLbl = (v) => (sel === 'bass' ? v : sel === 'gtr' ? ({ D: '↓', U: '↑', X: '×', S: 'S' }[v] || '') : v === 1 ? '·' : '');
 
   const genre = tipStyle || (REGGAE_PRESETS.includes(beat.name) || /^Reggae/.test(beat.name || '') ? 'reggae' : 'pop');
-  const tipKind = sel === 'bass' ? 'bass' : p.kind, tip = (BEAT_TIPS[tipKind] || BEAT_TIPS.sample)[genre];
-  const tipSteps = sel === 'bass' ? [...tip[0]].map((c, k) => (c === '.' ? -1 : k)).filter((k) => k >= 0) : tip[0];
+  const tipKind = sel === 'bass' ? 'bass' : sel === 'gtr' ? 'gtr' : p.kind, tip = (BEAT_TIPS[tipKind] || BEAT_TIPS.sample)[genre];
+  const tipSteps = sel === 'bass' || sel === 'gtr' ? [...tip[0]].map((c, k) => (c === '.' ? -1 : k)).filter((k) => k >= 0) : tip[0];
   const applyTip = () => {
     if (sel === 'bass') { setBeat((b) => ({ ...b, bass: [...tip[0]].map((c) => (c === '.' ? '' : c)), bassMute: false })); return; }
+    if (sel === 'gtr') { setBeat((b) => ({ ...b, gtr: [...tip[0]].map((c) => (c === '.' ? '' : c)), gtrMute: false })); return; }
     setBeat((b) => ({ ...b, rows: { ...b.rows, [p.id]: new Array(16).fill(0).map((_, k) => (tip[0].includes(k) ? 2 : 0)) } }));
     setPad(sel, { mute: false });
   };
   const LBL = ['1', 'e', '&', 'a', '2', 'e', '&', 'a', '3', 'e', '&', 'a', '4', 'e', '&', 'a'];
-  const rowsAll = [...beat.pads.map((pd, i) => ({ key: i, id: pd.id, name: PAD_KINDS[pd.kind].name, cells: beat.rows[pd.id], col: PAD_COLORS[i], mute: !!pd.mute })), { key: 'bass', id: 'bass', name: 'Bas', cells: beat.bass, col: 'var(--brass)', mute: !!beat.bassMute }];
+  const gtrCells = beat.gtr || new Array(16).fill('');
+  const rowsAll = [{ key: 'gtr', id: 'gtr', name: 'Gitarr', cells: gtrCells, col: '#d9a866', mute: !!beat.gtrMute }, ...beat.pads.map((pd, i) => ({ key: i, id: pd.id, name: PAD_KINDS[pd.kind].name, cells: beat.rows[pd.id], col: PAD_COLORS[i], mute: !!pd.mute })), { key: 'bass', id: 'bass', name: 'Bas', cells: beat.bass, col: 'var(--brass)', mute: !!beat.bassMute }];
   const selRow = rowsAll.find((r) => r.key === sel) || rowsAll[0];
-  const toggleMute = (key) => (key === 'bass' ? setBeat((b) => ({ ...b, bassMute: !b.bassMute })) : setPad(key, { mute: !beat.pads[key].mute }));
-  const tapCell = (key, k) => { if (key !== sel) setSel(key); if (key === 'bass') { const order = ['', 'R', '3', '5', '8']; setBeat((b) => ({ ...b, bass: b.bass.map((v, j) => (j === k ? order[(order.indexOf(v) + 1) % 5] : v)) })); return; } const pd = beat.pads[key]; setBeat((b) => ({ ...b, rows: { ...b.rows, [pd.id]: b.rows[pd.id].map((v, j) => (j === k ? [2, 0, 1][v] : v)) } })); if (!playing && !beat.rows[pd.id][k]) { engine.init(); playPad(pd, engine.ctx.currentTime + 0.005, 1); } };
-  const pickSound = (key) => { setSel(key); if (key !== 'bass') { engine.init(); playPad(beat.pads[key], engine.ctx.currentTime + 0.005, 1); } };
+  const toggleMute = (key) => (key === 'bass' ? setBeat((b) => ({ ...b, bassMute: !b.bassMute })) : key === 'gtr' ? setBeat((b) => ({ ...b, gtrMute: !b.gtrMute })) : setPad(key, { mute: !beat.pads[key].mute }));
+  const GORD = ['', 'D', 'U', 'X', 'S'], cycleGtr = (k) => setBeat((b) => { const g = b.gtr || new Array(16).fill(''); return { ...b, gtr: g.map((v, j) => (j === k ? GORD[(GORD.indexOf(v) + 1) % 5] : v)) }; });
+  const tapCell = (key, k) => { if (key !== sel) setSel(key); if (key === 'gtr') { cycleGtr(k); return; } if (key === 'bass') { const order = ['', 'R', '3', '5', '8']; setBeat((b) => ({ ...b, bass: b.bass.map((v, j) => (j === k ? order[(order.indexOf(v) + 1) % 5] : v)) })); return; } const pd = beat.pads[key]; setBeat((b) => ({ ...b, rows: { ...b.rows, [pd.id]: b.rows[pd.id].map((v, j) => (j === k ? [2, 0, 1][v] : v)) } })); if (!playing && !beat.rows[pd.id][k]) { engine.init(); playPad(pd, engine.ctx.currentTime + 0.005, 1); } };
+  const pickSound = (key) => { setSel(key); if (key !== 'bass' && key !== 'gtr') { engine.init(); playPad(beat.pads[key], engine.ctx.currentTime + 0.005, 1); } };
   const MuteBtn = (r) => html`<button type="button" className=${'bs-mute' + (r.mute ? ' off' : '')} aria-pressed=${!r.mute} aria-label=${(r.mute ? 'Slå på ' : 'Stäng av ') + r.name} onClick=${() => toggleMute(r.key)}>${r.mute ? 'Av' : 'På'}</button>`;
 
   return html`<div className="bs">
@@ -3880,7 +3901,13 @@ function BeatStudio({ toast }) {
     <section className="card bs-card">
       <div className="bs-h"><b>1</b>Välj ljud</div>
       <div className="bs-presets" role="group" aria-label="Ljud">${rowsAll.map((r) => html`<button key=${r.id} type="button" className=${'chip bs-snd' + (sel === r.key ? ' on' : '') + (r.mute ? ' bs-muted' : '')} style=${{ '--pc': r.col }} onClick=${() => pickSound(r.key)}><i className="bs-dot"></i>${r.name}</button>`)}</div>
-      ${sel === 'bass' ? html`<div className="bs-opts">
+      ${sel === 'gtr' ? html`<div className="bs-opts">
+        <div className="label">Färdiga gitarrkomp</div>
+        <div className="bs-presets">${Object.entries(GTR_PATTERNS).map(([id, [pat, l]]) => html`<button key=${id} className="chip" onClick=${() => setBeat((b) => ({ ...b, gtr: [...pat].map((c) => (c === '.' ? '' : c)), gtrMute: false }))}>${l}</button>`)}</div>
+        <div className="label">Ackord, en takt var</div>
+        <div className="bs-presets">${BEAT_PROGS.map((pg, i) => html`<button key=${i} className=${'chip' + ((beat.prog || 0) === i ? ' on' : '')} onClick=${() => setBeat((b) => ({ ...b, prog: i }))}>${pg.map((k) => CHORD_DB[k].name).join(' ')}</button>`)}</div>
+        <div className="bs-line"><label className="slider"><span>Volym</span><input type="range" min="0" max="1.2" step="0.01" value=${beat.gtrVol ?? 0.7} onInput=${(e) => setBeat((b) => ({ ...b, gtrVol: +e.target.value }))} onChange=${() => {}} /><span>${Math.round((beat.gtrVol ?? 0.7) * 100)}</span></label>${MuteBtn(selRow)}</div>
+      </div>` : sel === 'bass' ? html`<div className="bs-opts">
         <div className="bs-presets" role="group" aria-label="Basljud">${BASS_CH.map(([id, l]) => html`<button key=${id} className=${'chip' + (beat.bassCh === id ? ' on' : '')} onClick=${() => { setBeat((b) => ({ ...b, bassCh: id })); engine.init(); engine.bassAs(CHORD_DB[(BEAT_PROGS[beat.prog || 0])[0]].root, engine.ctx.currentTime + 0.01, 0.4, beat.bassVol ?? 0.9, id); }}>${l}</button>`)}</div>
         <div className="seg" role="group" aria-label="Tonlängd">${[['kort', 'Korta toner'], ['lang', 'Långa toner']].map(([id, l]) => html`<button key=${id} aria-pressed=${(beat.bassLen || 'lang') === id} onClick=${() => setBeat((b) => ({ ...b, bassLen: id }))}>${l}</button>`)}</div>
         <div className="label">Ackord, en takt var</div>
@@ -3908,7 +3935,7 @@ function BeatStudio({ toast }) {
         <p>${tip[1]}</p>
         <div className="row" style=${{ gap: 8, flexWrap: 'wrap' }}><button className="btn" onClick=${applyTip}>Lägg in förslaget</button><span className="muted" style=${{ fontSize: 12.5 }}>Rutorna med streckad ram passar.</span></div>
       </div>
-      <p className="bs-hint">${sel === 'bass' ? 'Tryck i en ruta för grundton (R), ters (3), kvint (5), oktav (8) eller tyst. Basen följer ackorden.' : 'Tryck i en ruta för ett slag, igen för ett svagare slag, en tredje gång för att ta bort.'}
+      <p className="bs-hint">${sel === 'gtr' ? 'Tryck i en ruta för nedslag (↓), uppslag (↑), dämpat slag (×), reggae-skank (S) eller tyst. Gitarren följer ackorden.' : sel === 'bass' ? 'Tryck i en ruta för grundton (R), ters (3), kvint (5), oktav (8) eller tyst. Basen följer ackorden.' : 'Tryck i en ruta för ett slag, igen för ett svagare slag, en tredje gång för att ta bort.'}
         <button type="button" className="bs-how-btn" onClick=${() => setShowHow(!showHow)}>${showHow ? 'Dölj' : 'Hur funkar en takt?'}</button></p>
       ${showHow ? html`<div className="bs-how">
         <p><b>En takt har fyra slag:</b> 1, 2, 3 och 4. Räkna högt i tempot: ett, två, tre, fyra, ett, två …</p>
