@@ -953,36 +953,36 @@ html.jam-stage .jam-mode{display:none}
 .bs-swing{flex:1;min-width:180px}
 .bs-presets{display:flex;gap:6px;flex-wrap:wrap}
 .bs-pads{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
-.bs-pad{position:relative;overflow:hidden;aspect-ratio:1;border-radius:16px;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;gap:2px;padding:10px;text-align:left;
+.bs-pad{position:relative;overflow:hidden;aspect-ratio:1;min-width:0;border-radius:16px;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;gap:2px;padding:8px;text-align:left;
   background:color-mix(in oklab,var(--pc) 16%,var(--surface));border:1.5px solid color-mix(in oklab,var(--pc) 45%,transparent);color:var(--text);touch-action:manipulation;user-select:none;-webkit-user-select:none;transition:transform .06s ease}
-.bs-pad b{font-size:13.5px;line-height:1.15;font-weight:700}
+.bs-pad b{font-size:12.5px;line-height:1.15;font-weight:700;max-width:100%;overflow-wrap:anywhere;hyphens:manual}
 .bs-pad small{font-size:11.5px;color:var(--muted)}
 .bs-pad:active{transform:scale(.96)}
-.bs-pad.sel{border-color:var(--pc);box-shadow:0 0 0 2px color-mix(in oklab,var(--pc) 40%,transparent)}
-.bs-pad.hit{background:color-mix(in oklab,var(--pc) 34%,var(--surface))}
+.bs-pad.bs-sel{border-color:var(--pc);box-shadow:0 0 0 2px color-mix(in oklab,var(--pc) 40%,transparent)}
+.bs-pad.bs-hit{background:color-mix(in oklab,var(--pc) 34%,var(--surface))}
 .bs-glow{position:absolute;inset:0;background:radial-gradient(circle at 50% 55%,color-mix(in oklab,var(--pc) 70%,transparent),transparent 70%);opacity:0;animation:bsGlow .35s ease-out;pointer-events:none}
 @keyframes bsGlow{from{opacity:1}to{opacity:0}}
 .bs-edit{display:grid;gap:12px}
 .bs-tabs{display:flex;gap:6px}
 .bs-steps{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px}
-.bs-step{height:44px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-weight:800;font-size:14px;touch-action:manipulation}
-.bs-step.beat{border-color:color-mix(in oklab,var(--text) 35%,transparent)}
-.bs-step.on{background:var(--pc);border-color:var(--pc);color:#111}
-.bs-step.ghost{background:color-mix(in oklab,var(--pc) 40%,var(--surface-2))}
-.bs-step.now{outline:2px solid var(--text);outline-offset:1px}
+.bs-step{min-width:0;padding:0;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-weight:800;font-size:14px;touch-action:manipulation}
+.bs-step.bs-beat{border-color:color-mix(in oklab,var(--text) 35%,transparent)}
+.bs-step.bs-on{background:var(--pc);border-color:var(--pc);color:#111}
+.bs-step.bs-ghost{background:color-mix(in oklab,var(--pc) 40%,var(--surface-2))}
+.bs-step.bs-now{outline:2px solid var(--text);outline-offset:1px}
 .bs-opts{display:grid;gap:10px}
 .bs-select{height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);padding:0 10px;font:inherit}
 .bs-sample{display:grid;gap:8px}
 .bs-over{display:grid;gap:6px}
 .bs-orow{display:grid;grid-template-columns:96px 1fr;align-items:center;gap:8px;padding:3px 4px;border-radius:8px;text-align:left;color:var(--text)}
-.bs-orow.sel{background:var(--surface-2)}
+.bs-orow.bs-sel{background:var(--surface-2)}
 .bs-oname{font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bs-ocells{display:grid;grid-template-columns:repeat(16,minmax(0,1fr));gap:3px}
-.bs-ocells i{height:12px;border-radius:3px;background:var(--surface-3)}
-.bs-ocells i.beat{box-shadow:inset 0 0 0 1px color-mix(in oklab,var(--text) 25%,transparent)}
-.bs-ocells i.on{background:var(--pc)}
-.bs-ocells i.ghost{background:color-mix(in oklab,var(--pc) 45%,var(--surface-3))}
-.bs-ocells i.now{outline:1.5px solid var(--text)}
+.bs-ocells i.bs-c{height:12px;border-radius:3px;background:var(--surface-3)}
+.bs-ocells i.bs-beat{box-shadow:inset 0 0 0 1px color-mix(in oklab,var(--text) 25%,transparent)}
+.bs-ocells i.bs-on{background:var(--pc)}
+.bs-ocells i.bs-ghost{background:color-mix(in oklab,var(--pc) 45%,var(--surface-3))}
+.bs-ocells i.bs-now{outline:1.5px solid var(--text)}
 .bs-save{display:grid;gap:10px}
 .bs-saved{display:inline-flex;align-items:center}
 .bs-del{width:32px;height:32px;border-radius:50%;color:var(--muted);font-size:18px}
@@ -3473,14 +3473,14 @@ function Jam({ easy, onSave, onDone }) {
 /* ---------------------------------------------------------------- beatstudion */
 // Beatstudion: en enkel beatmaker och sampler. 8 pads med trummor eller egna ljud, 16 rutor per takt och en bas som följer ackorden.
 const PAD_KINDS = {
-  kick: { name: 'Bastrumma', ch: [['djup', 'Djup'], ['snartig', 'Snärtig'], ['tight', 'Tight']] },
+  kick: { name: 'Bas\u00adtrumma', ch: [['djup', 'Djup'], ['snartig', 'Snärtig'], ['tight', 'Tight']] },
   snare: { name: 'Virvel', ch: [['full', 'Full'], ['tight', 'Tight'], ['kant', 'Kantslag']] },
-  rim: { name: 'Kantslag' },
-  clap: { name: 'Handklapp' },
+  rim: { name: 'Kant\u00adslag' },
+  clap: { name: 'Hand\u00adklapp' },
   hat: { name: 'Hi-hat', ch: [['tight', 'Tight'], ['luftig', 'Luftig']] },
   ohat: { name: 'Öppen hi-hat', ch: [['tight', 'Kort'], ['luftig', 'Luftig']] },
   shaker: { name: 'Shaker' },
-  cowbell: { name: 'Koskälla' },
+  cowbell: { name: 'Kos\u00adkälla' },
   tom: { name: 'Puka', ch: [['lag', 'Låg'], ['hog', 'Hög']] },
   sample: { name: 'Eget ljud' },
 };
@@ -3664,7 +3664,7 @@ function BeatStudio({ toast }) {
     </section>
 
     <section className="bs-pads" aria-label="Pads">${beat.pads.map((pd, i) => html`<button key=${pd.id} type="button"
-      className=${'bs-pad' + (sel === i ? ' sel' : '') + (playing && beat.rows[pd.id][cur] ? ' hit' : '')}
+      className=${'bs-pad' + (sel === i ? ' bs-sel' : '') + (playing && beat.rows[pd.id][cur] ? ' bs-hit' : '')}
       style=${{ '--pc': PAD_COLORS[i] }} onPointerDown=${(e) => { e.preventDefault(); hitPad(i); }}
       onKeyDown=${(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); hitPad(i); } }}>
       <span key=${flash[pd.id] || 0} className="bs-glow"></span><b>${PAD_KINDS[pd.kind].name}</b><small>${pd.kind === 'sample' ? (pd.rec ? 'inspelat' : 'tom, spela in') : (PAD_KINDS[pd.kind].ch || []).find((x) => x[0] === pd.ch)?.[1] || ''}</small></button>`)}</section>
@@ -3675,7 +3675,7 @@ function BeatStudio({ toast }) {
         <button role="tab" aria-selected=${sel === 'bass'} className=${'chip' + (sel === 'bass' ? ' on' : '')} onClick=${() => setSel('bass')}>Bas</button>
       </div>
       <div className="bs-steps" role="group" aria-label="Rutor i takten">${steps.map((v, k) => html`<button key=${k} type="button"
-        className=${'bs-step' + (v ? ' on' : '') + (v === 1 ? ' ghost' : '') + (k === cur ? ' now' : '') + (k % 4 === 0 ? ' beat' : '')}
+        className=${'bs-step' + (v ? ' bs-on' : '') + (v === 1 ? ' bs-ghost' : '') + (k === cur ? ' bs-now' : '') + (k % 4 === 0 ? ' bs-beat' : '')}
         style=${{ '--pc': sel === 'bass' ? 'var(--brass)' : PAD_COLORS[sel] }} aria-pressed=${!!v}
         aria-label=${'Ruta ' + (k + 1)} onClick=${() => tapStep(k)}>${stepLbl(v)}</button>`)}</div>
       <small className="muted">${sel === 'bass' ? 'Tryck för grundton (R), kvint (5), oktav (8) eller tyst. Basen följer ackorden.' : 'Tryck en gång för ett slag, två för ett svagt slag, tre för att ta bort.'}</small>
@@ -3701,8 +3701,8 @@ function BeatStudio({ toast }) {
 
     <section className="card bs-over" aria-label="Hela takten">
       <div className="label">Hela takten</div>
-      ${[...beat.pads.map((pd, i) => ({ id: pd.id, i, name: PAD_KINDS[pd.kind].name, cells: beat.rows[pd.id], col: PAD_COLORS[i] })), { id: 'bass', i: 'bass', name: 'Bas', cells: beat.bass, col: 'var(--brass)' }].map((r) => html`<button key=${r.id} type="button" className=${'bs-orow' + (sel === r.i ? ' sel' : '')} onClick=${() => setSel(r.i)}>
-        <span className="bs-oname">${r.name}</span><span className="bs-ocells">${r.cells.map((v, k) => html`<i key=${k} className=${(v ? 'on' : '') + (v === 1 ? ' ghost' : '') + (k === cur ? ' now' : '') + (k % 4 === 0 ? ' beat' : '')} style=${{ '--pc': r.col }}></i>`)}</span></button>`)}
+      ${[...beat.pads.map((pd, i) => ({ id: pd.id, i, name: PAD_KINDS[pd.kind].name, cells: beat.rows[pd.id], col: PAD_COLORS[i] })), { id: 'bass', i: 'bass', name: 'Bas', cells: beat.bass, col: 'var(--brass)' }].map((r) => html`<button key=${r.id} type="button" className=${'bs-orow' + (sel === r.i ? ' bs-sel' : '')} onClick=${() => setSel(r.i)}>
+        <span className="bs-oname">${r.name}</span><span className="bs-ocells">${r.cells.map((v, k) => html`<i key=${k} className=${'bs-c' + (v ? ' bs-on' : '') + (v === 1 ? ' bs-ghost' : '') + (k === cur ? ' bs-now' : '') + (k % 4 === 0 ? ' bs-beat' : '')} style=${{ '--pc': r.col }}></i>`)}</span></button>`)}
       <div className="row" style=${{ gap: 8, flexWrap: 'wrap' }}><button className="btn" onClick=${clear}>Rensa takten</button></div>
     </section>
 
