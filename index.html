@@ -962,6 +962,10 @@ html.jam-stage .jam-mode{display:none}
 .bs-pad.bs-hit{background:color-mix(in oklab,var(--pc) 34%,var(--surface))}
 .bs-glow{position:absolute;inset:0;background:radial-gradient(circle at 50% 55%,color-mix(in oklab,var(--pc) 70%,transparent),transparent 70%);opacity:0;animation:bsGlow .35s ease-out;pointer-events:none}
 @keyframes bsGlow{from{opacity:1}to{opacity:0}}
+.bs-modebar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.bs-tone b{font-size:22px;font-family:var(--f-display)}
+.bs-pad.bs-inch{border-color:var(--pc);border-width:2.5px;background:color-mix(in oklab,var(--pc) 30%,var(--surface))}
+.bs-pad.bs-inch::after{content:"";position:absolute;top:8px;right:8px;width:9px;height:9px;border-radius:50%;background:var(--pc)}
 .bs-edit{display:grid;gap:12px}
 .bs-tabs{display:flex;gap:6px}
 .bs-steps{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px}
@@ -3560,6 +3564,8 @@ function BeatStudio({ toast }) {
   const [saved, setSaved] = useState(MY_BEATS);
   const [smpRec, setSmpRec] = useState(null);
   const [flash, setFlash] = useState({});
+  const [padMode, setPadMode] = useState('drums');
+  const [toneInst, setToneInst] = useState('gitarr');
   const run = useRef(null);
   useEffect(() => { loadBeatSamples(beat); return () => stop(); }, []);
 
@@ -3647,6 +3653,18 @@ function BeatStudio({ toast }) {
   const remove = (b) => { const list = MY_BEATS.filter((x) => x.id !== b.id); saveBeats(list); setSaved(list); };
 
   const p = sel === 'bass' ? null : beat.pads[sel], kind = p && PAD_KINDS[p.kind];
+  const progK = BEAT_PROGS[beat.prog || 0], keyK = progK[0], keyName = CHORD_DB[keyK].name, minor = /^[A-G][#b]?m(?!aj)/.test(keyName);
+  const keyPc = PC_OF[(/^[A-G][#b]?/.exec(keyName) || ['C'])[0]], keyHz = CHORD_DB[keyK].root;
+  const scale = minor ? [0, 2, 3, 5, 7, 8, 10, 12] : [0, 2, 4, 5, 7, 9, 11, 12];
+  const flats = ['F', 'Dm', 'Gm', 'Cm', 'Bb', 'Eb'].includes(keyName);
+  const NOTE_N = flats ? ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'] : ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  const nowChord = playing ? progK[bar % progK.length] : keyK, nowPcs = chordPcs(nowChord, false);
+  const hitTone = (i) => {
+    engine.init(); const t = engine.ctx.currentTime + 0.005, f = keyHz * Math.pow(2, scale[i] / 12);
+    if (toneInst === 'bas') engine.bassAs(f, t, 0.55, 1, beat.bassCh); else engine.note(f * 2, t, { vel: 1, dur: 1.4 });
+    setFlash((fl) => ({ ...fl, ['t' + i]: Date.now() }));
+    try { navigator.vibrate && navigator.vibrate(8); } catch (e) {}
+  };
   const prog = BEAT_PROGS[beat.prog || 0], steps = sel === 'bass' ? beat.bass : beat.rows[p.id];
   const stepLbl = (v) => (sel === 'bass' ? v : v === 1 ? '·' : '');
 
@@ -3663,11 +3681,19 @@ function BeatStudio({ toast }) {
       <div className="bs-presets" role="group" aria-label="Färdiga komp">${BEAT_PRESETS.map((pr, i) => html`<button key=${pr.name} className="chip" onClick=${() => loadPreset(i)}>${pr.name}</button>`)}</div>
     </section>
 
-    <section className="bs-pads" aria-label="Pads">${beat.pads.map((pd, i) => html`<button key=${pd.id} type="button"
+    <div className="bs-modebar">
+      <div className="seg" role="group" aria-label="Vad padsen spelar">${[['drums', 'Trummor'], ['tones', 'Toner']].map(([id, l]) => html`<button key=${id} aria-pressed=${padMode === id} onClick=${() => setPadMode(id)}>${l}</button>`)}</div>
+      ${padMode === 'tones' ? html`<div className="seg" role="group" aria-label="Instrument">${[['gitarr', 'Gitarr'], ['bas', 'Bas']].map(([id, l]) => html`<button key=${id} aria-pressed=${toneInst === id} onClick=${() => setToneInst(id)}>${l}</button>`)}</div>` : null}
+    </div>
+    ${padMode === 'tones' ? html`<section className="bs-pads" aria-label="Tonpads">${scale.map((semi, i) => { const pc = (keyPc + semi) % 12, inCh = nowPcs.has(pc); return html`<button key=${i} type="button"
+      className=${'bs-pad bs-tone' + (inCh ? ' bs-inch' : '')} style=${{ '--pc': PAD_COLORS[i] }}
+      onPointerDown=${(e) => { e.preventDefault(); hitTone(i); }} onKeyDown=${(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); hitTone(i); } }}>
+      <span key=${flash['t' + i] || 0} className="bs-glow"></span><b>${NOTE_N[pc]}${i === 7 ? '\u2032' : ''}</b><small>${inCh ? 'i ' + CHORD_DB[nowChord].name : ['1', '2', '3', '4', '5', '6', '7', '8'][i]}</small></button>`; })}</section>
+    <small className="muted">${(/^[A-G][#b]?/.exec(keyName) || ['C'])[0]}-${minor ? 'moll' : 'dur'}. Tonerna som passar ackordet just nu är markerade och följer med när ackordet byts.</small>` : html`<section className="bs-pads" aria-label="Pads">${beat.pads.map((pd, i) => html`<button key=${pd.id} type="button"
       className=${'bs-pad' + (sel === i ? ' bs-sel' : '') + (playing && beat.rows[pd.id][cur] ? ' bs-hit' : '')}
       style=${{ '--pc': PAD_COLORS[i] }} onPointerDown=${(e) => { e.preventDefault(); hitPad(i); }}
       onKeyDown=${(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); hitPad(i); } }}>
-      <span key=${flash[pd.id] || 0} className="bs-glow"></span><b>${PAD_KINDS[pd.kind].name}</b><small>${pd.kind === 'sample' ? (pd.rec ? 'inspelat' : 'tom, spela in') : (PAD_KINDS[pd.kind].ch || []).find((x) => x[0] === pd.ch)?.[1] || ''}</small></button>`)}</section>
+      <span key=${flash[pd.id] || 0} className="bs-glow"></span><b>${PAD_KINDS[pd.kind].name}</b><small>${pd.kind === 'sample' ? (pd.rec ? 'inspelat' : 'tom, spela in') : (PAD_KINDS[pd.kind].ch || []).find((x) => x[0] === pd.ch)?.[1] || ''}</small></button>`)}</section>`}
 
     <section className="card bs-edit">
       <div className="bs-tabs" role="tablist">
