@@ -83,6 +83,34 @@ input,select,textarea{font-size:16px}
   --vd-plate:#113524; --vd-line:#0a2015; --vd-rim:#0b0e0b; --vd-dots:#f2c230; --vd-disc:#0a0c0a; --vd-groove:#262a26;
   --vd-label:#f2c230; --vd-ink:#1a1405; --vd-arm:#fbf2dc; --vd-head:#e2563f; --vd-hole:#fbf2dc; --vd-ring:#c93a2b; --vd-ring-2:#1f8a4c; --vd-rays:#f2c230;
 }
+:root[data-skin="neon"]{
+  /* Neon: nästan svart, magenta och cyan som glöder */
+  --bg:#07050f; --surface:#110c20; --surface-2:#1a1433; --surface-3:#241c45; --line:#2e2552; --text:#f2eeff; --muted:#b3abd6; --faint:#8f88b8; --brass:#ff3df2; --brass-2:#33d6ff; --brass-ink:#1a0618; --leaf:#33d6ff; --leaf-2:#8be9ff; --leaf-ink:#04161e; --ember:#ff3df2; --ember-ink:#1a0618; --sky:#33d6ff; --f1:#33d6ff; --f2:#2ee6b8; --f3:#ffd23f; --f4:#ff3df2; --glow-1:#ff3df2; --glow-2:#33d6ff; --wv-band:#1a1433; --cv-bg:#1d1240; --cv-text:#f2eeff; --cv-btn:#ff3df2; --cv-btn-text:#1a0618; --vd-plate:#160f30; --vd-line:#0b0818; --vd-rim:#05040b; --vd-dots:#33d6ff; --vd-disc:#07060d; --vd-groove:#221a3d; --vd-label:#ff3df2; --vd-ink:#1a0618; --vd-arm:#f2eeff; --vd-head:#33d6ff; --vd-hole:#f2eeff; --vd-ring:#ff3df2; --vd-ring-2:#33d6ff; --vd-rays:#8a5cff;
+  --f-display:"Bricolage Grotesque","Avenir Next",system-ui,sans-serif;
+  --f-body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --r:16px;
+  color-scheme:dark;
+}
+:root[data-skin="sol"]{
+  /* Sol: mörkt rödbrunt, guld och rosa som en solnedgång */
+  --bg:#0d0605; --surface:#1a0d0b; --surface-2:#261410; --surface-3:#331b15; --line:#45271d; --text:#fff1ea; --muted:#dcbcb0; --faint:#ae8a7f; --brass:#ffb84d; --brass-2:#ff3d80; --brass-ink:#2a1204; --leaf:#ff8a4c; --leaf-2:#ffc07a; --leaf-ink:#2a1204; --ember:#ff6a3d; --ember-ink:#1f0802; --sky:#ffd27a; --f1:#ffd27a; --f2:#ff8a4c; --f3:#ffb84d; --f4:#ff3d80; --glow-1:#ffb84d; --glow-2:#ff3d80; --wv-band:#261410; --cv-bg:#3a160f; --cv-text:#fff1ea; --cv-btn:#ffb84d; --cv-btn-text:#2a1204; --vd-plate:#2a110c; --vd-line:#140705; --vd-rim:#070303; --vd-dots:#ffb84d; --vd-disc:#0a0505; --vd-groove:#2e1a14; --vd-label:#ffb84d; --vd-ink:#2a1204; --vd-arm:#fff1ea; --vd-head:#ff3d80; --vd-hole:#fff1ea; --vd-ring:#ff3d80; --vd-ring-2:#ff8a4c; --vd-rays:#ffb84d;
+  --f-display:"Bricolage Grotesque","Avenir Next",system-ui,sans-serif;
+  --f-body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --r:16px;
+  color-scheme:dark;
+}
+:root[data-skin="svartvit"]{
+  /* Svartvit: svart och vitt, med ett svagt neonskimmer i bakgrunden */
+  --bg:#000000; --surface:#0e0e10; --surface-2:#18181b; --surface-3:#232327; --line:#2e2e33; --text:#f5f5f7; --muted:#b4b4bb; --faint:#8d8d95; --brass:#ffffff; --brass-2:#d0d0d6; --brass-ink:#000000; --leaf:#e6e6ea; --leaf-2:#ffffff; --leaf-ink:#000000; --ember:#ffffff; --ember-ink:#000000; --sky:#c9c9d2; --f1:#33d6ff; --f2:#2ee6b8; --f3:#ffd23f; --f4:#ff3df2; --glow-1:#ff3df2; --glow-2:#33d6ff; --wv-band:#18181b; --cv-bg:#141416; --cv-text:#f5f5f7; --cv-btn:#ffffff; --cv-btn-text:#000000; --vd-plate:#121214; --vd-line:#050506; --vd-rim:#000000; --vd-dots:#9a9aa2; --vd-disc:#050505; --vd-groove:#1e1e22; --vd-label:#f5f5f7; --vd-ink:#000000; --vd-arm:#f5f5f7; --vd-head:#ff3df2; --vd-hole:#000000; --vd-ring:#ff3df2; --vd-ring-2:#33d6ff; --vd-rays:#d0d0d6;
+  --f-display:"Bricolage Grotesque","Avenir Next",system-ui,sans-serif;
+  --f-body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --r:16px;
+  color-scheme:dark;
+}
+:root[data-skin="svartvit"][data-skin] body{background:radial-gradient(900px 520px at 85% -8%,color-mix(in oklab,var(--glow-1) 7%,transparent),transparent 65%),radial-gradient(800px 520px at -10% 30%,color-mix(in oklab,var(--glow-2) 6%,transparent),transparent 60%),var(--bg);background-attachment:fixed}
 html,body{background:var(--bg);color:var(--text)}
 body{background:radial-gradient(900px 520px at 85% -8%,color-mix(in oklab,var(--glow-1) 16%,transparent),transparent 65%),radial-gradient(800px 520px at -10% 30%,color-mix(in oklab,var(--glow-2) 10%,transparent),transparent 60%),var(--bg);background-attachment:fixed;min-height:100%}
 body{font-family:var(--f-body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
@@ -561,14 +589,14 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 .mini-pat i.r{color:var(--faint)}
 .song.can{border-color:color-mix(in oklab,var(--leaf) 40%,transparent)}
 /* Kväll: lugnare och mer exklusivt. Platta ytor, inga neonglöd, serif i rubrikerna */
-:root:is([data-skin="salvia"],[data-skin="riddim"]) body{background:var(--bg)}
-:root:is([data-skin="salvia"],[data-skin="riddim"]) h1,:root:is([data-skin="salvia"],[data-skin="riddim"]) h2,:root:is([data-skin="salvia"],[data-skin="riddim"]) h3,
-:root:is([data-skin="salvia"],[data-skin="riddim"]) .home-h1,:root:is([data-skin="salvia"],[data-skin="riddim"]) .ls-h1{font-weight:700;letter-spacing:-.01em}
-:root:is([data-skin="salvia"],[data-skin="riddim"]) .card{background:var(--surface);border-color:var(--line)}
-:root:is([data-skin="salvia"],[data-skin="riddim"]) .play,:root:is([data-skin="salvia"],[data-skin="riddim"]) .fab,:root:is([data-skin="salvia"],[data-skin="riddim"]) .ls-btn,:root:is([data-skin="salvia"],[data-skin="riddim"]) .ls-back,:root:is([data-skin="salvia"],[data-skin="riddim"]) .gh-launch{box-shadow:none}
-:root:is([data-skin="salvia"],[data-skin="riddim"]) .play{border-radius:999px;font-weight:600}
-:root:is([data-skin="salvia"],[data-skin="riddim"]) .ls-btn:not(.ghost){background:var(--cv-btn);color:var(--cv-btn-text)}
-:root:is([data-skin="salvia"],[data-skin="riddim"]) .free-cover{position:relative;overflow:hidden;isolation:isolate;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;background:var(--cv-bg);color:var(--cv-text);border-radius:14px;padding:24px 28px}
+:root:is([data-skin="salvia"],[data-skin="riddim"],[data-skin="neon"],[data-skin="sol"],[data-skin="svartvit"]) body{background:var(--bg)}
+:root:is([data-skin="salvia"],[data-skin="riddim"],[data-skin="neon"],[data-skin="sol"],[data-skin="svartvit"]) h1,:root:is([data-skin="salvia"],[data-skin="riddim"],[data-skin="neon"],[data-skin="sol"],[data-skin="svartvit"]) h2,:root:is([data-skin="salvia"],[data-skin="riddim"],[data-skin="neon"],[data-skin="sol"],[data-skin="svartvit"]) h3,
+:root:is([data-skin="salvia"],[data-skin="riddim"],[data-skin="neon"],[data-skin="sol"],[data-skin="svartvit"]) .home-h1,:root:is([data-skin="salvia"],[data-skin="riddim"],[data-skin="neon"],[data-skin="sol"],[data-skin="svartvit"]) .ls-h1{font-weight:700;letter-spacing:-.01em}
+:root:is([data-skin="salvia"],[data-skin="riddim"],[data-skin="neon"],[data-skin="sol"],[data-skin="svartvit"]) .card{background:var(--surface);border-color:var(--line)}
+:root:is([data-skin="salvia"],[data-skin="riddim"],[data-skin="neon"],[data-skin="sol"],[data-skin="svartvit"]) .play,:root:is([data-skin="salvia"],[data-skin="riddim"],[data-skin="neon"],[data-skin="sol"],[data-skin="svartvit"]) .fab,:root:is([data-skin="salvia"],[data-skin="riddim"],[data-skin="neon"],[data-skin="sol"],[data-skin="svartvit"]) .ls-btn,:root:is([data-skin="salvia"],[data-skin="riddim"],[data-skin="neon"],[data-skin="sol"],[data-skin="svartvit"]) .ls-back,:root:is([data-skin="salvia"],[data-skin="riddim"],[data-skin="neon"],[data-skin="sol"],[data-skin="svartvit"]) .gh-launch{box-shadow:none}
+:root:is([data-skin="salvia"],[data-skin="riddim"],[data-skin="neon"],[data-skin="sol"],[data-skin="svartvit"]) .play{border-radius:999px;font-weight:600}
+:root:is([data-skin="salvia"],[data-skin="riddim"],[data-skin="neon"],[data-skin="sol"],[data-skin="svartvit"]) .ls-btn:not(.ghost){background:var(--cv-btn);color:var(--cv-btn-text)}
+:root:is([data-skin="salvia"],[data-skin="riddim"],[data-skin="neon"],[data-skin="sol"],[data-skin="svartvit"]) .free-cover{position:relative;overflow:hidden;isolation:isolate;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;background:var(--cv-bg);color:var(--cv-text);border-radius:14px;padding:24px 28px}
 .vinyl-deck{display:none}
 .home-day{display:block;margin-top:8px;border-radius:14px;overflow:hidden;background:var(--cv-bg)}
 .scene{position:relative;aspect-ratio:1/.8;overflow:hidden;background:#2a2014}
@@ -642,16 +670,16 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 .sleeve .home-steps{padding:0;background:transparent;border:0;gap:6px}
 .sleeve .home-steps li{font-size:15px}
 .sleeve .ls-btn.big{margin-top:2px}
-:root:is([data-skin="salvia"],[data-skin="riddim"]) .vinyl-deck{display:block;position:absolute;z-index:-1;right:0;top:0;width:380px;height:auto;font-family:var(--f-body)}
-:root:is([data-skin="salvia"],[data-skin="riddim"]) .vd-spin{transform-origin:129px 129px;animation:vinyl-spin 20s linear infinite}
-:root:is([data-skin="salvia"],[data-skin="riddim"]) .free-cover{min-height:210px}
-:root:is([data-skin="salvia"],[data-skin="riddim"]) .free-cover .vinyl-deck{width:260px}
-:root:is([data-skin="salvia"],[data-skin="riddim"]) .free-cover .vd-plate{display:none}
-@media (prefers-reduced-motion:reduce){:root:is([data-skin="salvia"],[data-skin="riddim"]) .vd-spin{animation:none}}
+:root:is([data-skin="salvia"],[data-skin="riddim"],[data-skin="neon"],[data-skin="sol"],[data-skin="svartvit"]) .vinyl-deck{display:block;position:absolute;z-index:-1;right:0;top:0;width:380px;height:auto;font-family:var(--f-body)}
+:root:is([data-skin="salvia"],[data-skin="riddim"],[data-skin="neon"],[data-skin="sol"],[data-skin="svartvit"]) .vd-spin{transform-origin:129px 129px;animation:vinyl-spin 20s linear infinite}
+:root:is([data-skin="salvia"],[data-skin="riddim"],[data-skin="neon"],[data-skin="sol"],[data-skin="svartvit"]) .free-cover{min-height:210px}
+:root:is([data-skin="salvia"],[data-skin="riddim"],[data-skin="neon"],[data-skin="sol"],[data-skin="svartvit"]) .free-cover .vinyl-deck{width:260px}
+:root:is([data-skin="salvia"],[data-skin="riddim"],[data-skin="neon"],[data-skin="sol"],[data-skin="svartvit"]) .free-cover .vd-plate{display:none}
+@media (prefers-reduced-motion:reduce){:root:is([data-skin="salvia"],[data-skin="riddim"],[data-skin="neon"],[data-skin="sol"],[data-skin="svartvit"]) .vd-spin{animation:none}}
 @keyframes vinyl-spin{to{transform:rotate(360deg)}}
-:root:is([data-skin="salvia"],[data-skin="riddim"]) .free-cover .ls-kicker{color:var(--cv-text)}
-:root:is([data-skin="salvia"],[data-skin="riddim"]) .free-cover .home-h1{font-size:46px;line-height:.95;color:var(--cv-text);max-width:9em}
-:root:is([data-skin="salvia"],[data-skin="riddim"]) .bottomnav button[aria-current="page"]{color:var(--brass);background:transparent}
+:root:is([data-skin="salvia"],[data-skin="riddim"],[data-skin="neon"],[data-skin="sol"],[data-skin="svartvit"]) .free-cover .ls-kicker{color:var(--cv-text)}
+:root:is([data-skin="salvia"],[data-skin="riddim"],[data-skin="neon"],[data-skin="sol"],[data-skin="svartvit"]) .free-cover .home-h1{font-size:46px;line-height:.95;color:var(--cv-text);max-width:9em}
+:root:is([data-skin="salvia"],[data-skin="riddim"],[data-skin="neon"],[data-skin="sol"],[data-skin="svartvit"]) .bottomnav button[aria-current="page"]{color:var(--brass);background:transparent}
 /* Teman */
 .skins{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .skin{text-align:left;border-radius:14px;padding:12px;border:2px solid transparent;display:grid;gap:8px;color:#fff}
@@ -1270,9 +1298,9 @@ h2.page{font-family:var(--f-display);font-size:clamp(28px,3.4vw,38px);font-weigh
 h2.page + .lead,.page + .lead{margin-top:6px}
 .lead{font-size:16px;line-height:1.45}
 /* Huvudknapp */
-.play,:root:is([data-skin="salvia"],[data-skin="riddim"]) .play{background:var(--ember);color:var(--ember-ink);font-weight:700;box-shadow:0 10px 24px -14px var(--ember)}
+.play,:root:is([data-skin="salvia"],[data-skin="riddim"],[data-skin="neon"],[data-skin="sol"],[data-skin="svartvit"]) .play{background:var(--ember);color:var(--ember-ink);font-weight:700;box-shadow:0 10px 24px -14px var(--ember)}
 .play:hover{filter:brightness(1.06)}
-.play.stop,:root:is([data-skin="salvia"],[data-skin="riddim"]) .play.stop{background:var(--text);color:var(--bg);box-shadow:none}
+.play.stop,:root:is([data-skin="salvia"],[data-skin="riddim"],[data-skin="neon"],[data-skin="sol"],[data-skin="svartvit"]) .play.stop{background:var(--text);color:var(--bg);box-shadow:none}
 .fab{background:var(--text);color:var(--bg)}
 .btn{border-radius:var(--ds-r-ctl)}
 .btn.primary,.ls-btn{background:var(--ember);color:var(--ember-ink)}
@@ -1348,8 +1376,8 @@ details.card.more{padding:18px 0 0}
 .song.can{border-color:transparent}
 .h2-hero{border:0}
 
-.card,:root:is([data-skin="salvia"],[data-skin="riddim"]) .card,.beatcard,.practice .beatcard{background:transparent;border-color:transparent;border-top-color:color-mix(in oklab,var(--line) 65%,transparent);box-shadow:none}
-:root:is([data-skin="salvia"],[data-skin="riddim"]) .card.hand3d{background:var(--surface);border-color:transparent}
+.card,:root:is([data-skin="salvia"],[data-skin="riddim"],[data-skin="neon"],[data-skin="sol"],[data-skin="svartvit"]) .card,.beatcard,.practice .beatcard{background:transparent;border-color:transparent;border-top-color:color-mix(in oklab,var(--line) 65%,transparent);box-shadow:none}
+:root:is([data-skin="salvia"],[data-skin="riddim"],[data-skin="neon"],[data-skin="sol"],[data-skin="svartvit"]) .card.hand3d{background:var(--surface);border-color:transparent}
 .practice .beatcard,.practice .pr-chords{padding-left:0;padding-right:0}
 .seg{justify-self:start;width:max-content;max-width:100%}
 /* Ackordbyten: steg som en lista, tips som text */
@@ -1471,7 +1499,7 @@ details.card.more{padding:18px 0 0}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
 <script>
 const { useState, useEffect, useRef, useMemo } = React;
-try { const sk = localStorage.getItem('ng-skin2'), dk = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches; document.documentElement.setAttribute('data-skin', sk === 'riddim' || (sk === 'auto' && dk) ? 'riddim' : 'salvia'); } catch (e) { document.documentElement.setAttribute('data-skin', 'salvia'); }
+try { const sk = localStorage.getItem('ng-skin2'), dk = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches; document.documentElement.setAttribute('data-skin', sk === 'auto' ? (dk ? 'riddim' : 'salvia') : ['salvia', 'riddim', 'neon', 'sol', 'svartvit'].indexOf(sk) >= 0 ? sk : 'salvia'); } catch (e) { document.documentElement.setAttribute('data-skin', 'salvia'); }
 /* Inbyggd mallmotor (ersätter htm-biblioteket, inga externa beroenden) */
 const html = (() => {
   const P = '', cache = new WeakMap(), VOID = { input: 1, br: 1, img: 1, hr: 1, meta: 1, link: 1 };
@@ -3105,7 +3133,7 @@ function Jam({ easy, onSave, onDone }) {
   const [recs, setRecs] = useState([]);
   const [name, setName] = useState('');
   const S = useRef(null), cvR = useRef(null), dot = useRef(null), streakR = useRef(null), cheerR = useRef(null);
-  const [skin, setSkinS] = useState(() => { try { return localStorage.getItem('ng-jam-skin') || 'neon'; } catch (e) { return 'neon'; } });
+  const [skin, setSkinS] = useState(() => { const app = document.documentElement.getAttribute('data-skin'); try { return localStorage.getItem('ng-jam-skin') || (RING_SKINS[app] ? app : 'neon'); } catch (e) { return RING_SKINS[app] ? app : 'neon'; } });
   const skinR = useRef(skin);
   const setSkin = (v) => { setSkinS(v); skinR.current = v; try { localStorage.setItem('ng-jam-skin', v); } catch (e) {} };
   const [intro, setIntro] = useState(0);
@@ -3349,7 +3377,11 @@ const SKINS = [
   { id: 'auto', name: 'Följ telefonen', sub: 'Ljust på dagen, Riddim när telefonen är i mörkt läge', bg: '#e6dccb', fg: '#2e4136', sw: ['#f3ede1', '#0e1f17', '#f2c230'] },
   { id: 'salvia', name: 'Salvia och persika', sub: 'Ljust papper, dämpat grönt, som ett skivomslag', bg: '#f3ede1', fg: '#2e4136', sw: ['#4c6655', '#edb99f', '#96472e'] },
   { id: 'riddim', name: 'Riddim', sub: 'Djupgrönt, guld och rött, som en strandbar i skymningen', bg: '#0e1f17', fg: '#fbf2dc', sw: ['#f2c230', '#1f8a4c', '#c93a2b'] },
+  { id: 'neon', name: 'Neon', sub: 'Nästan svart, magenta och cyan som glöder', bg: '#07050f', fg: '#f2eeff', sw: ['#ff3df2', '#8a5cff', '#33d6ff'] },
+  { id: 'sol', name: 'Sol', sub: 'Mörkt rödbrunt, guld och rosa som en solnedgång', bg: '#0d0605', fg: '#fff1ea', sw: ['#ffb84d', '#ff6a3d', '#ff3d80'] },
+  { id: 'svartvit', name: 'Svartvit', sub: 'Svart och vitt med ett svagt neonskimmer', bg: '#000000', fg: '#f5f5f7', sw: ['#ffffff', '#8d8d95', '#ff3df2'] },
 ];
+const SKIN_IDS = ['salvia', 'riddim', 'neon', 'sol', 'svartvit'];
 
 /* ---------------------------------------------------------------- klocka och spela-med */
 // Spela med en egen inspelning: klockan följer ljudfilens slag i stället för kompbandet
@@ -5000,7 +5032,7 @@ function App() {
   const [tableChord, setTableChord] = useState('C');
   const [modal, setModal] = useState(false);
   const [picking, setPicking] = useState(false);
-  const [skin, setSkinState] = useState(() => { try { const v = localStorage.getItem('ng-skin2'); return v === 'riddim' || v === 'auto' ? v : 'salvia'; } catch (e) { return 'salvia'; } });
+  const [skin, setSkinState] = useState(() => { try { const v = localStorage.getItem('ng-skin2'); return v === 'auto' || SKIN_IDS.includes(v) ? v : 'salvia'; } catch (e) { return 'salvia'; } });
   const [sysDark, setSysDark] = useState(() => { try { return matchMedia('(prefers-color-scheme: dark)').matches; } catch (e) { return false; } });
   useEffect(() => { let mq; try { mq = matchMedia('(prefers-color-scheme: dark)'); } catch (e) { return; } const h = (e) => setSysDark(e.matches); mq.addEventListener ? mq.addEventListener('change', h) : mq.addListener(h); return () => (mq.removeEventListener ? mq.removeEventListener('change', h) : mq.removeListener(h)); }, []);
   const [skinOpen, setSkinOpen] = useState(false);
