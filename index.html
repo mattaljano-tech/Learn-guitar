@@ -948,6 +948,14 @@ html.jam-stage .jam-mode{display:none}
 .bs{display:grid;gap:14px;align-items:start}
 .bs-col{display:grid;gap:14px;min-width:0}
 @media (min-width:980px){.bs{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}}
+.bs-tip{display:grid;gap:8px;padding:12px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line)}
+.bs-tip p{margin:0;font-size:14px;line-height:1.45}
+.bs-tip-top{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.bs-tip-k{font-weight:800;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--brass)}
+.bs-step.bs-tipc:not(.bs-on){border:2px dashed var(--pc);background:color-mix(in oklab,var(--pc) 10%,var(--surface-2))}
+.bs-how-btn{margin-left:6px;color:var(--brass);font-weight:700;text-decoration:underline;text-underline-offset:3px;padding:0}
+.bs-how{display:grid;gap:6px;padding:12px;border-radius:12px;background:var(--surface-2)}
+.bs-how p{margin:0;font-size:13.5px;line-height:1.45}
 .bs-card{display:grid;gap:12px}
 .bs-h{display:flex;align-items:center;gap:10px;font-family:var(--f-display);font-weight:700;font-size:17px}
 .bs-h b{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--text);color:var(--bg);font-size:14px;flex:none}
@@ -3581,6 +3589,22 @@ function beatStep(b, s, t, sd16, root) {
   }
 }
 
+// Tips i Beatstudion: var ett ljud brukar ligga i takten, för pop/rock och för reggae. Rutorna räknas 1 e & a 2 e & a …
+const BEAT_TIPS = {
+  kick: { pop: [[0, 8], 'Bastrumman är hjärtslaget. Lägg den på 1 och 3, alltså första rutan i första och tredje gruppen.'], reggae: [[8], 'I reggae (one drop) slår bastrumman bara på 3. Det är det som ger reggaen dess gung.'] },
+  snare: { pop: [[4, 12], 'Virveln svarar bastrumman på 2 och 4. Klappa händerna på 2 och 4 så hör du det.'], reggae: [[8], 'I reggae slår virveln eller kantslaget tillsammans med bastrumman på 3.'] },
+  rim: { pop: [[4, 12], 'Kantslaget är en mjukare virvel, på 2 och 4.'], reggae: [[8], 'Kantslaget på 3, samtidigt som bastrumman, är klassisk reggae.'] },
+  clap: { pop: [[4, 12], 'Handklappen hör hemma på 2 och 4, samma som virveln.'], reggae: [[8], 'I reggae passar en handklapp på 3.'] },
+  hat: { pop: [[0, 2, 4, 6, 8, 10, 12, 14], 'Hi-hatten håller tempot jämnt. Lägg den på varje åttondel: alla siffror och alla &.'], reggae: [[2, 6, 10, 14], 'I reggae ligger hi-hatten gärna på baktakten, alltså &-rutorna mellan slagen.'] },
+  ohat: { pop: [[14], 'En öppen hi-hat på sista & före nästa 1 ger ett lyft in i nästa takt.'], reggae: [[14], 'En öppen hi-hat på sista & före 1 ger ett luftigt lyft.'] },
+  shaker: { pop: [[0, 2, 4, 6, 8, 10, 12, 14], 'Shakern fyller ut, gärna på varje åttondel som hi-hatten.'], reggae: [[2, 6, 10, 14], 'Shakern på &-rutorna förstärker reggaens baktakt.'] },
+  cowbell: { pop: [[0, 6, 12], 'Koskällan låter bäst sparsamt, på 1 och ett par ställen till.'], reggae: [[2, 10], 'Koskällan sparsamt, på ett par &-rutor.'] },
+  tom: { pop: [[12, 13, 14, 15], 'Pukor passar som en liten upptakt i slutet av takten, på 4 e & a.'], reggae: [[12, 14], 'Pukor i slutet av takten leder in i nästa.'] },
+  sample: { pop: [[4, 12], 'Ett eget ljud fungerar ofta som virvel på 2 och 4.'], reggae: [[8], 'Prova ditt eget ljud på 3.'] },
+  bass: { pop: ['R.....R.R...5...', 'Basen spelar grundtonen (R) på 1, där ackordet byts. På 3 kan den spela grundtonen igen eller kvinten (5).'], reggae: ['R.....5.R...8...', 'Reggaebas: grundton (R) på 1 och 3 och kvint (5) och oktav (8) emellan. Lämna gärna luft, tystnaden är en del av reggae.'] },
+};
+const REGGAE_PRESETS = ['One drop', 'Rockers', 'Steppers', 'Dub'];
+
 function BeatStudio({ toast }) {
   const [beat, setBeatS] = useState(() => { try { const d = JSON.parse(localStorage.getItem('ng-beat-draft')); if (d && d.pads) return d; } catch (e) {} return beatFromPreset(BEAT_PRESETS[0]); });
   const beatR = useRef(beat);
@@ -3595,6 +3619,8 @@ function BeatStudio({ toast }) {
   const [flash, setFlash] = useState({});
   const [padMode, setPadMode] = useState('drums');
   const [toneInst, setToneInst] = useState('gitarr');
+  const [tipStyle, setTipStyle] = useState(null);
+  const [showHow, setShowHow] = useState(false);
   const run = useRef(null);
   useEffect(() => { loadBeatSamples(beat); return () => stop(); }, []);
 
@@ -3697,6 +3723,14 @@ function BeatStudio({ toast }) {
   const prog = BEAT_PROGS[beat.prog || 0], steps = sel === 'bass' ? beat.bass : beat.rows[p.id];
   const stepLbl = (v) => (sel === 'bass' ? v : v === 1 ? '·' : '');
 
+  const genre = tipStyle || (REGGAE_PRESETS.includes(beat.name) ? 'reggae' : 'pop');
+  const tipKind = sel === 'bass' ? 'bass' : p.kind, tip = (BEAT_TIPS[tipKind] || BEAT_TIPS.sample)[genre];
+  const tipSteps = sel === 'bass' ? [...tip[0]].map((c, k) => (c === '.' ? -1 : k)).filter((k) => k >= 0) : tip[0];
+  const applyTip = () => {
+    if (sel === 'bass') { setBeat((b) => ({ ...b, bass: [...tip[0]].map((c) => (c === '.' ? '' : c)), bassMute: false })); return; }
+    setBeat((b) => ({ ...b, rows: { ...b.rows, [p.id]: new Array(16).fill(0).map((_, k) => (tip[0].includes(k) ? 2 : 0)) } }));
+    setPad(sel, { mute: false });
+  };
   const LBL = ['1', 'e', '&', 'a', '2', 'e', '&', 'a', '3', 'e', '&', 'a', '4', 'e', '&', 'a'];
   const rowsAll = [...beat.pads.map((pd, i) => ({ key: i, id: pd.id, name: PAD_KINDS[pd.kind].name, cells: beat.rows[pd.id], col: PAD_COLORS[i], mute: !!pd.mute })), { key: 'bass', id: 'bass', name: 'Bas', cells: beat.bass, col: 'var(--brass)', mute: !!beat.bassMute }];
   const selRow = rowsAll.find((r) => r.key === sel) || rowsAll[0];
@@ -3741,9 +3775,21 @@ function BeatStudio({ toast }) {
 
     <section className="card bs-card">
       <div className="bs-h"><b>2</b>Placera ${selRow.name.replace('­', '').toLowerCase()}</div>
-      <p className="bs-hint">${sel === 'bass' ? 'Tryck där basen ska spela: R är ackordets grundton, 5 kvinten och 8 oktaven. Basen följer ackorden.' : 'Tryck där den ska slå. Igen för ett svagare slag, en tredje gång för att ta bort.'}</p>
+      <div className="bs-tip">
+        <div className="bs-tip-top"><span className="bs-tip-k">Tips</span>
+          <div className="seg" role="group" aria-label="Stil för tipsen">${[['pop', 'Pop/rock'], ['reggae', 'Reggae']].map(([id, l]) => html`<button key=${id} aria-pressed=${genre === id} onClick=${() => setTipStyle(id)}>${l}</button>`)}</div></div>
+        <p>${tip[1]}</p>
+        <div className="row" style=${{ gap: 8, flexWrap: 'wrap' }}><button className="btn" onClick=${applyTip}>Lägg in förslaget</button><span className="muted" style=${{ fontSize: 12.5 }}>Rutorna med streckad ram passar.</span></div>
+      </div>
+      <p className="bs-hint">${sel === 'bass' ? 'Tryck i en ruta för grundton (R), kvint (5), oktav (8) eller tyst. Basen följer ackorden.' : 'Tryck i en ruta för ett slag, igen för ett svagare slag, en tredje gång för att ta bort.'}
+        <button type="button" className="bs-how-btn" onClick=${() => setShowHow(!showHow)}>${showHow ? 'Dölj' : 'Hur funkar en takt?'}</button></p>
+      ${showHow ? html`<div className="bs-how">
+        <p><b>En takt har fyra slag:</b> 1, 2, 3 och 4. Räkna högt i tempot: ett, två, tre, fyra, ett, två …</p>
+        <p><b>Mellan slagen</b> finns tre rutor till: e, & och a. Säg ”ett-e-och-a, två-e-och-a” så hamnar du på rätt ruta.</p>
+        <p><b>Grundregeln:</b> bastrumman på 1 och 3, virveln på 2 och 4 och hi-hatten på alla siffror och &. Reggae vänder på det: allt tungt landar på 3.</p>
+      </div>` : null}
       <div className="bs-bar">${[0, 1, 2, 3].map((g) => html`<div key=${g} className="bs-grp">${[0, 1, 2, 3].map((j) => { const k = g * 4 + j, v = steps[k]; return html`<div key=${k} className="bs-nc">
-        <button type="button" className=${'bs-step' + (v ? ' bs-on' : '') + (v === 1 ? ' bs-ghost' : '') + (k === cur ? ' bs-now' : '')} style=${{ '--pc': selRow.col }} aria-pressed=${!!v} aria-label=${'Slag ' + LBL[k] + ', ruta ' + (k + 1)} onClick=${() => tapStep(k)}>${stepLbl(v)}</button>
+        <button type="button" className=${'bs-step' + (v ? ' bs-on' : '') + (v === 1 ? ' bs-ghost' : '') + (k === cur ? ' bs-now' : '') + (tipSteps.includes(k) ? ' bs-tipc' : '')} style=${{ '--pc': selRow.col }} aria-pressed=${!!v} aria-label=${'Slag ' + LBL[k] + ', ruta ' + (k + 1)} onClick=${() => tapStep(k)}>${stepLbl(v)}</button>
         <span className=${j === 0 ? 'bs-b' : ''}>${LBL[k]}</span></div>`; })}</div>`)}</div>
       ${sel === 'bass' && playing ? html`<span className="muted" style=${{ fontSize: 13 }}>Ackord nu: ${CHORD_DB[prog[bar % prog.length]].name}</span>` : null}
     </section>
