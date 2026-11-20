@@ -1595,6 +1595,18 @@ details.card.more{padding:18px 0 0}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
 <script>
 const { useState, useEffect, useRef, useMemo } = React;
+/* Datalagring: allt sparas under nycklar som börjar med ng- (inspelningar och samplingar i IndexedDB 'ng-rec').
+   Lagringen är versionsmärkt, så att en framtida ändring av formatet kan flytta gammal data utan att något går förlorat. */
+const NG_SCHEMA = 2;
+(function migrate() {
+  try {
+    const v = +(localStorage.getItem('ng-schema') || 1);
+    if (v < 2) { /* v1 → v2: samma format, bara versionsmärkning */ }
+    localStorage.setItem('ng-schema', String(NG_SCHEMA));
+  } catch (e) {}
+  // be webbläsaren att inte rensa appens data automatiskt när telefonen får ont om plats
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persisted().then((ok) => ok || navigator.storage.persist()); } catch (e) {}
+})();
 try { const sk = localStorage.getItem('ng-skin2'), dk = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches; document.documentElement.setAttribute('data-skin', sk === 'auto' ? (dk ? 'riddim' : 'salvia') : ['salvia', 'riddim', 'neon', 'sol', 'svartvit'].indexOf(sk) >= 0 ? sk : 'salvia'); } catch (e) { document.documentElement.setAttribute('data-skin', 'salvia'); }
 /* Inbyggd mallmotor (ersätter htm-biblioteket, inga externa beroenden) */
 const html = (() => {
@@ -1955,7 +1967,11 @@ class Engine {
     this.timer = null; this.prog = null; this.mix = { g: 0.85, b: 0.8, d: 0.7 }; this.muted = false; this.log = [];
     this.useSamples = true; try { this.useSamples = localStorage.getItem('ng-snd') !== 'synth'; } catch (e) {}
     this.smp = null;
+    this.userLat = 0; try { this.userLat = (+localStorage.getItem('ng-lat') || 0) / 1000; } catch (e) {}
   }
+  // total fördröjning från att ljudet schemaläggs tills det hörs: det webbläsaren rapporterar + egen kalibrering (Bluetooth m.m.)
+  lat() { return ((this.ctx && this.ctx.outputLatency) || 0) + this.userLat; }
+  setLat(ms) { this.userLat = ms / 1000; try { localStorage.setItem('ng-lat', String(Math.round(ms))); } catch (e) {} }
   // Inspelade toner från en riktig nylongitarr (tonejs-instruments, CC-BY 3.0). Tills de laddats används den syntetiska strängen.
   loadSamples() {
     if (this.smp || !this.ctx) return;
@@ -2331,7 +2347,7 @@ class Engine {
   stop() { clearInterval(this.timer); this.timer = null; this.prog = null; this.queue = []; this.log = []; }
   flush() {
     if (!this.ctx || !this.queue.length) return;
-    const now = this.ctx.currentTime, due = [], keep = [];
+    const now = this.ctx.currentTime - this.lat(), due = [], keep = [];
     for (const q of this.queue) (q.t <= now ? due : keep).push(q);
     this.queue = keep;
     for (const q of due) this.onVisual && this.onVisual(q);
@@ -4200,7 +4216,7 @@ function audioBars(a) {
 }
 function audioClock() {
   const A = AUDIO_SYNC, c = engine.ctx; if (!A || !c) return null;
-  const t = c.currentTime - (c.outputLatency || 0) - A.base, B = A.beats, S = A.starts, first = B[S[A.from]];
+  const t = c.currentTime - engine.lat() - A.base, B = A.beats, S = A.starts, first = B[S[A.from]];
   if (t < first) { const k = (t - first) / A.ibi; if (k < -4) return null; const p = (k + 4) * 2; return { bar: -1, step: Math.min(7, Math.floor(p)), frac: p - Math.floor(p) }; }
   let lo = 0, hi = B.length - 1;
   while (lo < hi) { const m = (lo + hi + 1) >> 1; if (B[m] <= t) lo = m; else hi = m - 1; }
@@ -4212,7 +4228,7 @@ function audioClock() {
 function clockNow() {
   if (AUDIO_SYNC) return audioClock();
   if (!engine.ctx || !engine.log.length) return null;
-  const now = engine.ctx.currentTime - (engine.ctx.outputLatency || 0);
+  const now = engine.ctx.currentTime - engine.lat();
   let cur = null; for (const e of engine.log) if (e.t <= now) cur = e;
   if (!cur) return null;
   return { step: cur.step, bar: cur.bar, frac: Math.max(0, Math.min(0.999, (now - cur.t) / cur.sd)) };
@@ -4649,7 +4665,7 @@ function GuitarHero({ song, bars, easy, bpm, setBpm, playing, onStart, onStop, a
     if (!engine.ctx) return;
     // använd tidsstämpeln från själva trycket, så att en upptagen skärm inte gör trycket sent
     const lag = e && e.timeStamp ? Math.min(0.25, Math.max(0, (performance.now() - e.timeStamp) / 1000)) : 0;
-    hit(engine.ctx.currentTime - (engine.ctx.outputLatency || 0) - lag);
+    hit(engine.ctx.currentTime - engine.lat() - lag);
   };
   useEffect(() => {
     const h = (e) => {
@@ -4712,7 +4728,7 @@ function GuitarHero({ song, bars, easy, bpm, setBpm, playing, onStart, onStop, a
       // låtposition
       let now = -9;
       if (phase === 'play' && engine.ctx && engine.log.length) {
-        const k = ghPosAt(engine.ctx.currentTime - (engine.ctx.outputLatency || 0)); if (k != null) now = k;
+        const k = ghPosAt(engine.ctx.currentTime - engine.lat()); if (k != null) now = k;
       } else if (phase === 'done') now = p.bars.length * 8 + 6;
       const sd = engine.log.length ? engine.log[engine.log.length - 1].sd : 30 / bpm;
       // missar och automatiska träffar i titta-läget
@@ -5641,7 +5657,7 @@ function RhythmMeter({ active, onHit }) {
   const [tally, setTally] = useState({ p: 0, g: 0, m: 0, streak: 0 });
   const hit = () => {
     if (!active || !engine.ctx) return;
-    const now = engine.ctx.currentTime - (engine.ctx.outputLatency || 0) * 0.5;
+    const now = engine.ctx.currentTime - engine.lat() * 0.5;
     const offs = engine.log.filter((x) => x.step % 2 === 1).map((x) => (now - x.t) * 1000);
     if (!offs.length) return;
     const ms = offs.reduce((a, b) => (Math.abs(b) < Math.abs(a) ? b : a));
@@ -5685,7 +5701,7 @@ const RecDB = (() => {
     const t = db.transaction('rec', mode), q = fn(t.objectStore('rec'));
     t.oncomplete = () => res(q ? q.result : undefined); t.onerror = () => rej(t.error);
   }));
-  return { put: (r) => run('readwrite', (st) => st.put(r)), del: (id) => run('readwrite', (st) => st.delete(id)), list: (song) => run('readonly', (st) => st.index('song').getAll(song)) };
+  return { put: (r) => run('readwrite', (st) => st.put(r)), del: (id) => run('readwrite', (st) => st.delete(id)), list: (song) => run('readonly', (st) => st.index('song').getAll(song)), all: () => run('readonly', (st) => st.getAll()) };
 })();
 const fmtDur = (s) => Math.floor(s / 60) + ':' + String(Math.round(s % 60)).padStart(2, '0');
 function RecItem({ r, onDel }) {
@@ -5699,6 +5715,115 @@ function RecItem({ r, onDel }) {
     <a className="rec-x" href=${url} download=${r.title + ' ' + when.replace(/[: ]/g, '-') + '.' + ext} title="Ladda ner" aria-label="Ladda ner inspelningen">↓</a>
     <button className="rec-x" onClick=${() => onDel(r.id)} title="Ta bort" aria-label="Ta bort inspelningen">×</button>
   </li>`;
+}
+
+/* ---------------------------------------------------------------- säkerhetskopia och fördröjning */
+const blobTo64 = (b) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1] || ''); r.onerror = rej; r.readAsDataURL(b); });
+const b64ToBlob = (s, type) => { const bin = atob(s), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return new Blob([u], { type: type || 'audio/webm' }); };
+async function makeBackup() {
+  const ls = {};
+  for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith('ng-')) ls[k] = localStorage.getItem(k); }
+  let recs = []; try { recs = await RecDB.all(); } catch (e) {}
+  const rec = [];
+  for (const r of recs) { if (!r || !r.blob) continue; const { blob, ...rest } = r; rec.push({ ...rest, type: blob.type, data: await blobTo64(blob) }); }
+  return { app: 'NylonGitarr', schema: NG_SCHEMA, at: new Date().toISOString(), ls, rec };
+}
+function backupInfo(d) {
+  const j = (k, f) => { try { return JSON.parse(d.ls[k]) || f; } catch (e) { return f; } };
+  const prog = j('ng-progress', {}), rec = d.rec || [];
+  return { xp: prog.xp || 0, songs: j('ng-songs', []).length, beats: j('ng-beats', []).length, recs: rec.filter((r) => r.song !== 'sample').length, samples: rec.filter((r) => r.song === 'sample').length,
+    when: d.at ? new Date(d.at).toLocaleString('sv-SE', { dateStyle: 'medium', timeStyle: 'short' }) : 'okänt datum' };
+}
+async function restoreBackup(d) {
+  for (const [k, v] of Object.entries(d.ls || {})) if (k.startsWith('ng-') && typeof v === 'string') localStorage.setItem(k, v);
+  for (const r of d.rec || []) { const { data, type, ...rest } = r; if (data && rest.id) await RecDB.put({ ...rest, blob: b64ToBlob(data, type) }); }
+}
+function DataSettings() {
+  const [last, setLast] = useState(() => { try { return localStorage.getItem('ng-backup-at'); } catch (e) { return null; } });
+  const [busy, setBusy] = useState(false), [msg, setMsg] = useState(''), [ask, setAsk] = useState(null), [store, setStore] = useState(null);
+  useEffect(() => {
+    if (!navigator.storage || !navigator.storage.estimate) return;
+    Promise.all([navigator.storage.estimate(), navigator.storage.persisted ? navigator.storage.persisted() : false]).then(([e, ok]) => setStore({ mb: (e.usage || 0) / 1048576, ok })).catch(() => {});
+  }, []);
+  const save = async () => {
+    setBusy(true); setMsg('');
+    try {
+      const d = await makeBackup(), day = d.at.slice(0, 10), name = 'nylongitarr-sakerhetskopia-' + day + '.json';
+      const file = new File([JSON.stringify(d)], name, { type: 'application/json' });
+      const touch = window.matchMedia && matchMedia('(pointer: coarse)').matches;
+      let shared = false;
+      if (touch && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try { await navigator.share({ files: [file], title: 'NylonGitarr säkerhetskopia' }); shared = true; } catch (e) { if (e && e.name === 'AbortError') { setBusy(false); return; } }
+      }
+      if (!shared) { const url = URL.createObjectURL(file), a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000); }
+      const now = new Date().toISOString(); try { localStorage.setItem('ng-backup-at', now); } catch (e) {} setLast(now);
+      const i = backupInfo(d); setMsg('Sparad: ' + i.beats + ' beats, ' + i.songs + ' egna låtar, ' + i.recs + ' inspelningar och ' + i.samples + ' samplingar. Lägg filen någonstans säkert, t.ex. i Google Drive.');
+    } catch (e) { setMsg('Säkerhetskopian gick inte att skapa. Försök igen.'); }
+    setBusy(false);
+  };
+  const pick = (e) => {
+    const f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f) return;
+    f.text().then((t) => {
+      const d = JSON.parse(t); if (!d || d.app !== 'NylonGitarr' || !d.ls) throw new Error('fel');
+      const i = backupInfo(d); setAsk(d);
+      setMsg('Filen är från ' + i.when + ' och innehåller ' + i.xp + ' XP, ' + i.beats + ' beats, ' + i.songs + ' egna låtar, ' + i.recs + ' inspelningar och ' + i.samples + ' samplingar. Inställningar och framsteg ersätts, inspelningar läggs till.');
+    }).catch(() => { setAsk(null); setMsg('Filen gick inte att läsa. Välj en säkerhetskopia från NylonGitarr (.json).'); });
+  };
+  const apply = async () => {
+    setBusy(true);
+    try { await restoreBackup(ask); setAsk(null); setMsg('Klart! Appen startar om med din säkerhetskopia.'); setTimeout(() => location.reload(), 900); }
+    catch (e) { setAsk(null); setMsg('Något gick fel när filen lästes in. Försök igen.'); setBusy(false); }
+  };
+  const lastTxt = last ? new Date(last).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short', year: 'numeric' }) : 'aldrig';
+  return html`<div className="set-sec"><b>Säkerhetskopia</b>
+    <small>Sparar allt i en fil: framsteg, egna låtar, beats, komp, inställningar, inspelningar och samplingar. Filen går också att läsa in i den riktiga appen sen. Senast sparad: ${lastTxt}.</small>
+    <div className="row">
+      <button className="btn primary" disabled=${busy} onClick=${save}>${busy && !ask ? 'Sparar …' : 'Spara säkerhetskopia'}</button>
+      <label className="btn" style=${{ cursor: 'pointer' }}>Läs in fil<input type="file" accept=".json,application/json" onChange=${pick} style=${{ display: 'none' }} /></label>
+    </div>
+    ${ask ? html`<div className="row"><button className="btn primary" disabled=${busy} onClick=${apply}>Ja, läs in</button><button className="btn" onClick=${() => { setAsk(null); setMsg(''); }}>Avbryt</button></div>` : null}
+    ${msg ? html`<p className="muted" style=${{ fontSize: 13 }}>${msg}</p>` : null}
+    ${store ? html`<small>${'Appen använder ' + (store.mb < 1 ? 'under 1' : store.mb.toFixed(1)) + ' MB. ' + (store.ok ? 'Datan är skyddad mot automatisk rensning.' : 'Webbläsaren kan rensa datan om telefonen får ont om plats, så spara en säkerhetskopia ibland.')}</small>` : null}
+  </div>`;
+}
+function LatencySettings() {
+  const [ms, setMs] = useState(() => Math.round(engine.userLat * 1000));
+  const [run, setRun] = useState(false);
+  const [msg, setMsg] = useState('');
+  const R = useRef(null);
+  const set = (v) => { const n = Math.max(-100, Math.min(400, Math.round(v))); setMs(n); engine.setLat(n); };
+  const finish = () => {
+    const r = R.current; R.current = null; setRun(false); if (!r) return;
+    const offs = [];
+    for (const t of r.taps) { const k = Math.round((t - r.t0) / r.spb); if (k < 3 || k >= r.n) continue; const o = t - (r.t0 + k * r.spb); if (o > -0.25 && o < 0.45) offs.push(o); }
+    if (offs.length < 5) { setMsg('För få knackningar. Försök igen och knacka på varje klick.'); return; }
+    offs.sort((a, b) => a - b); const med = offs[offs.length >> 1], spread = offs[Math.floor(offs.length * 0.8)] - offs[Math.floor(offs.length * 0.2)];
+    const rep = (engine.ctx.outputLatency || 0) * 1000, extra = med * 1000 - rep;
+    set(extra);
+    setMsg('Uppmätt fördröjning ' + Math.round(med * 1000) + ' ms (webbläsaren rapporterar ' + Math.round(rep) + ' ms). Justeringen är satt till ' + Math.round(Math.max(-100, Math.min(400, extra))) + ' ms.' + (spread > 0.06 ? ' Knackningarna var ganska ojämna, så gör gärna om mätningen.' : ''));
+  };
+  const start = () => {
+    engine.init(); const c = engine.ctx, spb = 60 / 90, n = 16, t0 = c.currentTime + 0.5;
+    for (let i = 0; i < n; i++) engine.click(t0 + i * spb, i % 4 === 0);
+    R.current = { t0, spb, n, taps: [] }; setRun(true); setMsg('Knacka på knappen precis när du hör klicken. Börja när du hittat takten.');
+    setTimeout(finish, (0.5 + n * spb + 0.6) * 1000);
+  };
+  const tap = (e) => {
+    const r = R.current; if (!r) return;
+    const lag = e && e.timeStamp ? Math.min(0.25, Math.max(0, (performance.now() - e.timeStamp) / 1000)) : 0;
+    r.taps.push(engine.ctx.currentTime - lag); vib(10);
+  };
+  return html`<div className="set-sec"><b>Fördröjning i ljudet</b>
+    <small>Om ljudet kommer efter det du ser, t.ex. med Bluetooth-hörlurar, blir spelen och takten fel. Mät med samma hörlurar eller högtalare som du brukar använda.</small>
+    <div className="row">
+      <button className="btn" onClick=${() => set(ms - 10)} aria-label="Minska fördröjningen">−</button>
+      <b style=${{ minWidth: 70, textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>${(ms > 0 ? '+' : '') + ms} ms</b>
+      <button className="btn" onClick=${() => set(ms + 10)} aria-label="Öka fördröjningen">+</button>
+      ${ms ? html`<button className="btn" onClick=${() => { set(0); setMsg(''); }}>Nollställ</button>` : null}
+    </div>
+    ${run ? html`<button className="btn primary" style=${{ minHeight: 64, fontSize: 18, touchAction: 'manipulation' }} onPointerDown=${tap}>Knacka här i takt</button>` : html`<div className="row"><button className="btn primary" onClick=${start}>Mät med knackning</button></div>`}
+    ${msg ? html`<p className="muted" style=${{ fontSize: 13 }}>${msg}</p>` : null}
+  </div>`;
 }
 
 /* ---------------------------------------------------------------- app */
@@ -6916,6 +7041,8 @@ function App() {
           <div className="seg" role="group" aria-label="Gitarrljud">${[[true, 'Riktig'], [false, 'Syntetisk']].map(([v, l]) => html`<button key=${l} aria-pressed=${realSnd === v} onClick=${() => { engine.setSound(v); setRealSnd(v); engine.init(); engine.playChord(voicing('C', easy).frets); }}>${l}</button>`)}</div></div>
         <div className="set-row"><div><b>Vibration</b><small>Telefonen vibrerar vid ackordbyten</small></div>
           <button className=${'chip' + (vibe ? ' on' : '')} onClick=${() => { setVibe(!vibe); if (!vibe) setTimeout(() => vib(30), 50); }}>${vibe ? 'På' : 'Av'}</button></div>
+        <${LatencySettings} />
+        <${DataSettings} />
         <div className="set-sec"><b>Flytta framsteg</b><small>XP, märken, rekord, egna låtar och kalibrering följer med. Gör så här: kopiera koden på enheten du övat på och klistra in den på den andra.</small>
           <div className="row"><button className="btn primary" onClick=${makeCode}>Kopiera min kod</button></div>
           ${codeOut ? html`<textarea id="codeout" readOnly rows="3" value=${codeOut} onFocus=${(e) => e.target.select()}></textarea>` : null}
