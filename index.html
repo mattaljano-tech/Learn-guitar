@@ -961,7 +961,7 @@ html.jam-stage .jam-mode{display:none}
 .jam-rec.is-paused i{animation:none;background:var(--muted)}
 .jam-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;align-items:center}
 .jam-pause{height:52px;padding:0 22px;border-radius:999px;font-weight:700}
-.jam-paused{margin:0;text-align:center;font-size:14px;color:var(--muted)}
+.jam-paused{margin:0;text-align:center;font-size:14px;color:var(--muted);max-width:100%}
 .jam-comp-live{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center}
 .jam-comp-live .bs-select{min-width:0;max-width:230px}
 .jam-check{display:flex;align-items:center;gap:8px;font-size:14px}
@@ -3542,9 +3542,9 @@ function Jam({ easy, onSave, onDone }) {
           <select id="jam-comp" className="bs-select" value=${comp} onChange=${(e) => setComp(e.target.value)}>
             <option value="">Inget komp</option>
             <option value="draft">Det som ligger i Beatstudion nu</option>
-            ${MY_BEATS.map((b) => html`<option key=${b.id} value=${b.id}>${b.name} · ${b.bpm} BPM</option>`)}
+            ${MY_BEATS.map((b) => html`<option key=${b.id} value=${b.id}>${String(b.name).includes(String(b.bpm)) ? b.name + ' BPM' : b.name + ' · ' + b.bpm + ' BPM'}</option>`)}
           </select>
-          ${comp ? html`<label className="jam-check"><input type="checkbox" checked=${compGtr} onChange=${(e) => setCompGtr(e.target.checked)} /> Gitarr med i kompet</label>
+          ${comp ? html`<label className="jam-check"><input type="checkbox" checked=${compGtr} onChange=${(e) => setCompGtr(e.target.checked)} /> Appens gitarr med i kompet</label>
           <small className="muted">Använd hörlurar, så hör mikrofonen bara din gitarr. Inspelningen får både din gitarr och kompet.</small>` : null}
         </div>
         <div className="row" style=${{ gap: 10, alignItems: 'center', justifyContent: 'center' }}><span className="label">Ringens färg</span>${SkinPick}</div>
@@ -3570,13 +3570,13 @@ function Jam({ easy, onSave, onDone }) {
           <select id="jam-comp-live" className="bs-select" value=${comp} onChange=${(e) => changeComp(e.target.value)}>
             <option value="">Inget komp</option>
             <option value="draft">Beatstudion nu</option>
-            ${MY_BEATS.map((b) => html`<option key=${b.id} value=${b.id}>${b.name} · ${b.bpm} BPM</option>`)}
+            ${MY_BEATS.map((b) => html`<option key=${b.id} value=${b.id}>${String(b.name).includes(String(b.bpm)) ? b.name + ' BPM' : b.name + ' · ' + b.bpm + ' BPM'}</option>`)}
           </select>
-          ${comp ? html`<label className="jam-check"><input type="checkbox" checked=${compGtr} onChange=${(e) => changeComp(comp, e.target.checked)} /> Gitarr</label>` : null}
+          ${comp ? html`<label className="jam-check"><input type="checkbox" checked=${compGtr} onChange=${(e) => changeComp(comp, e.target.checked)} /> Appens gitarr med</label>` : null}
         </div>
         ${paused ? html`<p className="jam-paused">Pausat. Välj komp och lyssna in dig, inspelningen står still tills du fortsätter.</p>` : null}
         <div className="jam-btns">
-          <button className="btn jam-pause" onClick=${togglePause}>${paused ? '▶ Fortsätt' : '⏸ Paus'}</button>
+          <button className=${'btn jam-pause' + (paused ? ' primary' : '')} onClick=${togglePause}>${paused ? '▶ Fortsätt' : '⏸ Paus'}</button>
           <button className="play stop" onClick=${finish}>${I.stop}Klar, visa vad jag spelade</button>
         </div></div>` : null}
       ${phase === 'done' && res ? html`<div className="jam-res">
