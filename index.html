@@ -1509,6 +1509,25 @@ details.card.more{padding:18px 0 0}
 
 /* Spela in + övningsläge: knappar i låtraden */
 .song-tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.rg{display:grid;gap:12px}
+.rg-head{display:flex;justify-content:space-between;align-items:center;gap:10px}.rg-head>div{display:grid;gap:2px}.rg-head b{font-size:17px}
+.rg-cv{width:100%;height:190px;display:block;border-radius:18px;background:#0f2219}
+.rg-cv.lane{height:min(460px,58vh)}
+.rg-hud{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;font-weight:700}
+.rg-score b{font-size:22px;font-variant-numeric:tabular-nums}.rg-score{color:var(--muted);font-size:13px}
+.rg-mult{padding:4px 11px;border-radius:999px;background:var(--surface-2);font-weight:900}.rg-mult.m2{background:#6fd0c0;color:#0b1a13}.rg-mult.m3{background:#f2c230;color:#0b1a13}.rg-mult.m4{background:#ef5b45;color:#fff}
+.rg-combo{display:inline-flex;align-items:center;gap:5px}.rg-combo svg{width:15px;height:15px;color:var(--ember)}.rg-acc{margin-left:auto;color:var(--muted)}
+.rg-tempo{flex-wrap:wrap}
+.rg-steps{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.rg-steps li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px;border-radius:16px;background:var(--surface-2)}
+.rg-steps li>span:nth-child(2){display:grid;gap:3px}.rg-steps small{color:var(--muted);font-size:13px}
+.rg-steps .n{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:900;box-shadow:inset 0 0 0 2px var(--line)}
+.rg-steps li.now{box-shadow:inset 0 0 0 2px var(--ember)}.rg-steps li.now .n{background:var(--ember);color:var(--ember-ink);box-shadow:none}
+.rg-steps li.done .n{background:var(--leaf);color:var(--leaf-ink);box-shadow:none}
+.rg .btn svg{width:16px;height:16px;flex:none}
+.rg-done{display:grid;gap:8px;justify-items:center;text-align:center;padding:6px 0}
+.rg-stars{display:flex;gap:6px;font-size:40px;color:var(--line)}.rg-stars .on{color:#f2c230}
+.rg-big{font-size:24px}
 .bs-quick .bs-card,.bs-quick .bs-over,.bs-quick .bs-live{display:none!important}
 .bs-modeseg{margin-bottom:4px}
 .bs-feel-in{display:grid;gap:10px;margin-top:10px}
@@ -2336,32 +2355,59 @@ class Engine {
     if (end < full) g.gain.setTargetAtTime(0.0001, t + Math.max(0.01, end - 0.03), 0.01);
     src.connect(g); g.connect(this.bus.d); src.start(t); src.stop(t + end + 0.12);
   }
-  band(style, step, t, sd, root, key) {
+  // ackordets tre toner i orgelns läge (mellan A3 och A4)
+  triad(key, root) {
+    const ch = key && CHORD_DB[key]; if (!ch || !root) return null;
+    let f = root; while (f < 220) f *= 2; while (f >= 440) f /= 2;
+    const minor = /^[A-G][#b]?m(?!aj)/.test(key) || /moll/i.test(ch.name || '');
+    return [f, f * Math.pow(2, (minor ? 3 : 4) / 12), f * Math.pow(2, 7 / 12)];
+  }
+  // en enkel orgel (dragstänger 8', 4' och 2 2/3') för reggaens "bubbla"
+  organ(freqs, t, dur, vel = 1) {
+    const c = this.ctx, g = c.createGain(), lp = c.createBiquadFilter(), tr = this.transpose ? Math.pow(2, this.transpose / 12) : 1;
+    lp.type = 'lowpass'; lp.frequency.value = 2600; lp.Q.value = 0.5;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.055 * vel, t + 0.005); g.gain.setTargetAtTime(0.0001, t + dur, 0.018);
+    for (const f of freqs) [[1, 1], [2, 0.45], [3, 0.22]].forEach(([h, a]) => { const o = c.createOscillator(), og = c.createGain(); o.type = 'sine'; o.frequency.value = f * h * tr; og.gain.value = a; o.connect(og); og.connect(lp); o.start(t); o.stop(t + dur + 0.12); });
+    lp.connect(g); g.connect(this.bus.b); g.connect(this.dSend);
+  }
+  band(style, step, t, sd, root, key, bar = 0) {
     if (style && style.startsWith('beat:')) { const b = MY_BEATS.find((x) => x.id === style.slice(5)); if (b) this.kit = b.kit || 'riktig'; const mi = !!(key && CHORD_DB[key] && /^[A-G][#b]?m(?!aj)/.test(CHORD_DB[key].name)); if (b) for (const k of [0, 1]) beatStep(b, step * 2 + k, t + k * (sd / 2) * (1 + (b.swing || 0)), sd / 2, root, mi); return; }
     const r = root, fifth = r * 1.4983, oct = r * 2;
-    if (style === 'reggae') { // One Drop: allt landar på 3
-      this.hat(t, step % 2 ? 0.85 : 0.45);
-      if (step === 4) { this.kick(t); this.rim(t); }
-      if (step === 0) this.bass(r, t, sd * 1.8);
-      if (step === 3) this.bass(fifth, t, sd * 0.75, 0.85);
-      if (step === 4) this.bass(r, t, sd * 1.5);
-      if (step === 6) this.bass(oct, t, sd * 0.8, 0.8);
+    // Låtkompen spelas med riktiga inspelade trummor, en varm bas och lite mänsklig ojämnhet, så att det känns som ett band
+    const hum = (dt = 0.007) => t + Math.random() * dt, vv = (a, j = 0.16) => a * (1 - j / 2 + Math.random() * j);
+    const D = (kind, vel, ch = '', dt = 0) => this.drum(kind, hum() + dt, vv(vel), ch, 'riktig');
+    const fill = bar % 4 === 3, tri = this.triad(key, r);
+    if (style === 'reggae') { // One Drop: allt landar på 3, orgeln studsar på &
+      D('hat', step % 2 ? 0.7 : 0.38, 'luftig');
+      if (step === 4) { D('kick', 1.05, 'djup'); D('rim', 0.95); }
+      if (step === 7 && bar % 2 === 1) D('ohat', 0.3, 'tight');
+      if (fill && step === 7) { D('snare', 0.45); D('snare', 0.6, '', sd / 2); }
+      if (step === 0) this.bassAs(r, t, sd * 1.7, 0.8, 'dub');
+      if (step === 3) this.bassAs(fifth, t, sd * 0.7, 0.68, 'dub');
+      if (step === 4) this.bassAs(r, t, sd * 1.5, 0.8, 'dub');
+      if (step === 6) this.bassAs(oct, t, sd * 0.75, 0.64, 'dub');
+      if (tri && step % 2) { this.organ(tri, hum(), sd * 0.42, 0.9); this.organ(tri, hum() + sd / 2, sd * 0.3, 0.45); }
     } else if (style === 'steppers') { // Steppers: bastrumma på varje slag
-      this.hat(t, step % 2 ? 0.9 : 0.4, step === 7);
-      if (step % 2 === 0) this.kick(t, 0.9);
-      if (step === 4) this.rim(t);
-      if (step === 0 || step === 2 || step === 4) this.bass(r, t, sd * 0.85);
-      if (step === 6) this.bass(oct, t, sd * 0.85, 0.85);
-      if (step === 7) this.bass(fifth, t, sd * 0.6, 0.7);
-    } else if (style === 'acoustic') {
-      this.shaker(t, step % 2 ? 0.6 : 1);
-      if (step === 0) this.kick(t, 0.85);
-      if (step === 5) this.kick(t, 0.6);
-      if (step === 2 || step === 6) this.rim(t, 0.85);
-      if (step === 0) this.bass(r, t, sd * 2.2);
-      if (step === 3) this.bass(oct, t, sd * 0.8, 0.8);
-      if (step === 4) this.bass(r, t, sd * 1.8);
-      if (step === 7) this.bass(fifth, t, sd * 0.8, 0.75);
+      D('hat', step % 2 ? 0.75 : 0.4, step === 7 ? 'luftig' : '');
+      if (step === 7) D('ohat', 0.28, 'tight');
+      if (step % 2 === 0) D('kick', 0.95, 'tight');
+      if (step === 4) D('rim', 0.95);
+      if (fill && step === 6) { D('snare', 0.5); D('snare', 0.65, '', sd / 2); }
+      if (step === 0 || step === 2 || step === 4) this.bassAs(r, t, sd * 0.85, 0.9, 'dub');
+      if (step === 6) this.bassAs(oct, t, sd * 0.85, 0.8, 'dub');
+      if (step === 7) this.bassAs(fifth, t, sd * 0.6, 0.7, 'dub');
+      if (tri && step % 2) this.organ(tri, hum(), sd * 0.4, 0.8);
+    } else if (style === 'acoustic') { // akustiskt: shaker, borste och kontrabas
+      D('shaker', step % 2 ? 0.55 : 0.95);
+      if (step === 0) D('kick', 0.9, 'djup');
+      if (step === 5) D('kick', 0.55, 'djup');
+      if (step === 2 || step === 6) D('snare', 0.8, 'borste');
+      if (fill && step === 7) { D('tom', 0.55, 'hog'); D('tom', 0.65, '', sd / 2); }
+      if (step === 0 && bar % 4 === 0) D('ride', 0.22, 'klocka');
+      if (step === 0) this.bassAs(r, t, sd * 2, 0.9, 'akustisk');
+      if (step === 3) this.bassAs(oct, t, sd * 0.8, 0.7, 'akustisk');
+      if (step === 4) this.bassAs(r, t, sd * 1.7, 0.85, 'akustisk');
+      if (step === 7) this.bassAs(fifth, t, sd * 0.8, 0.7, 'akustisk');
     } else if (style === 'click') {
       if (step % 2 === 0) this.click(t, step === 0);
     }
@@ -2588,6 +2634,229 @@ function BeatStrip({ pattern, accents = [], cur, half = 0, count, onEdit }) {
       <div className="t">${dir === 'D' ? (accents.includes(i) ? 'Ner!' : 'Ner') : dir === 'U' ? 'Upp' : dir === 'X' ? 'Tjack' : 'Paus'}</div>
     </div>`)}
   </div>`;
+}
+
+/* ---------------------------------------------------------------- rytmspelet
+   Steg 0: se hela takten och lyssna i lugnt tempo. Sedan öva utan poäng och till sist köra Rytmbanan (Motorvägen):
+   slagen kommer emot dig i två filer (NER och UPP), mikrofonen hör när du slår och ger Perfekt, Bra eller Miss. */
+const RG_COL = { bg: '#0f2219', road0: '#0f2219', road1: '#173826', gold: '#f2c230', red: '#ef5b45', teal: '#6fd0c0', ink: '#fbf2dc', mut: '#9fb3a5', calm: '#7d9a89', dim: '#4d6b5a', card: '#16301f', tj: '#c9a86a' };
+const rgEase = (p) => 1 - Math.pow(1 - Math.max(0, Math.min(1, p)), 3);
+function rgArrow(x, cx, cy, s, dir, col, lw) {
+  x.save(); x.translate(cx, cy); x.strokeStyle = col; x.lineWidth = lw || s * 0.16; x.lineCap = 'round'; x.lineJoin = 'round'; x.beginPath();
+  if (dir === 'X') { const a = s * 0.34; x.moveTo(-a, -a); x.lineTo(a, a); x.moveTo(a, -a); x.lineTo(-a, a); }
+  else { if (dir === 'U') x.rotate(Math.PI); x.moveTo(0, -s / 2); x.lineTo(0, s / 2); x.moveTo(-s * 0.36, s * 0.14); x.lineTo(0, s / 2); x.lineTo(s * 0.36, s * 0.14); }
+  x.stroke(); x.restore();
+}
+function rgFit(c) {
+  const W = c.clientWidth, H = c.clientHeight, dpr = Math.min(2, window.devicePixelRatio || 1); if (!W) return null;
+  if (c.width !== Math.round(W * dpr) || c.height !== Math.round(H * dpr)) { c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); }
+  const x = c.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, W, H); return { x, W, H };
+}
+function RhythmGame({ song, bars, bpm, style, easy, onBefore, onClose, award }) {
+  const patAt = (bi) => { const b = bars[((bi % bars.length) + bars.length) % bars.length]; return (b && b.pat) || song.pattern; };
+  const pat0 = patAt(0), s16 = pat0.length === 16, accents = song.accents || [];
+  const [phase, setPhase] = useState('learn'); // learn, listen, practice, score, done
+  const [pct, setPct] = useState(0.5);
+  const [heard, setHeard] = useState(false);
+  const [gtr, setGtr] = useState(true);
+  const [hud, setHud] = useState({ score: 0, combo: 0, mult: 1, acc: 100 });
+  const [res, setRes] = useState(null);
+  const [micMsg, setMicMsg] = useState('');
+  const R = useRef(null), cv = useRef(null), raf = useRef(0), mic = useRef(null);
+  const best = (() => { try { return (JSON.parse(localStorage.getItem('ng-rytm-best') || '{}'))[song.id] || 0; } catch (e) { return 0; } })();
+
+  const halt = () => {
+    const r = R.current; if (r) { clearInterval(r.timer); r.dead = true; } R.current = null;
+    cancelAnimationFrame(raf.current); if (mic.current) { mic.current.stop(); mic.current = null; }
+  };
+  useEffect(() => halt, []);
+  useEffect(() => { halt(); setPhase('learn'); setRes(null); setHeard(false); }, [song.id]);
+
+  // alla slag (och pauser) i ett steg k (åttondel), med tid
+  const notesAt = (r, k) => {
+    const bi = Math.floor(k / 8), st = ((k % 8) + 8) % 8, p = patAt(r.mode === 'listen' ? 0 : bi), t = r.t0 + k * r.sd, out = [];
+    if (p.length === 16) for (let h = 0; h < 2; h++) out.push({ id: k * 2 + h, t: t + h * r.sd / 2, dir: p[st * 2 + h], i: st * 2 + h, acc: accents.includes(st * 2 + h), bi, gap: r.sd / 2 });
+    else out.push({ id: k * 2, t, dir: p[st], i: st, acc: accents.includes(st), bi, gap: r.sd });
+    return out;
+  };
+  const sched = (r) => {
+    const c = engine.ctx, hor = c.currentTime + 0.15;
+    while (r.k < r.endK && r.t0 + r.k * r.sd < hor) {
+      const k = r.k++, t = r.t0 + k * r.sd;
+      if (k < 0) { if (k % 2 === 0) engine.click(t, k === -8 || (r.bpm < 60 && k === -4)); continue; }
+      const bi = Math.floor(k / 8), st = k % 8, b = bars[(r.mode === 'listen' ? 0 : bi) % bars.length], ch = chordAt(b, st);
+      engine.band(style, st, t, r.sd, CHORD_DB[ch].root, ch, bi);
+      if (r.gtr) {
+        const fr = voicing(ch, easy).frets;
+        notesAt(r, k).forEach((n) => {
+          if (!n.dir || n.dir === '-') return;
+          if (n.dir === 'X') return engine.chuck(fr, n.t);
+          if (song.feel === 'reggae') engine.chop(fr, n.t, { vel: n.dir === 'D' ? 1 : 0.75 });
+          else engine.strum(fr, n.t, n.dir, { vel: n.acc ? 1.05 : n.dir === 'U' ? 0.5 : 0.66 });
+        });
+      }
+    }
+    engine.queue = (engine.queue || []).filter((q) => q.t > c.currentTime - 1);
+    if (r.k >= r.endK && c.currentTime > r.t0 + r.endK * r.sd + 0.5) finish(r);
+  };
+  const finish = (r) => {
+    if (r.dead) return; halt();
+    if (r.mode === 'listen') { setHeard(true); setPhase('learn'); return; }
+    if (r.mode === 'practice') { setPhase('learn'); return; }
+    const acc = r.tot ? Math.round(r.hits / r.tot * 100) : 0, stars = r.noMic ? 0 : acc >= 90 ? 3 : acc >= 75 ? 2 : acc >= 50 ? 1 : 0, score = Math.round(r.score);
+    let rec = false;
+    if (!r.noMic) { try { const m = JSON.parse(localStorage.getItem('ng-rytm-best') || '{}'); if (score > (m[song.id] || 0)) { m[song.id] = score; rec = true; localStorage.setItem('ng-rytm-best', JSON.stringify(m)); } } catch (e) {} }
+    if (stars && award) award(10 + stars * 10, 'Rytmbanan: ' + song.title + ' ' + '★'.repeat(stars));
+    setRes({ score, acc, stars, best: r.best, rec, noMic: r.noMic, bpm: r.bpm }); setPhase('done');
+  };
+  const pop = (r, n, txt, col) => r.pops.push({ t: engine.ctx.currentTime, txt, col, dir: n ? n.dir : null });
+  const judge = (r) => {
+    if (r.noMic || r.mode === 'listen') return;
+    const c = engine.ctx, now = c.currentTime - engine.lat();
+    while (r.on.length) {
+      const o = r.on.shift() - engine.lat() - 0.035; let bestN = null, bd = 0.16;
+      for (const n of r.live) { if (n.res || !n.dir || n.dir === '-') continue; const d = Math.abs(o - n.t); if (d < bd) { bd = d; bestN = n; } }
+      if (bestN) {
+        const pf = bd < 0.075; bestN.res = pf ? 'p' : 'b'; r.tot++; r.hits += pf ? 1 : 0.6; r.combo++; r.best = Math.max(r.best, r.combo); r.mult = Math.min(4, 1 + Math.floor(r.combo / 8));
+        r.score += (pf ? 100 : 50) * r.mult * (bestN.acc ? 1.5 : 1);
+        const col = bestN.dir === 'U' ? RG_COL.teal : bestN.acc ? RG_COL.red : bestN.dir === 'X' ? RG_COL.tj : RG_COL.gold;
+        pop(r, bestN, pf ? (bestN.acc ? 'PERFEKT!' : 'Perfekt') : 'Bra', pf ? col : RG_COL.ink);
+        if (pf) for (let q = 0; q < (bestN.acc ? 16 : 9); q++) r.sparks.push({ t: c.currentTime, dir: bestN.dir, a: Math.random() * Math.PI * 2, v: 60 + Math.random() * 130, col });
+      } else if (c.currentTime - r.lastWait > 0.6) { r.lastWait = c.currentTime; pop(r, null, 'Vänta …', RG_COL.calm); }
+    }
+    for (const n of r.live) if (!n.res && n.dir && n.dir !== '-' && n.t < now - 0.17) { n.res = 'm'; r.tot++; r.combo = 0; r.mult = 1; pop(r, n, 'Miss', '#ff8a7a'); }
+    const acc = r.tot ? Math.round(r.hits / r.tot * 100) : 100;
+    if (r.score !== r.hs || r.combo !== r.hc) { r.hs = r.score; r.hc = r.combo; setHud({ score: Math.round(r.score), combo: r.combo, mult: r.mult, acc }); }
+  };
+  const go = async (mode) => {
+    halt(); onBefore(); engine.init(); if (engine.ctx.state === 'suspended') { try { await engine.ctx.resume(); } catch (e) {} }
+    const c = engine.ctx, b = Math.max(48, Math.round(bpm * pct)), sd = 30 / b;
+    const r = { mode, bpm: b, sd, t0: c.currentTime + 0.3 + (b < 60 ? 4 : 8) * sd, k: b < 60 ? -4 : -8, endK: mode === 'score' ? bars.length * 8 : mode === 'listen' ? 32 : 1e9,
+      gtr: mode === 'listen' || (mode === 'practice' ? gtr : false), live: [], on: [], pops: [], sparks: [], score: 0, combo: 0, best: 0, mult: 1, hits: 0, tot: 0, lastWait: 0, noMic: mode === 'listen', hs: -1, hc: -1 };
+    R.current = r; setHud({ score: 0, combo: 0, mult: 1, acc: 100 }); setRes(null); setMicMsg(''); setPhase(mode);
+    if (mode !== 'listen') {
+      const m = new Mic();
+      try { await m.start({ aec: true }); mic.current = m; } catch (e) { r.noMic = true; setMicMsg('Mikrofonen gick inte att starta, så appen kan inte höra dina slag. Du kan ändå spela med banan.'); }
+      if (r.dead) { if (mic.current) mic.current.stop(); return; }
+    }
+    const cal = micCal(); let env = 0.01, last = 0;
+    r.timer = setInterval(() => sched(r), 25); sched(r);
+    const loop = () => {
+      if (r.dead) return; raf.current = requestAnimationFrame(loop);
+      if (mic.current && !r.noMic) { const m = mic.current; m.read(); const lv = m.rms(), now = c.currentTime;
+        if (lv > cal.onset && lv > env * 2 && now - last > 0.11 && now > r.t0 - 0.3) { last = now; r.on.push(now); } env = env * 0.9 + lv * 0.1; }
+      const now = c.currentTime - engine.lat(), kNow = Math.floor((now - r.t0) / r.sd);
+      // slagen som syns: från strax bakom linjen till drygt en takt fram
+      r.live = r.live.filter((n) => n.t > now - 0.6);
+      const have = new Set(r.live.map((n) => n.id)), lead = r.lead = Math.min(1.9, Math.max(1.1, 5 * r.sd));
+      for (let k = Math.max(0, kNow - 1); r.t0 + k * r.sd < now + lead + r.sd && k < r.endK; k++) notesAt(r, k).forEach((n) => { if (!have.has(n.id)) r.live.push(n); });
+      judge(r);
+      if (cv.current) { const f = rgFit(cv.current); if (f) (mode === 'listen' ? drawOverview : drawLane)(f.x, f.W, f.H, r, now); }
+    };
+    raf.current = requestAnimationFrame(loop);
+  };
+  const stopNow = () => { const r = R.current; halt(); engine.stop && engine.stop(); setPhase(r && r.mode === 'listen' ? 'learn' : 'learn'); if (r && r.mode === 'listen') setHeard(true); };
+
+  // ---------- översikten: hela takten som rutor
+  const drawOverview = (x, W, H, r, now) => {
+    const p = pat0, n = p.length, rows = n === 16 ? 2 : 1, per = n / rows, pad = 10, cw = (W - pad * 2) / per, ch = rows === 2 ? (H - 70) / 2 - 8 : H - 78;
+    let cur = -1, f = 0;
+    if (r && now >= r.t0) { const q = (now - r.t0) / (n === 16 ? r.sd / 2 : r.sd); cur = Math.floor(q) % n; f = q - Math.floor(q); }
+    x.fillStyle = RG_COL.bg; x.beginPath(); x.roundRect(0, 0, W, H, 18); x.fill();
+    for (let i = 0; i < n; i++) {
+      const row = Math.floor(i / per), col = i % per, cx = pad + cw * col + cw / 2, cy = 14 + row * (ch + 34) + ch / 2, d = p[i], on = i === cur, acc = accents.includes(i);
+      const colr = d === 'U' ? RG_COL.teal : d === 'X' ? RG_COL.tj : acc ? RG_COL.red : RG_COL.gold, pp = on ? 1 + 0.1 * (1 - rgEase(f * 2)) : 1;
+      x.save(); x.translate(cx, cy); x.scale(pp, pp);
+      if (d && d !== '-') { x.fillStyle = on ? colr : RG_COL.card; x.beginPath(); x.roundRect(-cw / 2 + 2.5, -ch / 2, cw - 5, ch, 10); x.fill(); rgArrow(x, 0, 0, Math.min(cw * 0.62, acc ? 38 : 30), d, on ? '#0b1a13' : colr, acc ? 6 : 4.5); }
+      else { x.setLineDash([4, 4]); x.strokeStyle = on ? RG_COL.ink : RG_COL.calm; x.lineWidth = 1.5; x.beginPath(); x.roundRect(-cw / 2 + 2.5, -ch / 2, cw - 5, ch, 10); x.stroke(); x.setLineDash([]);
+        x.fillStyle = on ? RG_COL.ink : RG_COL.calm; x.font = '700 ' + (n === 16 ? 9 : 12) + 'px Outfit, system-ui'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('paus', 0, 0); }
+      x.restore();
+      x.fillStyle = on ? RG_COL.ink : (n === 16 ? BEATS16 : BEATS)[i].match(/\d/) ? RG_COL.mut : RG_COL.dim; x.font = (on ? '900 ' : '800 ') + (n === 16 ? 13 : 16) + 'px Outfit, system-ui'; x.textAlign = 'center'; x.textBaseline = 'middle';
+      x.fillText((n === 16 ? BEATS16 : BEATS)[i], cx, cy + ch / 2 + 14);
+    }
+    x.fillStyle = RG_COL.mut; x.font = '600 12px Outfit, system-ui'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(r && now < r.t0 ? 'Räknar in … ' + Math.ceil((r.t0 - now) / (2 * r.sd)) : 'Röd = tungt slag · streckad = handen går i luften', W / 2, H - 12);
+  };
+
+  // ---------- Motorvägen
+  const drawLane = (x, W, H, r, now) => {
+    const C = RG_COL, cx = W / 2, hitY = H - 84, horY = 18, wNear = Math.min(W * 0.46, 210), wFar = wNear * 0.2, lead = r.lead || 1.6;
+    const P = (z) => { const p = 1 / (1 + 1.7 * Math.max(-0.15, z)); return (p - 1 / 2.7) / (1 - 1 / 2.7); };
+    const Y = (z) => horY + (hitY - horY) * P(z), HW = (z) => wFar + (wNear - wFar) * P(z), Z = (t) => (t - now) / lead;
+    const g = x.createLinearGradient(0, horY, 0, H); g.addColorStop(0, C.road0); g.addColorStop(1, C.road1);
+    x.fillStyle = '#0b1a13'; x.fillRect(0, 0, W, H);
+    x.fillStyle = g; x.beginPath(); x.moveTo(cx - wFar, horY); x.lineTo(cx + wFar, horY); x.lineTo(cx + wNear * 1.14, H); x.lineTo(cx - wNear * 1.14, H); x.fill();
+    const live = r.live.slice().sort((a, b) => b.t - a.t);
+    // pauser: lugna streckade fält
+    for (const n of live) { if (n.dir && n.dir !== '-') continue; let z0 = Z(n.t - n.gap * 0.42), z1 = Z(n.t + n.gap * 0.42); if (z1 < -0.15 || z0 > 1) continue; z0 = Math.max(-0.15, z0); z1 = Math.min(1, z1);
+      const ya = Y(z0), yb = Y(z1), wa = HW(z0), wb = HW(z1), cur = Math.abs(n.t - now) < n.gap / 2;
+      x.fillStyle = cur ? 'rgba(125,154,137,0.24)' : 'rgba(125,154,137,0.1)'; x.beginPath(); x.moveTo(cx - wa, ya); x.lineTo(cx + wa, ya); x.lineTo(cx + wb, yb); x.lineTo(cx - wb, yb); x.closePath(); x.fill();
+      x.setLineDash([6, 6]); x.strokeStyle = C.calm; x.lineWidth = 1.5; x.stroke(); x.setLineDash([]);
+      if (cur) continue; const zm = (z0 + z1) / 2, fs = 7 + 15 * P(zm); x.fillStyle = C.calm; x.font = '700 ' + fs + 'px Outfit, system-ui'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(n.gap < r.sd ? 'paus' : 'paus · andas', cx, Y(zm)); }
+    // taktlinjer, räkning och ackord
+    const B = s16 ? BEATS16 : BEATS;
+    for (const n of live) { const z = Z(n.t); if (z < -0.12 || z > 1) continue; const yy = Y(z), w = HW(z), main = /\d/.test(B[n.i] || '');
+      x.strokeStyle = n.i === 0 ? 'rgba(242,194,48,0.55)' : main ? 'rgba(251,242,220,0.16)' : 'rgba(251,242,220,0.06)'; x.lineWidth = n.i === 0 ? 3 : 1.5; x.beginPath(); x.moveTo(cx - w, yy); x.lineTo(cx + w, yy); x.stroke();
+      x.fillStyle = main ? C.mut : C.dim; x.font = '800 ' + (7 + 11 * P(z)) + 'px Outfit, system-ui'; x.textAlign = 'right'; x.textBaseline = 'middle'; x.fillText(B[n.i] || '', cx - w - 6, yy);
+      if (n.i === 0) { const b = bars[n.bi % bars.length]; x.textAlign = 'left'; x.fillStyle = C.gold; x.font = '900 ' + (9 + 14 * P(z)) + 'px Outfit, system-ui'; x.fillText(CHORD_DB[chordAt(b, 0)].name, cx + w + 6, yy); } }
+    x.strokeStyle = 'rgba(251,242,220,0.08)'; x.lineWidth = 2; x.beginPath(); x.moveTo(cx, horY); x.lineTo(cx, H); x.stroke();
+    // slå-linjen
+    const curN = live.find((n) => Math.abs(n.t - now) < n.gap / 2), act = curN && curN.dir && curN.dir !== '-' ? curN : null, hit = act ? 1 - rgEase(Math.max(0, now - act.t) / (act.gap * 0.5)) : 0;
+    x.strokeStyle = 'rgba(251,242,220,0.35)'; x.lineWidth = 3; x.beginPath(); x.moveTo(cx - wNear, hitY); x.lineTo(cx + wNear, hitY); x.stroke();
+    [['D', -1], ['U', 1]].forEach(([L, sgn]) => { const lx = cx + sgn * wNear / 2, on = act && (L === 'U' ? act.dir === 'U' : act.dir !== 'U'), col = L === 'U' ? C.teal : act && act.acc ? C.red : C.gold;
+      if (on) { x.fillStyle = col; x.globalAlpha = 0.2 + 0.5 * hit; x.beginPath(); x.arc(lx, hitY, 30 + 8 * hit, 0, 7); x.fill(); x.globalAlpha = 1; }
+      x.strokeStyle = on ? col : L === 'U' ? 'rgba(111,208,192,0.5)' : 'rgba(242,194,48,0.5)'; x.lineWidth = 3; x.beginPath(); x.arc(lx, hitY, 30, 0, 7); x.stroke();
+      x.fillStyle = C.mut; x.font = '800 12px Outfit, system-ui'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(L === 'U' ? 'UPP' : 'NER', lx, hitY + 48); });
+    if (curN && !act) { const br = 0.5 + 0.5 * Math.sin(now * 6); x.globalAlpha = 0.6 + 0.4 * br; x.fillStyle = C.calm; x.font = '800 18px Outfit, system-ui'; x.textAlign = 'center'; x.fillText('paus', cx, hitY - 4); x.globalAlpha = 1; }
+    if (now < r.t0) { const left = Math.ceil((r.t0 - now) / (2 * r.sd)); x.fillStyle = C.ink; x.font = '900 64px Outfit, system-ui'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(String(Math.min(4, left)), cx, H * 0.4); x.font = '700 14px Outfit, system-ui'; x.fillStyle = C.mut; x.fillText('räknar in', cx, H * 0.4 + 44); }
+    // slagen
+    for (const n of live) { if (!n.dir || n.dir === '-') continue; const z = Z(n.t); if (z > 1 || z < -0.12) continue; if (n.res === 'p' || n.res === 'b') continue;
+      const up = n.dir === 'U', yy = Y(z), w = HW(z), lx = cx + (up ? 1 : -1) * w / 2, sc = 0.25 + 0.75 * P(z), sz = (n.acc ? 64 : n.dir === 'X' ? 46 : 52) * sc;
+      const col = up ? C.teal : n.dir === 'X' ? C.tj : n.acc ? C.red : C.gold; x.globalAlpha = z < 0 || n.res === 'm' ? 0.3 : 1;
+      if (n.acc) { x.fillStyle = 'rgba(239,91,69,0.25)'; x.beginPath(); x.ellipse(lx, yy, sz * 0.85, sz * 0.5, 0, 0, 7); x.fill(); }
+      x.fillStyle = col; x.beginPath(); x.roundRect(lx - sz * 0.55, yy - sz * 0.32, sz * 1.1, sz * 0.64, sz * 0.2); x.fill();
+      x.fillStyle = 'rgba(255,255,255,0.25)'; x.beginPath(); x.roundRect(lx - sz * 0.5, yy - sz * 0.29, sz, sz * 0.18, sz * 0.12); x.fill();
+      rgArrow(x, lx, yy, sz * 0.42, n.dir, '#0b1a13', Math.max(2, sz * 0.08)); x.globalAlpha = 1; }
+    // gnistor och omdömen
+    const t = engine.ctx.currentTime;
+    r.sparks = r.sparks.filter((p) => t - p.t < 0.6); r.pops = r.pops.filter((p) => t - p.t < 0.9);
+    r.sparks.forEach((p) => { const a = (t - p.t) / 0.6, lx = cx + (p.dir === 'U' ? 1 : -1) * wNear / 2; x.fillStyle = p.col; x.globalAlpha = 1 - a; x.beginPath(); x.arc(lx + Math.cos(p.a) * p.v * a, hitY + Math.sin(p.a) * p.v * a * 0.7, 3 * (1 - a) + 1, 0, 7); x.fill(); });
+    r.pops.forEach((p) => { const a = (t - p.t) / 0.9, lx = p.dir ? cx + (p.dir === 'U' ? 1 : -1) * wNear / 2 : cx; x.globalAlpha = 1 - a * a; x.fillStyle = p.col; x.font = '900 ' + (p.txt === 'PERFEKT!' ? 22 : 17) + 'px Outfit, system-ui'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(p.txt, lx, hitY - 50 - 36 * rgEase(a)); });
+    x.globalAlpha = 1;
+    if (r.noMic && r.mode !== 'listen') { x.fillStyle = C.mut; x.font = '600 12px Outfit, system-ui'; x.textAlign = 'center'; x.fillText('Utan mikrofon: spela med banan', cx, 12); }
+  };
+
+  // ---------- vyerna
+  useEffect(() => { if (phase === 'learn' && cv.current) { const f = rgFit(cv.current); if (f) drawOverview(f.x, f.W, f.H, null, 0); } });
+  const b0 = bars[0], chordsTxt = [...new Set(bars.map((b) => CHORD_DB[chordAt(b, 0)].name))].slice(0, 4).join(' · ');
+  const tempoSeg = html`<div className="seg rg-tempo" role="group" aria-label="Tempo">${[[0.5, 'Långsamt 50 %'], [0.75, '75 %'], [1, 'Fullt ' + bpm]].map(([v, l]) => html`<button key=${v} aria-pressed=${pct === v} onClick=${() => setPct(v)}>${l}</button>`)}</div>`;
+  const running = phase === 'listen' || phase === 'practice' || phase === 'score';
+  return html`<section className="card rg" aria-label="Rytmspelet">
+    <div className="rg-head"><div><span className="label" style=${{ margin: 0 }}>${phase === 'score' ? 'Rytmbanan' : phase === 'practice' ? 'Öva utan poäng' : 'Lär dig rytmen'}</span>
+      <b>${chordsTxt} · ${Math.max(48, Math.round(bpm * pct))} BPM</b></div>
+      <button className="btn" onClick=${() => { halt(); onClose(); }}>Stäng</button></div>
+    ${phase === 'score' || phase === 'practice' ? html`<div className="rg-hud">
+      ${phase === 'score' ? html`<span className="rg-score"><b>${hud.score.toLocaleString('sv-SE')}</b> poäng</span><span className=${'rg-mult m' + hud.mult}>x${hud.mult}</span>` : null}
+      <span className="rg-combo">${FlameIcon}${hud.combo} i rad</span><span className="rg-acc">${hud.acc} %</span></div>` : null}
+    <canvas ref=${cv} className=${'rg-cv' + (phase === 'practice' || phase === 'score' ? ' lane' : '')} aria-hidden="true"></canvas>
+    ${micMsg ? html`<p className="muted" style=${{ fontSize: 13, margin: 0 }}>${micMsg}</p>` : null}
+    ${phase === 'learn' ? html`
+      ${tempoSeg}
+      <ol className="rg-steps">
+        <li className=${heard ? 'done' : 'now'}><span className="n">1</span><span><b>Lyssna</b><small>Appen spelar takten fyra gånger. Titta och räkna med.</small></span><button className=${'btn' + (heard ? '' : ' primary')} onClick=${() => go('listen')}>${I.play}Lyssna</button></li>
+        <li className=${heard ? 'now' : ''}><span className="n">2</span><span><b>Öva utan poäng</b><small>Spela med i lugnt tempo. Mikrofonen säger hur det går.</small><label className="jam-check"><input type="checkbox" checked=${gtr} onChange=${(e) => setGtr(e.target.checked)} /> Appens gitarr spelar med</label></span><button className="btn" onClick=${() => go('practice')}>Öva</button></li>
+        <li><span className="n">3</span><span><b>Kör Rytmbanan</b><small>Hela låten med poäng, x2–x4 för långa serier.${best ? ' Rekord: ' + best.toLocaleString('sv-SE') : ''}</small></span><button className=${'btn' + (heard ? ' primary' : '')} onClick=${() => go('score')}>Kör</button></li>
+      </ol>
+      <small className="muted">Använd hörlurar om du kan, så hör mikrofonen bara din gitarr.</small>` : null}
+    ${running ? html`<div className="row" style=${{ gap: 8 }}><button className="btn primary" onClick=${stopNow}>${I.stop}${phase === 'listen' ? 'Sluta lyssna' : 'Stoppa'}</button>
+      ${phase === 'listen' ? null : html`<span className="muted" style=${{ fontSize: 13, alignSelf: 'center' }}>Slå när slagen når linjen. Vänta på pauserna.</span>`}</div>` : null}
+    ${phase === 'done' && res ? html`<div className="rg-done">
+      <div className="rg-stars" aria-label=${res.stars + ' av 3 stjärnor'}>${[0, 1, 2].map((i) => html`<span key=${i} className=${i < res.stars ? 'on' : ''}>★</span>`)}</div>
+      <b className="rg-big">${res.score.toLocaleString('sv-SE')} poäng${res.rec ? ' · nytt rekord!' : ''}</b>
+      <span className="muted">${res.noMic ? 'Utan mikrofon räknas inga poäng.' : res.acc + ' % träffsäkerhet · bästa serie ' + res.best + ' slag i rad · ' + res.bpm + ' BPM'}</span>
+      <div className="row" style=${{ gap: 8, justifyContent: 'center' }}><button className="btn primary" onClick=${() => go('score')}>Spela igen</button>
+        ${pct < 1 ? html`<button className="btn" onClick=${() => { setPct(pct < 0.75 ? 0.75 : 1); }}>Lite snabbare</button>` : null}
+        <button className="btn" onClick=${() => setPhase('learn')}>Tillbaka</button></div></div>` : null}
+  </section>`;
 }
 
 // Lugn rytmvy: dagens ackord, ett stort ord för slaget just nu och raden med åtta slag. Inget som rullar.
@@ -5962,6 +6231,7 @@ function App() {
   useEffect(() => { let mq; try { mq = matchMedia('(prefers-color-scheme: dark)'); } catch (e) { return; } const h = (e) => setSysDark(e.matches); mq.addEventListener ? mq.addEventListener('change', h) : mq.addListener(h); return () => (mq.removeEventListener ? mq.removeEventListener('change', h) : mq.removeListener(h)); }, []);
   const [skinOpen, setSkinOpen] = useState(false);
   const [stepsOpen, setStepsOpen] = useState(false);
+  const [gameOpen, setGameOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
   const [fold, setFold] = useState({});
   // på mobilen ligger tunga delar hopfällda under en rubrik; på datorn visas allt som vanligt
@@ -6225,7 +6495,7 @@ function App() {
       bpm: () => S.current.bpm, swing: () => S.current.swing, countIn: () => S.current.countIn,
       onStep: (step, bar, t, sd) => {
         const s = S.current, bl = s.bars, b = bl[(s.startBar + bar) % bl.length], ch = chordAt(b, step), v = voicing(ch, s.easy);
-        engine.band(s.style, step, t, sd, CHORD_DB[ch].root, ch);
+        engine.band(s.style, step, t, sd, CHORD_DB[ch].root, ch, s.startBar + bar);
         if (!s.autoGuitar) return;
         const pat = b.pat || s.song.pattern, s16 = pat.length === 16;
         if (s16) engine.queue.push({ t: t + sd / 2, type: 'half', step });
@@ -6234,7 +6504,7 @@ function App() {
           if (!dir || dir === '-') return;
           if (dir === 'X') return engine.chuck(v.frets, tk);
           if (s.song.feel === 'reggae') engine.chop(v.frets, tk, { vel: dir === 'D' ? 1 : 0.75 });
-          else engine.strum(v.frets, tk, dir, { vel: s.song.accents.includes(k) ? 1 : s16 && dir === 'U' ? 0.5 : 0.62 });
+          else engine.strum(v.frets, tk, dir, { vel: s.song.accents.includes(k) ? 1.05 : dir === 'U' ? (s16 ? 0.45 : 0.5) : 0.66 });
         });
       },
     });
@@ -6380,6 +6650,7 @@ function App() {
           </div>
           <div className="song-tools">
           ${recBtn}
+          <button className=${'focus-btn' + (gameOpen ? ' on' : '')} aria-expanded=${gameOpen} onClick=${() => { if (gameOpen) setGameOpen(false); else { stopAll(); setGameOpen(true); } }}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7 11v3M5.5 12.5h3M15.5 12h.01M18 13.5h.01"/></svg>Rytmspel</button>
           ${narrowM ? html`<button className=${'focus-btn' + (viewOpen ? ' on' : '')} aria-expanded=${viewOpen} onClick=${() => setViewOpen(!viewOpen)}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>Visning</button>
             <button className=${'focus-btn' + (easy ? ' on' : '')} onClick=${() => setEasy(!easy)} title="Förenklade nybörjargrepp">${I.spark}Lätt</button>` : null}
           <button className="focus-btn" onClick=${enterFocus} title="Helskärm med bara ackord, slag och hand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>${narrowM ? 'Övning' : 'Övningsläge'}</button>
@@ -6411,7 +6682,8 @@ function App() {
       <div className="pr-main">
       ${views.pa ? html`<${PlayAlong} bars=${bars} startBar=${startBar} playing=${playing === 'song'} easy=${easy} noBall=${marker !== 'top' && views.hand} />` : null}
 
-      ${views.beat ? html`<section className="card beatcard" aria-label="Slagkomp">
+      ${gameOpen && !origOn ? html`<${RhythmGame} song=${song} bars=${bars} bpm=${bpm} style=${style} easy=${easy} onBefore=${stopAll} onClose=${() => setGameOpen(false)} award=${award} />` : null}
+      ${views.beat && !(gameOpen && !origOn) ? html`<section className="card beatcard" aria-label="Slagkomp">
         ${song0.alt && !origOn ? html`<div className="seg alt-seg" role="group" aria-label="Vilket komp">
           <button aria-pressed=${!altOn} onClick=${() => pickAlt(false)}>Appens komp</button>
           <button aria-pressed=${altOn} onClick=${() => pickAlt(true)}>${song0.alt.label}</button></div>` : null}
