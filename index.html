@@ -1650,7 +1650,7 @@ details.card.more{padding:18px 0 0}
   var cache = new Map();
   var SMALL = { och: 'and', 'på': 'on', av: 'of', 'i rad': 'in a row', med: 'with', till: 'to', eller: 'or', 'Öppna': 'Open', Spela: 'Play', Byt: 'Change', Visa: 'Show' };
   var NUMW = { 'låtar': 'songs', 'låt': 'song', takter: 'bars', takt: 'bar', slag: 'strums', byten: 'changes', ackord: 'chords', dagar: 'days', dag: 'day', 'poäng': 'points', 'stjärnor': 'stars', 'strängar': 'strings', 'sträng': 'string', 'gånger': 'times', sekunder: 'seconds', minuter: 'minutes' };
-  var SW = /[åäöÅÄÖ]|\b(och|att|du|det|för|med|som|på|inte|när|av|en|ett|takt|slag|gitarren?|låt(ar|en)?|spela|ackord(et|en)?)\b/;
+  var SW = /[åäöÅÄÖ]|\b(och|att|du|det|för|med|som|på|inte|när|av|en|ett|takt|slag|gitarren?|låt(ar|en)?|spela|ackord(et|en)?)\b/i;
   function tr(s) {
     if (!s || typeof s !== 'string') return s;
     var hit = cache.get(s); if (hit !== undefined) return hit;
@@ -1658,7 +1658,9 @@ details.card.more{padding:18px 0 0}
     if (core) {
       if (D[core] != null) out = m[1] + D[core] + m[3];
       else {
-        var c2 = core.replace(/\b(Steg|Takt|Dag|Nivå) (\d+) av (\d+)/g, function (x, w, a, b) { return { Steg: 'Step', Takt: 'Bar', Dag: 'Day', 'Nivå': 'Level' }[w] + ' ' + a + ' of ' + b; })
+        // först hela fraser ur ordlistan, sedan siffror (Steg 1 av 3, 12 byten), ackordnamn och småord
+        var c2 = core.replace(RX, function (k) { return D[k]; });
+        c2 = c2.replace(/\b(Steg|Takt|Dag|Nivå) (\d+) av (\d+)/g, function (x, w, a, b) { return { Steg: 'Step', Takt: 'Bar', Dag: 'Day', 'Nivå': 'Level' }[w] + ' ' + a + ' of ' + b; })
           .replace(/(\d+)\s(låtar|låt|takter|takt|slag|byten|ackord|dagar|dag|poäng|stjärnor|strängar|sträng|gånger|sekunder|minuter)(?![A-Za-zåäö])/g, function (x, n, w) { return n + ' ' + NUMW[w]; })
           .replace(/([A-G][#b]?)-dur(?![a-zåäö])/g, '$1 major').replace(/([A-G][#b]?)-moll(?![a-zåäö])/g, '$1 minor');
         if (D[c2] != null) c2 = D[c2];
