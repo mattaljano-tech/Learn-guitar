@@ -6,7 +6,7 @@ name: Android-app
 on:
   push:
     branches: [main]
-    paths: ['index.html', 'audio/**', 'hand/**', 'video/**', 'icons/**', 'app/**', '.github/workflows/android.yml']
+    paths: ['index.html', 'sync-url.json', 'audio/**', 'hand/**', 'video/**', 'icons/**', 'app/**', '.github/workflows/android.yml']
   workflow_dispatch:
 
 permissions:
