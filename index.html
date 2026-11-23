@@ -40,6 +40,7 @@ input,select,textarea{font-size:16px}
 .js-st i.hit{background:var(--text);color:var(--surface)}
 .js-busy{display:grid;gap:6px;font-size:13px}.js-busy .bar{height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden}.js-busy .bar i{display:block;height:100%;background:var(--ember)}
 .linkbtn{background:none;border:0;padding:0;color:inherit;text-decoration:underline;cursor:pointer;font:inherit}
+.jv-exp{grid-column:1/-1;display:grid;gap:8px;justify-items:start}
 </style>
 <title>NylonGitarr Studio</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
@@ -7074,9 +7075,67 @@ function SelfiePip({ vref }) {
     <button className="jam-selfie-sz" onPointerDown=${(e) => e.stopPropagation()} onClick=${() => save({ ...pos, s: (pos.s + 1) % 3 })} aria-label="Ändra storlek">⤢</button>
   </div>`;
 }
+// Spara jamvideon med ackord och pilar inbrända i bilden, så att den går att dela. Spelas upp tyst i bakgrunden i realtid.
+async function exportJamVideo(r, url, onProg, cancelRef) {
+  engine.init(); const ac = engine.ctx; try { await ac.resume(); } catch (e) {}
+  const v = document.createElement('video'); v.src = url; v.playsInline = true; v.preload = 'auto';
+  await new Promise((ok, bad) => { v.onloadedmetadata = ok; v.onerror = () => bad(new Error('load')); });
+  // webm från MediaRecorder saknar ofta längd: hoppa till slutet en gång så blir den känd
+  if (!isFinite(v.duration)) { await new Promise((ok) => { v.ondurationchange = () => { if (isFinite(v.duration)) ok(); }; v.currentTime = 1e7; setTimeout(ok, 3000); }); v.currentTime = 0; }
+  const dur = isFinite(v.duration) ? v.duration : r.dur || 1;
+  const sc = Math.min(1, 1280 / Math.max(v.videoWidth || 720, v.videoHeight || 1280)), W = Math.round((v.videoWidth || 720) * sc / 2) * 2, H = Math.round((v.videoHeight || 1280) * sc / 2) * 2;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
+  const src = ac.createMediaElementSource(v), dest = ac.createMediaStreamDestination(); src.connect(dest);
+  const stream = new MediaStream([...cv.captureStream(30).getVideoTracks(), ...dest.stream.getAudioTracks()]);
+  const mime = ['video/mp4;codecs=avc1,mp4a', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find((x) => MediaRecorder.isTypeSupported(x)) || '';
+  const mr = new MediaRecorder(stream, { videoBitsPerSecond: 3000000, audioBitsPerSecond: 160000, ...(mime ? { mimeType: mime } : {}) }), chunks = [];
+  mr.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+  const css = getComputedStyle(document.documentElement), cD = (css.getPropertyValue('--ember') || '#e0603a').trim() || '#e0603a', cU = (css.getPropertyValue('--sky') || '#4aa8e0').trim() || '#4aa8e0';
+  const ev = r.ev || { on: [], segs: [] }, u = W / 100, font = (w, px) => w + ' ' + Math.round(px) + 'px Outfit, system-ui, sans-serif';
+  const arrow = (x, y, sz, up, col, a) => {
+    g.save(); g.globalAlpha = a; g.translate(x, y); if (up) g.rotate(Math.PI);
+    g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = sz * 0.15; g.fillStyle = col;
+    g.beginPath(); g.moveTo(-sz * 0.16, -sz * 0.5); g.lineTo(sz * 0.16, -sz * 0.5); g.lineTo(sz * 0.16, sz * 0.05); g.lineTo(sz * 0.42, sz * 0.05); g.lineTo(0, sz * 0.5); g.lineTo(-sz * 0.42, sz * 0.05); g.lineTo(-sz * 0.16, sz * 0.05); g.closePath(); g.fill(); g.restore();
+  };
+  const draw = () => {
+    const t = v.currentTime; g.drawImage(v, 0, 0, W, H);
+    const grd = g.createLinearGradient(0, 0, 0, H * 0.22); grd.addColorStop(0, 'rgba(0,0,0,.45)'); grd.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = grd; g.fillRect(0, 0, W, H * 0.22);
+    const sg = ev.segs.find((x) => t >= x[0] && t < x[1]), nm = sg && CHORD_DB[sg[2]] ? CHORD_DB[sg[2]].name : '';
+    g.shadowColor = 'rgba(0,0,0,.7)'; g.shadowBlur = u * 2; g.fillStyle = '#fff'; g.textBaseline = 'top';
+    if (nm) { g.font = font(800, u * 13); g.fillText(nm, u * 4, u * 4); }
+    g.shadowBlur = 0;
+    let i = -1; for (let j = ev.on.length - 1; j >= 0; j--) if (ev.on[j][0] <= t + 0.02) { i = j; break; }
+    if (i >= 0) { const o = ev.on[i], age = t - o[0]; if (age < 0.6 && o[1]) arrow(W - u * 12, u * 13, u * 18, o[1] === 'U', o[1] === 'U' ? cU : cD, 1 - age / 0.6); }
+    // de senaste slagen i en rad längst ner
+    const last = ev.on.slice(Math.max(0, i - 7), i + 1).filter((o) => t - o[0] < 4), bw = u * 9, y0 = H - u * 16;
+    if (last.length) { g.fillStyle = 'rgba(0,0,0,.45)'; g.beginPath(); g.roundRect ? g.roundRect(u * 3, y0 - u * 3, last.length * bw + u * 4, u * 13, u * 3) : g.rect(u * 3, y0 - u * 3, last.length * bw + u * 4, u * 13); g.fill(); }
+    last.forEach((o, k) => { if (o[1]) arrow(u * 5 + k * bw + bw / 2, y0 + u * 3.5, u * 7, o[1] === 'U', o[1] === 'U' ? cU : cD, k === last.length - 1 ? 1 : 0.55); });
+    g.font = font(700, u * 3.2); g.fillStyle = 'rgba(255,255,255,.75)'; g.textBaseline = 'bottom'; g.textAlign = 'right'; g.fillText('NylonGitarr', W - u * 3, H - u * 3); g.textAlign = 'left';
+  };
+  const out = await new Promise((ok, bad) => {
+    let raf = 0; const loop = () => { if (cancelRef && cancelRef.current) { v.pause(); try { mr.stop(); } catch (e) {} cancelAnimationFrame(raf); ok(null); return; } draw(); onProg && onProg(Math.min(1, v.currentTime / dur)); raf = requestAnimationFrame(loop); };
+    v.onended = () => { cancelAnimationFrame(raf); draw(); setTimeout(() => { try { mr.stop(); } catch (e) {} }, 250); };
+    mr.onstop = () => { try { src.disconnect(); } catch (e) {} ok(cancelRef && cancelRef.current ? null : new Blob(chunks, { type: (mr.mimeType || mime || 'video/webm').split(';')[0] })); };
+    mr.start(500); v.play().then(() => { raf = requestAnimationFrame(loop); }).catch(bad);
+  });
+  return out;
+}
 // Videon från ett jam med ackordet och pilarna ovanpå, i takt med det du spelade
 function JamVideo({ r, url }) {
   const vR = useRef(null), chR = useRef(null), arR = useRef(null), [full, setFull] = useState(false);
+  const [ex, setEx] = useState(0), [exMsg, setExMsg] = useState(''), cancelR = useRef(false);
+  const doExport = async () => {
+    cancelR.current = false; setExMsg(''); setEx(0.001); try { vR.current && vR.current.pause(); } catch (e) {}
+    try {
+      const b = await exportJamVideo(r, url, (p) => setEx(Math.max(0.001, p)), cancelR);
+      if (b) {
+        const d = new Date(r.at), nm = 'Jam ' + d.toLocaleDateString('sv-SE') + ' ' + d.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }).replace(':', '-') + (/mp4/.test(b.type) ? '.mp4' : '.webm');
+        if (NATIVE) await saveFile(b, nm, 'Jamvideo med pilar'); else { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = nm; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 60000); }
+        setExMsg('Klart! Videon med ackord och pilar är sparad.');
+      }
+    } catch (e) { setExMsg('Det gick inte att göra videon. Prova igen.'); }
+    setEx(0);
+  };
   useEffect(() => {
     let raf = 0; const ev = r.ev || { on: [], segs: [] };
     const tick = () => {
@@ -7093,6 +7152,12 @@ function JamVideo({ r, url }) {
     <video ref=${vR} src=${url} controls playsInline preload="metadata"></video>
     <div className="jv-ov" aria-hidden="true"><b ref=${chR}></b><span ref=${arR} className="jv-ar"><i className="d">${I.down}</i><i className="u">${I.up}</i></span></div>
     <button className="jv-full" onClick=${() => setFull(!full)} aria-label=${full ? 'Mindre' : 'Större'}>${full ? '×' : '⤢'}</button>
+  </div>
+  <div className="jv-exp">
+    ${ex ? html`<div className="js-busy"><span>Gör videon med pilar … ${Math.round(ex * 100)} %. Håll skärmen tänd.</span><div className="bar"><i style=${{ width: Math.round(ex * 100) + '%' }}></i></div></div>
+      <button className="btn" onClick=${() => { cancelR.current = true; }}>Avbryt</button>`
+    : html`<button className="btn primary" onClick=${doExport}>Spara video med ackord och pilar</button>`}
+    ${exMsg ? html`<small className="muted">${exMsg}</small>` : null}
   </div>`;
 }
 // Jambladet: allt du spelade, ackord för ackord med varje slag upp eller ner, i takt med inspelningen
