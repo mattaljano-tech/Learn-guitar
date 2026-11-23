@@ -41,6 +41,7 @@ input,select,textarea{font-size:16px}
 .js-busy{display:grid;gap:6px;font-size:13px}.js-busy .bar{height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden}.js-busy .bar i{display:block;height:100%;background:var(--ember)}
 .linkbtn{background:none;border:0;padding:0;color:inherit;text-decoration:underline;cursor:pointer;font:inherit}
 .jv-exp{grid-column:1/-1;display:grid;gap:8px;justify-items:start}
+.trec{display:grid;gap:10px}.trec-list{display:flex;flex-wrap:wrap;gap:6px}.trec-card{display:grid;gap:8px;padding:12px;border-radius:14px;background:var(--surface-2)}.trec audio{width:100%}
 </style>
 <title>NylonGitarr Studio</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
@@ -4272,6 +4273,110 @@ function wavBlob(chunks, sr) {
   v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, 'data'); v.setUint32(40, n * 2, true);
   let o = 44; for (const k of chunks) for (let i = 0; i < k.d.length; i++, o += 2) v.setInt16(o, Math.max(-1, Math.min(1, k.d[i])) * 32767, true);
   return new Blob([b], { type: 'audio/wav' });
+}
+// ---------------------------------------------------------------- testljud åt utvecklingen
+// Spelar in ackord för ackord med klick och facit (vilket ackord, när varje slag ska komma och åt vilket håll),
+// packar allt i en zip-fil som går att skicka vidare. Används för att finslipa igenkänningen på riktiga gitarrer.
+const crc32 = (() => { const T = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; T[n] = c >>> 0; } return (u) => { let c = 0xffffffff; for (let i = 0; i < u.length; i++) c = T[(c ^ u[i]) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }; })();
+async function zipBlob(files) {
+  const enc = new TextEncoder(), parts = [], cen = []; let off = 0;
+  for (const f of files) {
+    const data = f.data instanceof Blob ? new Uint8Array(await f.data.arrayBuffer()) : enc.encode(f.data), name = enc.encode(f.name), crc = crc32(data);
+    const h = new DataView(new ArrayBuffer(30)); h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(8, 0, true); h.setUint32(14, crc, true); h.setUint32(18, data.length, true); h.setUint32(22, data.length, true); h.setUint16(26, name.length, true);
+    parts.push(h.buffer, name, data);
+    const c = new DataView(new ArrayBuffer(46)); c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint32(16, crc, true); c.setUint32(20, data.length, true); c.setUint32(24, data.length, true); c.setUint16(28, name.length, true); c.setUint32(42, off, true);
+    cen.push(c.buffer, name); off += 30 + name.length + data.length;
+  }
+  const csz = cen.reduce((a, b) => a + b.byteLength, 0), e = new DataView(new ArrayBuffer(22));
+  e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); e.setUint32(12, csz, true); e.setUint32(16, off, true);
+  return new Blob([...parts, ...cen, e.buffer], { type: 'application/zip' });
+}
+const TR_BPM = 70, TR_COUNT = 4;
+const TR_TAKES = [
+  ...['G', 'C', 'D', 'Em', 'Am', 'E', 'A', 'Dm'].map((k) => ({ id: k, title: k, chords: [k], bars: [[k, 'D-D-D-D-'], [k, 'D-D-D-D-'], [k, 'DUDUDUDU'], [k, 'DUDUDUDU']], how: 'Två takter bara nedslag på klicken, sedan två takter ner på klicken och upp mitt emellan.' })),
+  { id: 'byten', title: 'G → Em → C → D', chords: ['G', 'Em', 'C', 'D'], bars: [['G', 'D-DU-UDU'], ['Em', 'D-DU-UDU'], ['C', 'D-DU-UDU'], ['D', 'D-DU-UDU'], ['G', 'D-DU-UDU'], ['Em', 'D-DU-UDU'], ['C', 'D-DU-UDU'], ['D', 'D-DU-UDU']], how: 'Ett ackord per takt med kompet ner, ner-upp, upp-ner-upp. Följ pilarna.' },
+];
+function TestRec({ easy, onClose }) {
+  const [idx, setIdx] = useState(0), [ph, setPh] = useState('ready'), [live, setLive] = useState({ i: -99 }), [done, setDone] = useState({}), [err, setErr] = useState(''), [busy, setBusy] = useState(false);
+  const R = useRef(null), take = TR_TAKES[idx], B = 60 / TR_BPM, nE = take.bars.length * 8;
+  const stop = () => { const r = R.current; if (!r) return null; R.current = null; cancelAnimationFrame(r.raf); try { r.cap.stop(); } catch (e) {} try { r.m.stop(); } catch (e) {} window.__ngMicOn = false; return r; };
+  useEffect(() => () => { stop(); }, []);
+  const go = async () => {
+    setErr(''); const m = new Mic();
+    try { await m.start({ aec: false }); } catch (e) { setErr('Mikrofonen gick inte att starta. Tillåt mikrofonen för appen och prova igen.'); return; }
+    window.__ngMicOn = true;
+    const c = engine.ctx, t0 = c.currentTime + 0.5, lat = engine.lat(), beats = TR_COUNT + take.bars.length * 4;
+    for (let k = 0; k <= beats; k++) engine.click(t0 + k * B, k % 4 === 0);
+    const r = { m, raf: 0, cap: micCapture(m.src), t0, lat, peak: 0 }; R.current = r; setPh('run');
+    const endT = t0 + beats * B + 0.6;
+    const loop = () => {
+      if (!R.current) return; r.raf = requestAnimationFrame(loop);
+      const now = c.currentTime; m.read(); r.peak = Math.max(r.peak, m.rms());
+      const i = Math.floor((now - lat - t0) / (B / 2) + 0.5) - TR_COUNT * 2;
+      if (i !== r.li) { r.li = i; setLive({ i }); }
+      if (now > endT) {
+        const rr = stop(), sr = c.sampleRate, ch = rr.cap.chunks;
+        if (!ch.length) { setErr('Inget ljud kom in. Prova igen.'); setPh('ready'); return; }
+        const tA = ch[0].t, strums = [];
+        take.bars.forEach(([k, pat], b) => [...pat].forEach((d, j) => { if (d === '-') return; const e = b * 8 + j; strums.push({ i: e, d, chord: k, t: Math.round((t0 + (TR_COUNT * 2 + e) * (B / 2) - tA) * 10000) / 10000 }); }));
+        const wav = wavBlob(ch, sr);
+        const lab = { take: take.id, title: take.title, bpm: TR_BPM, sampleRate: sr, countInBeats: TR_COUNT, firstClick: Math.round((t0 - tA) * 10000) / 10000, outputLatency: Math.round(lat * 10000) / 10000,
+          note: 't = tid i wav-filen då klicket för slaget hördes ur högtalaren (utan latens). Lägg till outputLatency + reaktion för var anslaget väntas.', bars: take.bars, strums };
+        setDone((d) => ({ ...d, [take.id]: { wav, lab, url: URL.createObjectURL(wav), quiet: rr.peak < 0.02 } })); setPh('ready');
+      }
+    };
+    r.raf = requestAnimationFrame(loop);
+  };
+  const cancel = () => { stop(); setPh('ready'); };
+  const nDone = Object.keys(done).length;
+  const pack = async () => {
+    setBusy(true);
+    try {
+      const files = [], cal = (() => { try { return JSON.parse(localStorage.getItem(STRUM_KEY) || 'null'); } catch (e) { return null; } })();
+      TR_TAKES.forEach((t, n) => { const d = done[t.id]; if (!d) return; const base = String(n + 1).padStart(2, '0') + '-' + t.id; files.push({ name: base + '.wav', data: d.wav }, { name: base + '.json', data: JSON.stringify(d.lab, null, 1) }); });
+      files.push({ name: 'info.json', data: JSON.stringify({ made: new Date().toISOString(), app: 'NylonGitarr', native: !!NATIVE, ua: navigator.userAgent, easy: !!easy, strumModel: cal }, null, 1) });
+      const z = await zipBlob(files), nm = 'gitarr-testljud-' + new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-') + '.zip';
+      if (NATIVE) await saveFile(z, nm, 'Testljud'); else { const u = URL.createObjectURL(z), a = document.createElement('a'); a.href = u; a.download = nm; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 60000); }
+      setErr('');
+    } catch (e) { setErr('Det gick inte att spara paketet.'); }
+    setBusy(false);
+  };
+  const cur = live.i, e = Math.max(0, cur), bar = take.bars[Math.min(take.bars.length - 1, Math.floor(e / 8))], dir = cur >= 0 && cur < nE ? bar[1][cur % 8] : null;
+  const d = done[take.id];
+  return html`<div className="set-sec trec">
+    <div className="row between"><b>Spela in testljud</b><button className="btn" onClick=${() => { cancel(); onClose(); }}>Stäng</button></div>
+    <small>Appen klickar i lugnt tempo (${TR_BPM} BPM) och visar vad du ska slå. Spela som vanligt, med telefonen där den brukar ligga när du jammar. När du är klar sparar du allt som en fil och skickar den till Claude i chatten.</small>
+    <div className="trec-list">${TR_TAKES.map((t, n) => html`<button key=${t.id} className=${'chip' + (n === idx ? ' on' : '')} disabled=${ph === 'run'} onClick=${() => setIdx(n)}>${done[t.id] ? '✓ ' : ''}${t.id === 'byten' ? 'Byten' : CHORD_DB[t.id] ? CHORD_DB[t.id].name : t.id}</button>`)}</div>
+    <div className="trec-card">
+      <span className="ls-kicker">Inspelning ${idx + 1} av ${TR_TAKES.length}</span>
+      <h3 style=${{ margin: 0 }}>${take.chords.length > 1 ? take.title : 'Ackord ' + CHORD_DB[take.chords[0]].name}</h3>
+      <div className="diagrams" style=${{ gridTemplateColumns: 'repeat(' + Math.min(4, take.chords.length) + ', minmax(0, 1fr))', maxWidth: take.chords.length === 1 ? 150 : 'none' }}>${take.chords.map((k) => html`<${Diagram} key=${k} k=${k} easy=${easy} onClick=${() => engine.playChord(voicing(k, easy).frets)} />`)}</div>
+      <small className="muted">${take.how}</small>
+      ${ph === 'run' ? html`<div className=${'scal-now' + (dir === 'U' ? ' up' : '')}>
+          ${cur < 0 ? html`<b>${Math.max(1, Math.ceil(-cur / 2))}</b><span>Lyssna på klicken …</span>`
+          : cur < nE ? html`<b>${dir === 'D' ? I.down : dir === 'U' ? I.up : '·'}</b><span>${(dir === 'D' ? 'Ner' : dir === 'U' ? 'Upp' : 'Vänta') + ' · ' + CHORD_DB[bar[0]].name + ' · takt ' + (Math.floor(cur / 8) + 1) + ' av ' + take.bars.length}</span>`
+          : html`<b>✓</b><span>Klart …</span>`}
+        </div>
+        <div className="row"><button className="btn" onClick=${cancel}>Avbryt</button></div>`
+      : html`${d ? html`<audio controls src=${d.url}></audio>${d.quiet ? html`<small className="muted">Det lät väldigt tyst. Lägg telefonen närmare och gör gärna om.</small>` : null}` : null}
+        <div className="row" style=${{ flexWrap: 'wrap' }}>
+          <button className=${'btn' + (d ? '' : ' primary')} onClick=${go}>${d ? 'Gör om' : 'Spela in'}</button>
+          ${d && idx < TR_TAKES.length - 1 ? html`<button className="btn primary" onClick=${() => setIdx(idx + 1)}>Nästa</button>` : null}
+        </div>`}
+    </div>
+    ${err ? html`<small className="muted">${err}</small>` : null}
+    <div className="row between" style=${{ alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+      <small>${nDone} av ${TR_TAKES.length} inspelade</small>
+      <button className=${'btn' + (nDone === TR_TAKES.length ? ' primary' : '')} disabled=${!nDone || busy || ph === 'run'} onClick=${pack}>${busy ? 'Packar …' : 'Spara som fil'}</button>
+    </div>
+  </div>`;
+}
+function TestRecSettings({ easy }) {
+  const [open, setOpen] = useState(false);
+  if (open) return html`<${TestRec} easy=${easy} onClose=${() => setOpen(false)} />`;
+  return html`<div className="set-sec"><b>Spela in testljud åt Claude</b>
+    <small>Spela ackord för ackord efter klick, så sparas ljudet tillsammans med facit. Skicka filen till Claude så kan igenkänningen av ackord och upp/ner finslipas för just din gitarr. Tar ungefär fem minuter.</small>
+    <div className="row"><button className="btn primary" onClick=${() => setOpen(true)}>Börja</button></div></div>`;
 }
 // Lär appen dina slag: klick i lugnt tempo, ner på klicken och upp mellan dem. Appen sparar hur dina nedslag och uppslag låter.
 const SC_BPM = 66, SC_COUNT = 4, SC_BARS = 8;
@@ -8919,6 +9024,7 @@ function App() {
         <${SyncSettings} />
         <${PhoneSettings} />
         <${LatencySettings} />
+        <${TestRecSettings} easy=${easy} />
         <${DataSettings} />
         <div className="set-sec"><b>Flytta framsteg</b><small>XP, märken, rekord, egna låtar och kalibrering följer med. Gör så här: kopiera koden på enheten du övat på och klistra in den på den andra.</small>
           <div className="row"><button className="btn primary" onClick=${makeCode}>Kopiera min kod</button></div>
