@@ -10,6 +10,8 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(NgNativePlugin.class);
         super.onCreate(savedInstanceState);
+        // låt appen spela upp video i bakgrunden (behövs när jamvideon sparas med pilar)
+        try { getBridge().getWebView().getSettings().setMediaPlaybackRequiresUserGesture(false); } catch (Exception e) {}
         take(getIntent());
     }
 

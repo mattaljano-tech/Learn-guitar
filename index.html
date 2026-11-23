@@ -1779,8 +1779,13 @@ const NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && windo
 const blobB64 = (b) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1] || ''); r.onerror = rej; r.readAsDataURL(b); });
 async function saveFile(blob, name, title) {
   if (NATIVE) {
-    const P = window.Capacitor.Plugins, data = await blobB64(blob);
-    const w = await P.Filesystem.writeFile({ path: name, data, directory: 'CACHE' });
+    const P = window.Capacitor.Plugins, CH = 3 * 1024 * 1024;
+    let w = null;
+    for (let o = 0; o < Math.max(1, blob.size); o += CH) {
+      const data = await blobB64(blob.slice(o, o + CH));
+      if (o === 0) w = await P.Filesystem.writeFile({ path: name, data, directory: 'CACHE' });
+      else await P.Filesystem.appendFile({ path: name, data, directory: 'CACHE' });
+    }
     try { await P.Share.share({ title: title || name, url: w.uri, dialogTitle: title || 'Spara eller dela' }); } catch (e) { if (!/cancel/i.test(String(e && e.message))) throw e; return false; }
     return true;
   }
@@ -7181,19 +7186,19 @@ function SelfiePip({ vref }) {
   </div>`;
 }
 // Spara jamvideon med ackord och pilar inbrända i bilden, så att den går att dela. Spelas upp tyst i bakgrunden i realtid.
-async function exportJamVideo(r, url, onProg, cancelRef) {
+async function exportJamVideo(r, url, onProg, cancelRef, v0) {
   engine.init(); const ac = engine.ctx; try { await ac.resume(); } catch (e) {}
-  const v = document.createElement('video'); v.src = url; v.playsInline = true; v.preload = 'auto';
-  await new Promise((ok, bad) => { v.onloadedmetadata = ok; v.onerror = () => bad(new Error('load')); });
+  const v = v0 || document.createElement('video'); if (!v0) { v.src = url; v.playsInline = true; v.preload = 'auto'; }
+  if (v.readyState < 1) await new Promise((ok, bad) => { v.onloadedmetadata = ok; v.onerror = () => bad(new Error('kunde inte läsa videon')); });
   // webm från MediaRecorder saknar ofta längd: hoppa till slutet en gång så blir den känd
   if (!isFinite(v.duration)) { await new Promise((ok) => { v.ondurationchange = () => { if (isFinite(v.duration)) ok(); }; v.currentTime = 1e7; setTimeout(ok, 3000); }); v.currentTime = 0; }
   const dur = isFinite(v.duration) ? v.duration : r.dur || 1;
-  const sc = Math.min(1, 1280 / Math.max(v.videoWidth || 720, v.videoHeight || 1280)), W = Math.round((v.videoWidth || 720) * sc / 2) * 2, H = Math.round((v.videoHeight || 1280) * sc / 2) * 2;
+  const sc = Math.min(1, 960 / Math.max(v.videoWidth || 720, v.videoHeight || 1280)), W = Math.round((v.videoWidth || 720) * sc / 2) * 2, H = Math.round((v.videoHeight || 1280) * sc / 2) * 2;
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
   const src = ac.createMediaElementSource(v), dest = ac.createMediaStreamDestination(); src.connect(dest);
   const stream = new MediaStream([...cv.captureStream(30).getVideoTracks(), ...dest.stream.getAudioTracks()]);
   const mime = ['video/mp4;codecs=avc1,mp4a', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find((x) => MediaRecorder.isTypeSupported(x)) || '';
-  const mr = new MediaRecorder(stream, { videoBitsPerSecond: 3000000, audioBitsPerSecond: 160000, ...(mime ? { mimeType: mime } : {}) }), chunks = [];
+  const mr = new MediaRecorder(stream, { videoBitsPerSecond: 1800000, audioBitsPerSecond: 160000, ...(mime ? { mimeType: mime } : {}) }), chunks = [];
   mr.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
   const css = getComputedStyle(document.documentElement), cD = (css.getPropertyValue('--ember') || '#e0603a').trim() || '#e0603a', cU = (css.getPropertyValue('--sky') || '#4aa8e0').trim() || '#4aa8e0';
   const ev = r.ev || { on: [], segs: [] }, u = W / 100, font = (w, px) => w + ' ' + Math.round(px) + 'px Outfit, system-ui, sans-serif';
@@ -7221,24 +7226,27 @@ async function exportJamVideo(r, url, onProg, cancelRef) {
     let raf = 0; const loop = () => { if (cancelRef && cancelRef.current) { v.pause(); try { mr.stop(); } catch (e) {} cancelAnimationFrame(raf); ok(null); return; } draw(); onProg && onProg(Math.min(1, v.currentTime / dur)); raf = requestAnimationFrame(loop); };
     v.onended = () => { cancelAnimationFrame(raf); draw(); setTimeout(() => { try { mr.stop(); } catch (e) {} }, 250); };
     mr.onstop = () => { try { src.disconnect(); } catch (e) {} ok(cancelRef && cancelRef.current ? null : new Blob(chunks, { type: (mr.mimeType || mime || 'video/webm').split(';')[0] })); };
-    mr.start(500); v.play().then(() => { raf = requestAnimationFrame(loop); }).catch(bad);
+    v.currentTime = 0; mr.start(1000); v.play().then(() => { raf = requestAnimationFrame(loop); }).catch((e) => { try { mr.stop(); } catch (x) {} bad(e); });
   });
   return out;
 }
 // Videon från ett jam med ackordet och pilarna ovanpå, i takt med det du spelade
-function JamVideo({ r, url }) {
-  const vR = useRef(null), chR = useRef(null), arR = useRef(null), [full, setFull] = useState(false);
+function JamVideo({ r, url, vRef }) {
+  const ownV = useRef(null), vR = vRef || ownV, chR = useRef(null), arR = useRef(null), [full, setFull] = useState(false);
   const [ex, setEx] = useState(0), [exMsg, setExMsg] = useState(''), cancelR = useRef(false);
   const doExport = async () => {
     cancelR.current = false; setExMsg(''); setEx(0.001); try { vR.current && vR.current.pause(); } catch (e) {}
+    // starta uppspelningen direkt i trycket, annars får telefonen inte spela upp videon i bakgrunden
+    const v0 = document.createElement('video'); v0.src = url; v0.playsInline = true; v0.preload = 'auto';
+    try { const pp = v0.play(); if (pp) await pp.then(() => v0.pause()).catch(() => {}); } catch (e) {}
     try {
-      const b = await exportJamVideo(r, url, (p) => setEx(Math.max(0.001, p)), cancelR);
+      const b = await exportJamVideo(r, url, (p) => setEx(Math.max(0.001, p)), cancelR, v0);
       if (b) {
         const d = new Date(r.at), nm = 'Jam ' + d.toLocaleDateString('sv-SE') + ' ' + d.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }).replace(':', '-') + (/mp4/.test(b.type) ? '.mp4' : '.webm');
         if (NATIVE) await saveFile(b, nm, 'Jamvideo med pilar'); else { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = nm; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 60000); }
         setExMsg('Klart! Videon med ackord och pilar är sparad.');
       }
-    } catch (e) { setExMsg('Det gick inte att göra videon. Prova igen.'); }
+    } catch (e) { setExMsg('Det gick inte att göra videon (' + ((e && (e.name || e.message)) || 'okänt fel') + '). Ta en skärmbild och skicka till Claude.'); }
     setEx(0);
   };
   useEffect(() => {
@@ -7252,7 +7260,7 @@ function JamVideo({ r, url }) {
       el.dataset.d = o && age < 0.6 ? o[1] || 'D' : ''; el.style.opacity = o && age < 0.6 ? String(1 - age / 0.6) : '0';
     };
     raf = requestAnimationFrame(tick); return () => cancelAnimationFrame(raf);
-  }, [r.id]);
+  }, [r.id, r.ev]);
   return html`<div className=${'jv' + (full ? ' full' : '')}>
     <video ref=${vR} src=${url} controls playsInline preload="metadata"></video>
     <div className="jv-ov" aria-hidden="true"><b ref=${chR}></b><span ref=${arR} className="jv-ar"><i className="d">${I.down}</i><i className="u">${I.up}</i></span></div>
@@ -7325,7 +7333,7 @@ function RecItem({ r: r0, onDel }) {
     setErr(''); setBusy(0.01);
     try {
       const a = await analyzeAudioFile(r.blob, false, (p) => setBusy(Math.max(0.01, p)), true);
-      const n = { ...r, ev: a.ev, bpm: r.bpm || a.bpm, pattern: a.pattern, loop: a.loop, style: a.name, chords: a.chords, parts: a.parts };
+      const n = { ...r, deep: true, ev: a.ev, bpm: a.bpm || r.bpm, pattern: a.pattern, loop: a.loop, style: a.name, chords: a.chords, parts: a.parts };
       await RecDB.put(n); setR(n); setOpen(true);
     } catch (e) { setErr('Inspelningen gick inte att läsa.'); }
     setBusy(0);
@@ -7335,12 +7343,13 @@ function RecItem({ r: r0, onDel }) {
   return html`<li className="rec-item">
     <div className="rec-meta"><b>${when}</b><span>${fmtDur(r.dur)}${r.bpm ? ' · ' + r.bpm + ' BPM' : ''}</span></div>
     ${!isJam && r.pattern && r.pattern.some((d) => d !== '-') ? html`<div className="rec-strum">${r.loop && r.loop.length ? html`<div className="ns-bars">${r.loop.slice(0, 8).map((b, i) => html`<span key=${i}>${[].concat(b).map((k) => (CHORD_DB[k] ? CHORD_DB[k].name : k)).join(' · ')}</span>`)}</div>` : null}<${BeatStrip} pattern=${r.pattern} accents=${[0]} cur=${-1} /></div>` : null}
-    ${r.kind === 'video' ? html`<${JamVideo} r=${r} url=${url} />` : html`<audio ref=${aRef} controls preload="metadata" src=${url}></audio>`}
+    ${r.kind === 'video' ? html`<${JamVideo} r=${r} url=${url} vRef=${aRef} />` : html`<audio ref=${aRef} controls preload="metadata" src=${url}></audio>`}
     <a className="rec-x" href=${url} download=${r.title + ' ' + when.replace(/[: ]/g, '-') + '.' + ext} onClick=${NATIVE ? (e) => { e.preventDefault(); saveFile(r.blob, r.title + ' ' + when.replace(/[: ]/g, '-') + '.' + ext, 'Inspelning').catch(() => {}); } : undefined} title="Ladda ner" aria-label="Ladda ner inspelningen">↓</a>
     <button className="rec-x" onClick=${() => onDel(r.id)} title="Ta bort" aria-label="Ta bort inspelningen">×</button>
-    ${isJam && r.kind !== 'video' ? html`<div className="rec-sheet">
+    ${isJam ? html`<div className="rec-sheet">
       ${busy ? html`<div className="js-busy"><span>Lyssnar igenom inspelningen … ${Math.round(busy * 100)} %</span><div className="bar"><i style=${{ width: Math.round(busy * 100) + '%' }}></i></div></div>`
-      : hasEv ? html`<button className=${'btn' + (open ? '' : ' primary')} onClick=${() => setOpen(!open)}>${open ? 'Dölj ackord och slag' : 'Visa ackord och slag'}</button>`
+      : hasEv ? html`<div className="row" style=${{ flexWrap: 'wrap', gap: 8 }}><button className=${'btn' + (open ? '' : ' primary')} onClick=${() => setOpen(!open)}>${open ? 'Dölj ackord och slag' : 'Visa ackord och slag'}</button>
+          ${r.deep ? null : html`<button className="btn" onClick=${analyze} title="Lyssnar igenom hela inspelningen i efterhand. Träffar ofta ackordbytena och slagen bättre än det appen hann höra live.">Lyssna igenom noggrant</button>`}</div>`
       : html`<button className="btn primary" onClick=${analyze}>Ta fram ackord och slag</button>`}
       ${err ? html`<small className="muted">${err}</small>` : null}
       ${open && hasEv ? html`<${JamSheet} r=${r} aRef=${aRef} />` : null}
