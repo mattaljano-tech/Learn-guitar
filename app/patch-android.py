@@ -5,7 +5,7 @@ A = 'android/app/src/main'
 pkg = 'se/mattaljano/nylongitarr'
 for f in os.listdir('native/java'):
     shutil.copy(os.path.join('native/java', f), os.path.join(A, 'java', pkg, f))
-for sub in ('layout', 'xml', 'drawable'):
+for sub in ('layout', 'xml', 'drawable', 'drawable-nodpi'):
     dst = os.path.join(A, 'res', sub); os.makedirs(dst, exist_ok=True)
     for f in os.listdir(os.path.join('native/res', sub)): shutil.copy(os.path.join('native/res', sub, f), os.path.join(dst, f))
 m = os.path.join(A, 'AndroidManifest.xml'); s = open(m).read()
