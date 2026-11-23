@@ -26,6 +26,7 @@ input,select,textarea{font-size:16px}
   body{-webkit-user-select:none;user-select:none}
   input,textarea{-webkit-user-select:text;user-select:text}
 }
+.ladder-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:13px}
 </style>
 <title>NylonGitarr Studio</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
@@ -3334,7 +3335,7 @@ function RhythmCard({ pattern, step, counting, chord, easy, note }) {
   </section>`;
 }
 
-function Bpm({ value, set, min = 40, max = 140 }) {
+function Bpm({ value, set, min = 40, max = 200 }) {
   const taps = useRef([]);
   const tap = () => {
     const now = performance.now(); taps.current = taps.current.filter((x) => now - x < 2500); taps.current.push(now);
@@ -7490,7 +7491,7 @@ function App() {
   const [playing, setPlaying] = useState(null);
   const [pos, setPos] = useState({ step: -1, bar: -1 });
   const [bpm, setBpm] = useState(song.bpm);
-  const [ladderOn, setLadderOn] = useState(false);
+  const [ladderOn, setLadderOn] = useState(() => { try { return localStorage.getItem('ng-ladder') === '1'; } catch (e) { return false; } });
   const [style, setStyle] = useState('reggae');
   const [jamMode, setJamMode] = useState('jam');
   const [countIn, setCountIn] = useState(true);
@@ -7984,6 +7985,7 @@ function App() {
             <span className="tag">${song.level}</span><span className="tag mono">${song.bpm} BPM original</span>
             <span className="tag">${bars.length} takter</span>${song.capo ? html`<span className="tag">${song.capo}</span>` : null}
           </div>
+          ${origOn ? null : html`<div className="ladder-row"><button className=${'vb-chip' + (ladderOn ? ' on' : '')} aria-pressed=${ladderOn} onClick=${toggleLadder}>${ladderOn ? 'Tempotrappa på' : 'Tempotrappa'}</button><span className="muted">${ladderOn ? '+5 % efter varje varv, upp till ' + song.bpm + ' BPM' : 'Originaltempo ' + song.bpm + ' BPM'}</span></div>`}
           ${(() => { const ct = capoTip(songChords(song)); return ct ? html`<p className="capo-tip">Svåra grepp? Med <b>capo på band ${ct.capo}</b> spelar du ${[...new Set(ct.to)].map((k) => CHORD_DB[k].name).join(', ')} i stället för ${[...new Set(ct.from)].map((k) => CHORD_DB[k].name).join(', ')}.</p>` : null; })()}
           <div className="song-tools">
           ${recBtn}
