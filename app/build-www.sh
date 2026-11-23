@@ -4,6 +4,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 rm -rf www && mkdir -p www/vendor/fonts
 cp ../index.html ../manifest.webmanifest www/
+[ -f ../sync-url.json ] && cp ../sync-url.json www/ || true
 cp -r ../icons ../audio ../hand ../video www/
 cp node_modules/react/umd/react.production.min.js node_modules/react-dom/umd/react-dom.production.min.js www/vendor/
 css=www/vendor/fonts.css; : > "$css"
