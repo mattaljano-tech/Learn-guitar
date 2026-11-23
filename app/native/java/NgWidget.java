@@ -46,6 +46,6 @@ public class NgWidget extends AppWidgetProvider {
         AppWidgetManager mgr = AppWidgetManager.getInstance(ctx);
         for (int id : mgr.getAppWidgetIds(new ComponentName(ctx, NgWidget.class))) mgr.updateAppWidget(id, views(ctx, R.layout.ng_widget));
         for (int id : mgr.getAppWidgetIds(new ComponentName(ctx, NgWidgetSmall.class))) mgr.updateAppWidget(id, views(ctx, R.layout.ng_widget_small));
-        for (int id : mgr.getAppWidgetIds(new ComponentName(ctx, NgWidgetJam.class))) mgr.updateAppWidget(id, NgWidgetJam.jamViews(ctx));
+        NgWidgetJam.updateAll(ctx);
     }
 }
