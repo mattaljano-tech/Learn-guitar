@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/ng_root" android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:padding="16dp" android:background="@drawable/ng_widget_bg">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+        <TextView android:id="@+id/ng_streak" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="0" android:textColor="#F2C230" android:textSize="34sp" android:textStyle="bold" />
+        <TextView android:id="@+id/ng_label" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+            android:layout_marginStart="8dp" android:text="dagar i rad" android:textColor="#FBF2DC" android:textSize="14sp" />
+        <TextView android:id="@+id/ng_level" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="" android:textColor="#9FB3A5" android:textSize="12sp" />
+    </LinearLayout>
+    <TextView android:id="@+id/ng_goal" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+        android:layout_marginTop="4dp" android:text="" android:textColor="#C9D6CC" android:textSize="14sp" android:maxLines="2" android:ellipsize="end" />
+    <TextView android:id="@+id/ng_button" android:layout_width="match_parent" android:layout_height="40dp"
+        android:gravity="center" android:text="Kör igång" android:textColor="#FFFFFF" android:textSize="15sp" android:textStyle="bold"
+        android:background="@drawable/ng_widget_btn" />
+</LinearLayout>

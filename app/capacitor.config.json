@@ -11,6 +11,10 @@
     "SystemBars": {
       "insetsHandling": "css",
       "style": "DEFAULT"
+    },
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_ng",
+      "iconColor": "#F2C230"
     }
   }
 }
