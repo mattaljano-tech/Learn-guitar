@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/ng_jam_root" android:layout_width="match_parent" android:layout_height="match_parent"
-    android:orientation="vertical" android:gravity="center" android:padding="10dp" android:background="@drawable/ng_widget_bg">
-    <ImageView android:layout_width="56dp" android:layout_height="56dp" android:src="@drawable/ng_mic" android:background="@drawable/ng_widget_mic_bg"
-        android:padding="12dp" android:contentDescription="Jamma" />
-    <TextView android:id="@+id/ng_jam_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp"
-        android:text="Jamma" android:textColor="#FBF2DC" android:textSize="14sp" android:textStyle="bold" />
+    android:orientation="vertical" android:gravity="center" android:padding="2dp">
+    <ImageView android:layout_width="0dp" android:layout_height="0dp" android:layout_weight="1" android:adjustViewBounds="true"
+        android:minWidth="56dp" android:minHeight="56dp" android:maxWidth="96dp" android:maxHeight="96dp"
+        android:scaleType="fitCenter" android:src="@drawable/ng_jam_icon" android:contentDescription="Jamma" />
+    <TextView android:id="@+id/ng_jam_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp"
+        android:text="Jamma" android:textColor="#FFFFFF" android:textSize="13sp" android:shadowColor="#99000000" android:shadowRadius="4" />
 </LinearLayout>
