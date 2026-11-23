@@ -9,7 +9,7 @@ for sub in ('layout', 'xml', 'drawable', 'drawable-nodpi'):
     dst = os.path.join(A, 'res', sub); os.makedirs(dst, exist_ok=True)
     for f in os.listdir(os.path.join('native/res', sub)): shutil.copy(os.path.join('native/res', sub, f), os.path.join(dst, f))
 m = os.path.join(A, 'AndroidManifest.xml'); s = open(m).read()
-perms = ['RECORD_AUDIO', 'MODIFY_AUDIO_SETTINGS', 'VIBRATE', 'WAKE_LOCK', 'FOREGROUND_SERVICE', 'FOREGROUND_SERVICE_MEDIA_PLAYBACK', 'POST_NOTIFICATIONS']
+perms = ['RECORD_AUDIO', 'MODIFY_AUDIO_SETTINGS', 'VIBRATE', 'WAKE_LOCK', 'FOREGROUND_SERVICE', 'FOREGROUND_SERVICE_MEDIA_PLAYBACK', 'FOREGROUND_SERVICE_MICROPHONE', 'POST_NOTIFICATIONS']
 add = ''.join('    <uses-permission android:name="android.permission.%s" />\n' % p for p in perms if ('android.permission.' + p + '"') not in s)
 s = s.replace('</manifest>', add + '</manifest>')
 app = '''
@@ -23,6 +23,7 @@ app = '''
             <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/ng_widget_small_info" />
         </receiver>
+        <service android:name=".NgJamService" android:exported="false" android:foregroundServiceType="microphone" />
         <receiver android:name=".NgWidgetJam" android:exported="true" android:label="NylonGitarr Jamma">
             <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/ng_widget_jam_info" />

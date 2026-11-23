@@ -29,6 +29,16 @@ public class NgNativePlugin extends Plugin {
         call.resolve(r);
     }
 
+    // Inspelningar gjorda från Jamma-widgeten som appen inte hämtat än
+    @PluginMethod
+    public void takeJams(PluginCall call) {
+        android.content.SharedPreferences p = NgJamService.prefs(getContext());
+        JSObject r = new JSObject();
+        r.put("list", p.getString("pending", "[]"));
+        p.edit().putString("pending", "[]").apply();
+        call.resolve(r);
+    }
+
     @PluginMethod
     public void setPlaying(PluginCall call) {
         playing = Boolean.TRUE.equals(call.getBoolean("on", false));
