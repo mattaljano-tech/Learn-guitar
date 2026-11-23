@@ -9,8 +9,9 @@ for sub in ('layout', 'xml', 'drawable', 'drawable-nodpi'):
     dst = os.path.join(A, 'res', sub); os.makedirs(dst, exist_ok=True)
     for f in os.listdir(os.path.join('native/res', sub)): shutil.copy(os.path.join('native/res', sub, f), os.path.join(dst, f))
 m = os.path.join(A, 'AndroidManifest.xml'); s = open(m).read()
-perms = ['RECORD_AUDIO', 'MODIFY_AUDIO_SETTINGS', 'VIBRATE', 'WAKE_LOCK', 'FOREGROUND_SERVICE', 'FOREGROUND_SERVICE_MEDIA_PLAYBACK', 'FOREGROUND_SERVICE_MICROPHONE', 'POST_NOTIFICATIONS']
+perms = ['RECORD_AUDIO', 'MODIFY_AUDIO_SETTINGS', 'VIBRATE', 'WAKE_LOCK', 'FOREGROUND_SERVICE', 'FOREGROUND_SERVICE_MEDIA_PLAYBACK', 'FOREGROUND_SERVICE_MICROPHONE', 'POST_NOTIFICATIONS', 'CAMERA']
 add = ''.join('    <uses-permission android:name="android.permission.%s" />\n' % p for p in perms if ('android.permission.' + p + '"') not in s)
+if 'android.hardware.camera' not in s: add += '    <uses-feature android:name="android.hardware.camera" android:required="false" />\n'
 s = s.replace('</manifest>', add + '</manifest>')
 app = '''
         <receiver android:name="io.capawesome.capacitorjs.plugins.foregroundservice.NotificationActionBroadcastReceiver" />
