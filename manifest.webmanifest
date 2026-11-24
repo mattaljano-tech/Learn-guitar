@@ -1,20 +1,44 @@
 {
   "name": "NylonGitarr Studio",
   "short_name": "NylonGitarr",
-  "description": "Öva gitarr med kompband, Guitar Hero-läge, skank-skola och stämmare.",
+  "description": "Öva gitarr med kompband, 3D-grepp, skank-skola och stämmare.",
   "lang": "sv",
   "id": "./",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#05040b",
-  "theme_color": "#07050f",
-  "categories": ["music", "education", "games"],
+  "background_color": "#1c1511",
+  "theme_color": "#1c1511",
+  "categories": [
+    "music",
+    "education",
+    "games"
+  ],
   "icons": [
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icons/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
-    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }
