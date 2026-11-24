@@ -1315,6 +1315,7 @@ details.tp-grid>.mixer{margin-top:14px}
 .h2-line{display:flex;flex-wrap:wrap;gap:4px 14px;margin:8px 0 0;color:var(--muted);font-size:15px}
 .h2-line span{display:inline-flex;align-items:center;gap:4px}.h2-line svg{width:15px;height:15px}.h2-line .hot{color:var(--ember);font-weight:700}
 .h2-line span+span::before{content:"·";margin-right:10px;color:var(--faint)}
+@media (max-width:760px){.h2-line{gap:2px 16px}.h2-line span+span::before{content:none}}
 .h2-steps.one li:not(.h2-now){display:none}
 .h2-mission .h2-steps.one{grid-template-columns:minmax(0,1fr)!important}
 .h2-mission .h2-more{justify-self:stretch!important}
@@ -1720,7 +1721,8 @@ h1,h2,h3,.home-h1,.ls-h1,h2.page,.h2-mission h2,.fb-t b{font-family:var(--f-seri
 .h2-greet .ls-kicker{color:var(--muted);font-size:14px;font-weight:600}
 .h2-hero{display:grid;gap:22px;background:transparent;border:0;border-radius:0;box-shadow:none;overflow:visible}
 .h2-hand{position:relative;margin:0;border-radius:18px;overflow:hidden;background:#000;aspect-ratio:720/456}
-.h2-hand video{display:block;width:100%;height:100%;object-fit:cover}
+.h2-hand video{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;background:#000;opacity:0}
+.h2-hand video.on{opacity:1}
 .h2-hand figcaption{position:absolute;left:16px;bottom:13px;display:grid;gap:1px;color:#fff;pointer-events:none}
 .h2-hand figcaption b{font-family:var(--f-serif);font-weight:600;font-size:22px;line-height:1.1}
 .h2-hand figcaption span{font-size:13px;color:rgba(255,255,255,.7)}
@@ -1728,7 +1730,8 @@ h1,h2,h3,.home-h1,.ls-h1,h2.page,.h2-mission h2,.fb-t b{font-family:var(--f-seri
 .brand h1{font-family:"Corinthia","Snell Roundhand",cursive!important;font-weight:700!important;font-size:35px!important;line-height:1.05;letter-spacing:0;white-space:nowrap;color:var(--text);margin:0}
 .brand>div{display:grid;gap:2px}
 .brand>:first-child{flex:none}
-@media (max-width:480px){.brand h1{display:block!important;font-size:32px!important}.brand{min-width:0}}
+@media (max-width:480px){.brand h1{display:block!important;font-size:27px!important}.brand{flex:0 1 auto;gap:6px}}
+@media (max-width:380px){.brand h1{font-size:23px!important}}
 .h2-mission{padding:0!important;gap:14px}
 .h2-mission h2 em{color:inherit}
 .h2-steps .cur{background:transparent}
@@ -8848,15 +8851,23 @@ function App() {
     for (let i = 0; i + 1 < ch.length; i++) if (HAND_SET.has(ch[i] + '>' + ch[i + 1])) return [ch[i], ch[i + 1]];
     for (const a of ch) for (const b of ch) if (a !== b && HAND_SET.has(a + '>' + b)) return [a, b];
     return ['G', 'C']; })();
-  const heroVid = (el) => { if (!el || el.dataset.ok) return; el.dataset.ok = '1'; el.muted = true;
+  // Två färdigladdade klipp som turas om (fram och tillbaka), så att videon aldrig blir svart vid bytet.
+  // poster = genomskinlig bild, annars visar Android en grå play-knapp innan klippet har laddats.
+  const NO_POSTER = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+  const heroBack = HAND_SET.has(heroPair[1] + '>' + heroPair[0]);
+  const heroBox = (fig) => { if (!fig || fig.dataset.ok) return; fig.dataset.ok = '1';
+    const vs = [...fig.querySelectorAll('video')]; vs.forEach((v) => { v.muted = true; v.defaultMuted = true; });
+    const play = (v) => { const pr = v.play(); if (pr && pr.catch) pr.catch(() => {}); };
+    const show = (k) => vs.forEach((v, j) => v.classList.toggle('on', j === k));
+    show(0);
     let calm = false; try { calm = matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
-    if (calm) { el.loop = false; el.addEventListener('loadeddata', () => { try { el.currentTime = el.duration || 0; } catch (e) {} }, { once: true }); return; }
-    const go = () => { const pr = el.play(); if (pr && pr.catch) pr.catch(() => {}); };
-    // Finns bytet tillbaka också spelas de växelvis, annars loopar samma byte
-    const [a, b] = heroPair;
-    if (HAND_SET.has(b + '>' + a)) { el.loop = false; let fwd = true;
-      el.addEventListener('ended', () => setTimeout(() => { if (!el.isConnected) return; fwd = !fwd; el.src = fwd ? handClip(a, b) : handClip(b, a); go(); }, 450)); }
-    go(); };
+    if (calm) return;
+    if (vs.length === 1) { vs[0].loop = true; play(vs[0]); return; }
+    vs.forEach((v, j) => v.addEventListener('ended', () => setTimeout(() => {
+      if (!fig.isConnected) return; const n = 1 - j; play(vs[n]); show(n);
+      // spola tillbaka det dolda klippet direkt, så att det är färdigt till nästa byte
+      setTimeout(() => { try { v.currentTime = 0; } catch (e) {} }, 120); }, 450)));
+    play(vs[0]); };
   const HomeTab = () => html`<div className="home home2">
     <div className="h2-greet">
       <div><span className="ls-kicker">${allDone ? 'Alla 14 dagar klara' : 'Dag ' + lessonDay + ' av ' + PLAN.length}</span>
@@ -8866,8 +8877,9 @@ function App() {
 
     <div className="h2-main">
     <section className="h2-hero">
-      <figure className="h2-hand">
-        <video key=${heroPair.join('>')} ref=${heroVid} src=${handClip(heroPair[0], heroPair[1])} muted loop playsInline preload="auto" aria-hidden="true"></video>
+      <figure className="h2-hand" key=${heroPair.join('>')} ref=${heroBox}>
+        <video className="on" src=${handClip(heroPair[0], heroPair[1])} poster=${NO_POSTER} muted playsInline preload="auto" disablePictureInPicture aria-hidden="true"></video>
+        ${heroBack ? html`<video src=${handClip(heroPair[1], heroPair[0])} poster=${NO_POSTER} muted playsInline preload="auto" disablePictureInPicture aria-hidden="true"></video>` : null}
         <figcaption><b>${CHORD_DB[heroPair[0]].name} <span aria-hidden="true">→</span> ${CHORD_DB[heroPair[1]].name}</b><span>${heroSong ? 'Bytet ur ' + heroSong.title : 'Så ser bytet ut'}</span></figcaption>
       </figure>
       <div className="h2-mission">
