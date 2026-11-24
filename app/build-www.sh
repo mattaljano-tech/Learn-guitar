@@ -15,6 +15,8 @@ add() { # paket familj vikt
 }
 for w in 400 500 600 700 800; do add outfit Outfit $w; done
 for w in 500 700; do add jetbrains-mono "JetBrains Mono" $w; done
+for w in 500 600 700; do add fraunces Fraunces $w; done
+add pinyon-script "Pinyon Script" 400
 python3 - <<'PY'
 import re
 p='www/index.html'; s=open(p, encoding='utf-8').read()
