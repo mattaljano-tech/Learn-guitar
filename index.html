@@ -52,7 +52,7 @@ input,select,textarea{font-size:16px}
 .sc-capo{display:inline-flex;align-items:center;gap:5px;font:inherit;font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;border:1.5px solid var(--ember);background:none;color:var(--ember);cursor:pointer}.sc-capo svg{width:14px;height:14px}.sc-capo.on{background:var(--ember);color:#fff}
 </style>
 <title>NylonGitarr Studio</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500..700&family=Pinyon+Script&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500..700&family=Corinthia:wght@400;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
 <style>
 /* Layout: sticky stage header over a two-column practice desk (song list | instrument), stacking to one column on phones */
 :root{
@@ -1725,9 +1725,10 @@ h1,h2,h3,.home-h1,.ls-h1,h2.page,.h2-mission h2,.fb-t b{font-family:var(--f-seri
 .h2-hand figcaption b{font-family:var(--f-serif);font-weight:600;font-size:22px;line-height:1.1}
 .h2-hand figcaption span{font-size:13px;color:rgba(255,255,255,.7)}
 .h2-hand figcaption b span{font-family:var(--f-body);font-weight:400;font-size:.8em;color:rgba(255,255,255,.6);margin:0 2px}
-.brand h1{font-family:"Pinyon Script","Snell Roundhand",cursive!important;font-weight:400!important;font-size:31px!important;line-height:1.05;letter-spacing:0;white-space:nowrap;color:var(--text);margin:0}
+.brand h1{font-family:"Corinthia","Snell Roundhand",cursive!important;font-weight:700!important;font-size:35px!important;line-height:1.05;letter-spacing:0;white-space:nowrap;color:var(--text);margin:0}
 .brand>div{display:grid;gap:2px}
-@media (max-width:480px){.brand h1{display:block!important;font-size:27px!important}}
+.brand>:first-child{flex:none}
+@media (max-width:480px){.brand h1{display:block!important;font-size:32px!important}.brand{min-width:0}}
 .h2-mission{padding:0!important;gap:14px}
 .h2-mission h2 em{color:inherit}
 .h2-steps .cur{background:transparent}
