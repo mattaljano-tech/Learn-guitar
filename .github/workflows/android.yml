@@ -51,7 +51,7 @@ jobs:
           grep -n "versionCode\|versionName" $G
 
       - name: Ikoner och startbild
-        run: npx @capacitor/assets generate --android --iconBackgroundColor '#06050e' --iconBackgroundColorDark '#06050e' --splashBackgroundColor '#06050e' --splashBackgroundColorDark '#06050e'
+        run: npx @capacitor/assets generate --android --iconBackgroundColor '#1c1511' --iconBackgroundColorDark '#1c1511' --splashBackgroundColor '#1c1511' --splashBackgroundColorDark '#1c1511'
 
       - name: Synka in webbdelen
         run: npx cap sync android
