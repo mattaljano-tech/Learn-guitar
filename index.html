@@ -1315,6 +1315,7 @@ details.tp-grid>.mixer{margin-top:14px}
 .h2-line{display:flex;flex-wrap:wrap;gap:4px 14px;margin:8px 0 0;color:var(--muted);font-size:15px}
 .h2-line span{display:inline-flex;align-items:center;gap:4px}.h2-line svg{width:15px;height:15px}.h2-line .hot{color:var(--ember);font-weight:700}
 .h2-line span+span::before{content:"·";margin-right:10px;color:var(--faint)}
+@media (max-width:760px){.h2-line{gap:2px 16px}.h2-line span+span::before{content:none}}
 .h2-steps.one li:not(.h2-now){display:none}
 .h2-mission .h2-steps.one{grid-template-columns:minmax(0,1fr)!important}
 .h2-mission .h2-more{justify-self:stretch!important}
@@ -1728,7 +1729,8 @@ h1,h2,h3,.home-h1,.ls-h1,h2.page,.h2-mission h2,.fb-t b{font-family:var(--f-seri
 .brand h1{font-family:"Corinthia","Snell Roundhand",cursive!important;font-weight:700!important;font-size:35px!important;line-height:1.05;letter-spacing:0;white-space:nowrap;color:var(--text);margin:0}
 .brand>div{display:grid;gap:2px}
 .brand>:first-child{flex:none}
-@media (max-width:480px){.brand h1{display:block!important;font-size:32px!important}.brand{min-width:0}}
+@media (max-width:480px){.brand h1{display:block!important;font-size:27px!important}.brand{flex:0 1 auto;gap:6px}}
+@media (max-width:380px){.brand h1{font-size:23px!important}}
 .h2-mission{padding:0!important;gap:14px}
 .h2-mission h2 em{color:inherit}
 .h2-steps .cur{background:transparent}
