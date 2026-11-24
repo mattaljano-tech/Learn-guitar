@@ -1749,6 +1749,14 @@ h1,h2,h3,.home-h1,.ls-h1,h2.page,.h2-mission h2,.fb-t b{font-family:var(--f-seri
   .h2-hand{border-radius:14px}
   .h2-hand figcaption b{font-size:19px}
 }
+
+/* ---------- Pappas band: mönstret som återkommande detalj ---------- */
+:root{--band:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='16' viewBox='0 0 44 16'%3E%3Crect width='44' height='16' fill='%233b2418'/%3E%3Cpath d='M0 1.6H44M0 14.4H44' stroke='%23c9a96a' stroke-width='.7' stroke-dasharray='1.6 1.1'/%3E%3Ccircle cx='11' cy='8' r='5.3' fill='%23d9c48c'/%3E%3Ccircle cx='11' cy='8' r='4.3' fill='none' stroke='%23c9a96a' stroke-width='.35'/%3E%3Crect x='10.2' y='7.2' width='1.6' height='1.6' transform='rotate%2845 11 8%29' fill='%236b3b22'/%3E%3Cpath d='M33 3.4L37.6 8 33 12.6 28.4 8Z' fill='%238fb5c0'/%3E%3Crect x='32.25' y='7.25' width='1.5' height='1.5' fill='%236b3b22'/%3E%3C/svg%3E")}
+.band-strip{display:block;height:16px;background:var(--band) repeat-x left center/44px 16px;border-radius:3px}
+.h2-hand::after{content:"";position:absolute;left:0;right:0;bottom:0;height:18px;background:var(--band) repeat-x left center/49.5px 18px}
+.h2-hand figcaption{bottom:28px}
+.ls-band{width:176px;justify-self:center;margin:2px auto 4px}
+.band-div{height:18px;margin:8px 0;background:var(--band) repeat-x left center/49.5px 18px;border-radius:2px;opacity:.95}
 </style>
 
 </head>
@@ -8756,6 +8764,7 @@ function App() {
       return html`<div className="ls-body ls-done">
         <svg className="ls-stars" viewBox="0 0 220 80" role="img" aria-label="Tre stjärnor"><path d="M40 8 l9 19 21 3 -15 15 4 21 -19 -10 -19 10 4 -21 -15 -15 21 -3 z" /><path d="M110 0 l11 23 25 4 -18 18 4 25 -22 -12 -22 12 4 -25 -18 -18 25 -4 z" /><path d="M180 8 l9 19 21 3 -15 15 4 21 -19 -10 -19 10 4 -21 -15 -15 21 -3 z" /></svg>
         <h1 className="ls-h1">Dag ${lessonDay} klar!</h1>
+        <span className="band-strip ls-band" aria-hidden="true"></span>
         <p className="ls-lead">${lp.t}. Bra jobbat.</p>
         <div className="ls-stats"><div><b>${streak}</b><span>${streak === 1 ? 'dag' : 'dagar'} i rad</span></div><div><b>${prog.dayXp[today()] || 0}</b><span>XP idag</span></div><div><b>${lessonDay}/14</b><span>dagar klara</span></div></div>
         ${next ? html`<div className="ls-next"><small>Imorgon</small><b>${next}</b></div>` : null}
@@ -8888,6 +8897,7 @@ function App() {
     </section>
     </div>
 
+    <div className="band-div" aria-hidden="true"></div>
     <details className="card more home-more"><summary>Dina framsteg, uppdrag och märken</summary>
       <div style=${{ display: 'grid', gap: 22, marginTop: 14 }}>${OldVag}</div>
     </details>
