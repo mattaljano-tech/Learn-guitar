@@ -2529,7 +2529,9 @@ const songBand = (s) => (!s ? 'folk' : s.band ? s.band : s.feel === 'reggae' ? '
 const TIER_OF = (s) => (s.custom ? 'Egna' : s.tier ? s.tier : s.level === 'Utmaning' ? 'Utmaning' : s.level === 'Nästa steg' ? 'Nästa steg' : 'Kom igång');
 
 /* ---------------------------------------------------------------- audio engine */
-const NYLON_SAMPLES = [['E2', 40], ['Fs2', 42], ['Gs2', 44], ['B2', 47], ['Cs3', 49], ['E3', 52], ['Fs3', 54], ['A3', 57], ['B3', 59], ['Cs4', 61], ['E4', 64], ['Fs4', 66], ['A4', 69], ['B4', 71], ['Cs5', 73], ['E5', 76]];
+const NYLON_SAMPLES = [['B1', 35], ['D2', 38], ['E2', 40], ['Fs2', 42], ['Gs2', 44], ['A2', 45], ['B2', 47], ['Cs3', 49], ['D3', 50], ['E3', 52], ['Fs3', 54], ['G3', 55], ['A3', 57], ['B3', 59], ['Cs4', 61], ['Ds4', 63], ['E4', 64], ['Fs4', 66], ['Gs4', 68], ['A4', 69], ['B4', 71], ['Cs5', 73], ['D5', 74], ['E5', 76], ['Fs5', 78], ['G5', 79], ['Gs5', 80], ['A5', 81], ['As5', 82]];
+// Inspelad elbas (Karoryfer) och kontrabas (VSO2) från tonejs-instruments, CC-BY 3.0. Används i kompbandet i stället för syntetisk bas.
+const BASS_SAMPLES = { bass: [['E1', 28], ['G1', 31], ['As1', 34], ['Cs2', 37], ['E2', 40], ['G2', 43], ['As2', 46], ['Cs3', 49], ['E3', 52], ['G3', 55], ['As3', 58]], kontrabas: [['Fs1', 30], ['G1', 31], ['As1', 34], ['C2', 36], ['D2', 38], ['E2', 40], ['Fs2', 42], ['Gs2', 44], ['A2', 45], ['Cs3', 49], ['E3', 52], ['Gs3', 56]] };
 let SAMPLE_GAIN = 0.37;
 class Engine {
   constructor() {
@@ -2551,22 +2553,56 @@ class Engine {
       .then((buf) => { this.smp.push({ m, buf }); this.smp.sort((a, b) => a.m - b.m); }).catch(() => {}));
   }
   samplesReady() { return this.useSamples && this.smp && this.smp.length === NYLON_SAMPLES.length; }
+  // Inspelade basar för kompbandet. Tills de laddats (eller om de saknas) spelas den syntetiska basen.
+  loadSets() {
+    if (this.sets || !this.ctx) return; this.sets = {};
+    for (const [name, list] of Object.entries(BASS_SAMPLES)) {
+      const arr = (this.sets[name] = []);
+      list.forEach(([n, m]) => fetch('audio/' + name + '/' + n + '.mp3').then((r) => { if (!r.ok) throw 0; return r.arrayBuffer(); })
+        .then((b) => new Promise((res, rej) => this.ctx.decodeAudioData(b, res, rej)))
+        .then((buf) => { arr.push({ m, buf }); arr.sort((a, b) => a.m - b.m); }).catch(() => {}));
+    }
+  }
+  setReady(name) { return this.sets && this.sets[name] && this.sets[name].length === BASS_SAMPLES[name].length; }
+  extraReady() { return Object.keys(BASS_SAMPLES).every((k) => this.setReady(k)); }
+  // spela en inspelad ton ur ett set, tonhöjdsjusterad från närmaste inspelning
+  setNote(name, freq, t, len, vel, { lp = 0, gain = 0.5, rel = 0.05, pan = 0 } = {}) {
+    if (this.transpose) freq *= Math.pow(2, this.transpose / 12);
+    const c = this.ctx, arr = this.sets[name], midi = 69 + 12 * Math.log2(freq / 440);
+    let s = arr[0]; for (const x of arr) if (Math.abs(x.m - midi) < Math.abs(s.m - midi)) s = x;
+    const rate = Math.pow(2, (midi - s.m) / 12), src = c.createBufferSource(), g = c.createGain();
+    src.buffer = s.buf; src.playbackRate.value = rate;
+    g.gain.setValueAtTime(gain * vel, t); g.gain.setTargetAtTime(0, t + len, rel);
+    let head = src;
+    if (lp) { const f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = lp; f.Q.value = 0.5; src.connect(f); head = f; }
+    head.connect(g);
+    if (pan && c.createStereoPanner) { const pn = c.createStereoPanner(); pn.pan.value = pan; g.connect(pn); pn.connect(this.bus.b); } else g.connect(this.bus.b);
+    src.start(t); src.stop(Math.min(t + s.buf.duration / rate, t + len + rel * 8));
+  }
   setSound(real) { this.useSamples = real; try { localStorage.setItem('ng-snd', real ? 'real' : 'synth'); } catch (e) {} if (real) this.loadSamples(); }
   init() {
     if (this.ctx) { if (this.ctx.state === 'suspended') this.ctx.resume(); return; }
     const AC = window.AudioContext || window.webkitAudioContext;
     const c = (this.ctx = new AC({ latencyHint: 'interactive' }));
     this.master = c.createGain(); this.master.gain.value = this.muted ? 0 : 0.9;
+    // bort med muller under 35 Hz: det hörs inte i en telefon men får kompressorn att pumpa
+    const hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 35; hp.Q.value = 0.7;
     const comp = c.createDynamicsCompressor();
-    comp.threshold.value = -16; comp.knee.value = 12; comp.ratio.value = 3; comp.attack.value = 0.005; comp.release.value = 0.2;
-    this.master.connect(comp); comp.connect(c.destination);
-    // rumsklang
-    this.verb = c.createConvolver(); this.verb.buffer = this.makeIR(2.3);
-    const ret = c.createGain(); ret.gain.value = 0.3; this.verb.connect(ret); ret.connect(this.master);
+    comp.threshold.value = -14; comp.knee.value = 10; comp.ratio.value = 2.5; comp.attack.value = 0.008; comp.release.value = 0.25;
+    // lite mer volym efter kompressorn, och en snabb begränsare som tar topparna så att inget spricker
+    const make = c.createGain(); make.gain.value = 1.45;
+    const lim = c.createDynamicsCompressor(); lim.threshold.value = -3; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = 0.001; lim.release.value = 0.08;
+    this.master.connect(hp); hp.connect(comp); comp.connect(make); make.connect(lim); lim.connect(c.destination);
+    // rumsklang: kort och mjuk, i stereo
+    this.verb = c.createConvolver(); this.verb.buffer = this.makeIR(1.7);
+    const ret = c.createGain(); ret.gain.value = 0.34; this.verb.connect(ret); ret.connect(this.master);
     this.bus = {};
     for (const k of ['g', 'b', 'd']) { const g = c.createGain(); g.gain.value = this.mix[k]; g.connect(this.master); this.bus[k] = g; }
-    const gs = c.createGain(); gs.gain.value = 0.38; this.bus.g.connect(gs); gs.connect(this.verb);
-    this.dSend = c.createGain(); this.dSend.gain.value = 0.22; this.dSend.connect(this.verb);
+    const gs = c.createGain(); gs.gain.value = 0.24; this.bus.g.connect(gs); gs.connect(this.verb);
+    this.dSend = c.createGain(); this.dSend.gain.value = 0.16; this.dSend.connect(this.verb);
+    // trummor: mindre sub i bastrumman, så att gitarren och basen hörs
+    const dLow = c.createBiquadFilter(); dLow.type = 'lowshelf'; dLow.frequency.value = 90; dLow.gain.value = -6;
+    this.dIn = dLow; dLow.connect(this.bus.d);
     // gitarrkropp: varm resonans + mjuk diskant
     this.body = c.createBiquadFilter(); this.body.type = 'peaking'; this.body.frequency.value = 200; this.body.Q.value = 1.2; this.body.gain.value = 4.5;
     const mid = c.createBiquadFilter(); mid.type = 'peaking'; mid.frequency.value = 2400; mid.Q.value = 0.9; mid.gain.value = -2;
@@ -2577,20 +2613,28 @@ class Engine {
     const curve = new Float32Array(1024); for (let i = 0; i < 1024; i++) { const x = i / 512 - 1; curve[i] = Math.tanh(2.4 * x); }
     this.shaper.curve = curve; this.shaper.connect(this.bus.b);
     // inspelade toner går förbi den syntetiska kroppen, med lite värme i botten
-    this.sbus = c.createBiquadFilter(); this.sbus.type = 'lowshelf'; this.sbus.frequency.value = 220; this.sbus.gain.value = 2; this.sbus.connect(this.bus.g);
+    this.sbus = c.createBiquadFilter(); this.sbus.type = 'highpass'; this.sbus.frequency.value = 75; this.sbus.Q.value = 0.6;
+    const pres = c.createBiquadFilter(); pres.type = 'peaking'; pres.frequency.value = 3000; pres.Q.value = 0.8; pres.gain.value = 3;
+    const warm = c.createBiquadFilter(); warm.type = 'peaking'; warm.frequency.value = 250; warm.Q.value = 1; warm.gain.value = -2;
+    this.sbus.connect(warm); warm.connect(pres); pres.connect(this.bus.g);
     if (this.useSamples) this.loadSamples();
+    this.loadSets();
     setTimeout(() => { for (const s of STRINGS) for (let f = 0; f <= 5; f++) this.ks(fq(s.freq, f), s.wound); }, 20);
     const loop = () => { this.flush(); requestAnimationFrame(loop); };
     requestAnimationFrame(loop);
   }
+  // Rumsklang: några tidiga reflexer och en mjuk svans där diskanten dör ut först, olika i vänster och höger (stereo)
   makeIR(sec) {
-    const c = this.ctx, len = Math.floor(sec * c.sampleRate), b = c.createBuffer(2, len, c.sampleRate);
+    const c = this.ctx, sr = c.sampleRate, len = Math.floor(sec * sr), b = c.createBuffer(2, len, sr), pre = Math.floor(0.012 * sr);
+    const early = [[0.011, 0.5], [0.017, 0.36], [0.023, 0.3], [0.031, 0.22], [0.041, 0.16], [0.053, 0.12]];
     for (let ch = 0; ch < 2; ch++) {
       const d = b.getChannelData(ch); let lp = 0;
-      for (let i = 0; i < len; i++) {
-        const t = i / len; lp += ((Math.random() * 2 - 1) - lp) * (0.55 - 0.4 * t);
-        d[i] = lp * Math.pow(1 - t, 3.2) * (i < 200 ? i / 200 : 1);
+      for (let i = pre; i < len; i++) {
+        const t = (i - pre) / (len - pre), k = 0.62 - 0.52 * t; // allt mörkare ju längre in i svansen
+        lp += ((Math.random() * 2 - 1) - lp) * k;
+        d[i] = lp * Math.exp(-6.2 * t) * Math.min(1, (i - pre) / (0.02 * sr)) * 0.55;
       }
+      for (const [dt, a] of early) { const i = Math.floor((dt + (ch ? 0.0037 : 0)) * sr); if (i < len) d[i] += (ch ? -a : a) * 0.9; }
     }
     return b;
   }
@@ -2624,7 +2668,14 @@ class Engine {
     const res = { buf: ab, rate: freq / f0 };
     this.cache.set(key, res); return res;
   }
-  note(freq, t, { vel = 1, dur = null, wound = false, pan = 0 } = {}) {
+  // en sträng kan bara låta med en ton: när en ny ton slås på samma sträng tystnar den förra
+  choke(str, t, g, end) {
+    if (str == null) return; this.ring = this.ring || [];
+    const prev = this.ring[str];
+    if (prev && prev.end > t && prev.t < t) { try { prev.g.gain.cancelScheduledValues(t); prev.g.gain.setTargetAtTime(0, t, 0.012); } catch (e) {} }
+    this.ring[str] = { g, t, end };
+  }
+  note(freq, t, { vel = 1, dur = null, wound = false, pan = 0, str = null } = {}) {
     if (this.transpose) freq *= Math.pow(2, this.transpose / 12);
     if (this.samplesReady()) {
       const c = this.ctx, midi = 69 + 12 * Math.log2(freq / 440);
@@ -2634,7 +2685,7 @@ class Engine {
       const g = c.createGain(); g.gain.setValueAtTime(SAMPLE_GAIN * vel, t);
       const end = dur ? t + dur + 0.25 : t + s.buf.duration / rate;
       if (dur) g.gain.setTargetAtTime(0, t + dur, 0.016);
-      src.connect(g);
+      src.connect(g); this.choke(str, t, g, end);
       if (c.createStereoPanner) { const p = c.createStereoPanner(); p.pan.value = pan; g.connect(p); p.connect(this.sbus); } else g.connect(this.sbus);
       src.start(t); src.stop(end); return;
     }
@@ -2643,7 +2694,7 @@ class Engine {
     const g = c.createGain(); g.gain.setValueAtTime(0.45 * vel, t);
     const end = dur ? t + dur + 0.25 : t + k.buf.duration / k.rate;
     if (dur) g.gain.setTargetAtTime(0, t + dur, 0.016);
-    src.connect(g);
+    src.connect(g); this.choke(str, t, g, end);
     if (c.createStereoPanner) { const p = c.createStereoPanner(); p.pan.value = pan; g.connect(p); p.connect(this.body); } else g.connect(this.body);
     src.start(t); src.stop(end);
   }
@@ -2655,7 +2706,7 @@ class Engine {
       const f = frets[i]; if (f < 0) continue;
       if (dir === 'U' && i < 2 && !strings) continue; // uppslag träffar mest de ljusa strängarna
       const s = STRINGS[i], v = vel * (dir === 'U' ? 0.7 : 1) * (0.86 + Math.random() * 0.14);
-      this.note(fq(s.freq, f), t + k * stagger * (0.85 + Math.random() * 0.3), { vel: v, dur, wound: s.wound, pan: (i - 2.5) * 0.09 });
+      this.note(fq(s.freq, f), t + k * stagger * (0.85 + Math.random() * 0.3), { vel: v, dur, wound: s.wound, pan: -0.12 + (i - 2.5) * 0.1, str: i });
       hit.push(i); k++;
     }
     this.queue.push({ t, type: 'pluck', strings: hit });
@@ -2691,6 +2742,7 @@ class Engine {
     }
   }
   bass(freq, t, len, vel = 1) {
+    if (this.setReady('bass')) return this.setNote('bass', freq, t, len, vel, { lp: 2200, gain: 0.62 });
     if (this.transpose) freq *= Math.pow(2, this.transpose / 12);
     const c = this.ctx, o = c.createOscillator(), o2 = c.createOscillator(), g2 = c.createGain(), lp = c.createBiquadFilter(), g = c.createGain();
     o.type = 'sine'; o2.type = 'triangle'; o.frequency.value = freq; o2.frequency.value = freq; g2.gain.value = 0.45;
@@ -2779,7 +2831,7 @@ class Engine {
   }
   // Beatstudion: trummor med valbar karaktär (djup, snärtig, tight …). Riktiga ljud om de finns, annars elektroniska.
   drum(kind, t, vel = 1, ch = '', kit = this.kit || 'riktig') {
-    const c = this.ctx, d = this.bus.d;
+    const c = this.ctx, d = this.dIn || this.bus.d;
     if (kit !== 'elektronisk') {
       const m = DRUM_FILES[kind], f = m && (ch in m ? m[ch] : m._), buf = f && this.drumBufs && this.drumBufs[f];
       if (!this.drumReq) this.loadDrums();
@@ -2826,6 +2878,9 @@ class Engine {
   // bas med karaktär: dub (djup och mjuk), rund (som kompbandet) eller snärtig (funk)
   bassAs(freq, t, len, vel = 1, ch = 'rund') {
     if (!['dub', 'snartig', 'sub', 'synt', 'akustisk', 'mjuk'].includes(ch)) return this.bass(freq, t, len, vel);
+    // inspelade basar: dub = elbas med mörk ton, mjuk = elbas med fingrarna, akustisk = kontrabas
+    if (ch === 'akustisk' && this.setReady('kontrabas')) return this.setNote('kontrabas', freq, t, len, vel, { lp: 3000, gain: 0.7, rel: 0.08 });
+    if ((ch === 'dub' || ch === 'mjuk') && this.setReady('bass')) return this.setNote('bass', freq, t, len, vel, { lp: ch === 'dub' ? 650 : 1400, gain: ch === 'dub' ? 0.78 : 0.62, rel: ch === 'dub' ? 0.07 : 0.05 });
     if (this.transpose) freq *= Math.pow(2, this.transpose / 12);
     const c = this.ctx, o = c.createOscillator(), lp = c.createBiquadFilter(), g = c.createGain();
     lp.type = 'lowpass';
@@ -2878,7 +2933,8 @@ class Engine {
     lp.type = 'lowpass'; lp.frequency.value = 2600; lp.Q.value = 0.5;
     g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.055 * vel, t + 0.005); g.gain.setTargetAtTime(0.0001, t + dur, 0.018);
     for (const f of freqs) [[1, 1], [2, 0.45], [3, 0.22]].forEach(([h, a]) => { const o = c.createOscillator(), og = c.createGain(); o.type = 'sine'; o.frequency.value = f * h * tr; og.gain.value = a; o.connect(og); og.connect(lp); o.start(t); o.stop(t + dur + 0.12); });
-    lp.connect(g); g.connect(this.bus.b); g.connect(this.dSend);
+    if (c.createStereoPanner) { const pn = c.createStereoPanner(); pn.pan.value = 0.32; lp.connect(g); g.connect(pn); pn.connect(this.bus.b); } else { lp.connect(g); g.connect(this.bus.b); }
+    g.connect(this.dSend);
   }
   band(style, step, t, sd, root, key, bar = 0) {
     this.activeAt = performance.now();
