@@ -1767,6 +1767,85 @@ h1,h2,h3,.home-h1,.ls-h1,h2.page,.h2-mission h2,.fb-t b{font-family:var(--f-seri
 @media (max-width:760px){.brand>svg.brand-band{width:14px;height:38px;margin:0 4px 0 2px}.top-in{padding-block:6px}}
 @media (min-width:1400px){.brand>svg.brand-band{width:18px;height:48px}}
 </style>
+<style id="bd-system">
+/* ===== better-design: systemlager. Värdena står i DESIGN.md, ändra dem där och här samtidigt. ===== */
+:root{
+  /* Rörelse: en fysik för hela appen. Trycket går ner snabbt och fjädrar tillbaka. */
+  --m-press-down:80ms; --m-release:520ms; --m-hover:200ms; --m-focus:160ms;
+  --m-ease-out:cubic-bezier(.2,0,0,1); --m-ease-color:cubic-bezier(.25,.1,.25,1);
+  --m-spring-pop:linear(0,.044,.155,.307,.475,.642,.794,.922,1.023,1.094,1.139,1.16,1.162,1.15,1.129,1.103,1.075,1.049,1.025,1.006,.991,.981,.976,.973,.974,.977,.981,.985,.989,.994,.997,1,1.002,1.003,1.004,1.004,1.004,1.004,1.003,1.002,1);
+  --m-spring-snap:linear(0,.03,.105,.207,.32,.435,.545,.644,.732,.806,.867,.915,.953,.981,1.001,1.015,1.023,1.027,1.028,1.028,1.026,1.023,1.02,1.016,1.013,1.01,1.008,1.006,1.004,1.003,1);
+}
+/* Ceder: accent och svag text mörkare, så att liten text klarar 4.5:1 mot papper och ytor (var 3.8:1) */
+:root[data-skin="ceder"]{--ember:#985527;--cv-btn:#985527;--faint:#756354}
+/* Fokusringen växer in i stället för att poppa */
+:focus-visible{transition:outline-offset var(--m-focus) var(--m-ease-out)}
+/* Fällbara rubriker i låtvyn: "Mixer och känsla" får samma storlek och plus som de andra */
+.tp-grid.more>summary{font-size:16px;font-weight:700;color:var(--text);padding:16px 4px;border-bottom:1px solid var(--line)}
+.tp-grid.more>summary::after{font-size:22px;font-weight:500;color:var(--ember)}
+/* ...och ingen dubbel linje ovanför: kortets kant försvinner när rubrikraden redan har en */
+@media (max-width:760px){:root[data-skin] .card.transport{border-top-color:transparent;padding-top:0}}
+/* Aldrig transition: all */
+.chal .pair span{transition:color .1s var(--m-ease-color),background-color .1s var(--m-ease-color),transform .1s var(--m-ease-out)}
+/* Idag: stegknappen rymmer sin siffra */
+.h2-steps button{min-height:40px}
+/* Idag på dator: undre raden följer samma kolumner som hand + dagens mål, så att kanterna linjerar */
+@media (min-width:1000px){
+  .h2-main{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);column-gap:40px}
+  .h2-extra{margin-top:0;align-self:start}
+}
+</style>
+<script>
+/* better-design: tryckrespons för alla knappar. Samma modell som interaction-kit (tryck ner ~4 px, mörkare fyllning,
+   fjädrande retur, minst 90 ms så att snabba tryck syns). Web Animations, så knapparnas egna CSS-övergångar lämnas orörda. */
+(function () {
+  var SEL = 'button, [role="button"], summary, a[href], label.chip';
+  var MIN = 90, reduce = matchMedia('(prefers-reduced-motion: reduce)');
+  function css(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+  function off(el) { return !el || el.disabled || el.getAttribute('aria-disabled') === 'true'; }
+  function depth(el) { var r = el.getBoundingClientRect(); return Math.min(.985, Math.max(.9, 1 - 8 / (r.width + r.height || 1))); }
+  /* Fyllda knappar ljusnar under fingret, ljusa ytor mörknar */
+  function dark(el) { var c = typeof el.className === 'string' ? el.className : ''; return /\b(play|stop|ls-btn|h2-go|fab|on)\b/.test(c) ? 1.12 : .9; }
+  function down(el) {
+    if (off(el)) return;
+    if (el._bdA) el._bdA.cancel();
+    var s = reduce.matches ? 1 : depth(el), b = dark(el);
+    el._bdAt = performance.now(); el.setAttribute('data-pressed', '');
+    el._bdA = el.animate([{ scale: s, filter: 'brightness(' + b + ')' }], { duration: parseFloat(css('--m-press-down')) || 80, easing: css('--m-ease-out') || 'ease-out', fill: 'forwards' });
+  }
+  function up(el) {
+    if (!el || !el._bdA) return;
+    var a = el._bdA, wait = Math.max(0, MIN - (performance.now() - el._bdAt));
+    setTimeout(function () {
+      if (el._bdA !== a) return;
+      el.removeAttribute('data-pressed');
+      el._bdA = el.animate([{ scale: 1, filter: 'brightness(1)' }], { duration: parseFloat(css('--m-release')) || 520, easing: css('--m-spring-pop') || 'ease-out' });
+      a.cancel(); var b = el._bdA; b.onfinish = function () { if (el._bdA === b) el._bdA = null; };
+    }, wait);
+  }
+  var cur = null;
+  document.addEventListener('pointerdown', function (e) {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    var el = e.target.closest && e.target.closest(SEL); if (!el) return; cur = el; down(el);
+  }, { passive: true, capture: true });
+  ['pointerup', 'pointercancel'].forEach(function (t) { addEventListener(t, function () { up(cur); cur = null; }, { passive: true, capture: true }); });
+  document.addEventListener('keydown', function (e) { if (e.repeat || (e.key !== ' ' && e.key !== 'Enter')) return; var el = e.target.closest && e.target.closest(SEL); if (el) { cur = el; down(el); } }, true);
+  document.addEventListener('keyup', function (e) { if (e.key === ' ' || e.key === 'Enter') { up(cur); cur = null; } }, true);
+  /* Hover med mus: ett steg i fyllningen, mjukt in och ut */
+  var hov = matchMedia('(hover: hover) and (pointer: fine)');
+  document.addEventListener('pointerover', function (e) {
+    if (!hov.matches || e.pointerType !== 'mouse') return;
+    var el = e.target.closest && e.target.closest(SEL); if (!el || off(el) || el._bdH || el.contains(e.relatedTarget)) return;
+    el._bdH = el.animate([{ filter: 'brightness(.95)' }], { duration: parseFloat(css('--m-hover')) || 200, easing: css('--m-ease-color'), fill: 'forwards', composite: 'add' });
+  }, { passive: true });
+  document.addEventListener('pointerout', function (e) {
+    var el = e.target.closest && e.target.closest(SEL); if (!el || !el._bdH || el.contains(e.relatedTarget)) return;
+    var h = el._bdH; el._bdH = null;
+    var back = el.animate([{ filter: 'brightness(.95)' }, { filter: 'brightness(1)' }], { duration: parseFloat(css('--m-hover')) || 200, easing: css('--m-ease-color'), composite: 'add' });
+    h.cancel(); back.onfinish = function () { back.cancel(); };
+  }, { passive: true });
+})();
+</script>
 
 </head>
 <body>
