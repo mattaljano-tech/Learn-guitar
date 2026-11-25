@@ -1730,8 +1730,8 @@ h1,h2,h3,.home-h1,.ls-h1,h2.page,.h2-mission h2,.fb-t b{font-family:var(--f-seri
 .brand h1{font-family:"Corinthia","Snell Roundhand",cursive!important;font-weight:700!important;font-size:35px!important;line-height:1.05;letter-spacing:0;white-space:nowrap;color:var(--text);margin:0}
 .brand>div{display:grid;gap:2px}
 .brand>:first-child{flex:none}
-@media (max-width:480px){.brand h1{display:block!important;font-size:27px!important}.brand{flex:0 1 auto;gap:6px}}
-@media (max-width:380px){.brand h1{font-size:23px!important}}
+@media (max-width:480px){.brand h1{display:block!important;font-size:30px!important}.brand{flex:0 1 auto;gap:6px}}
+@media (max-width:380px){.brand h1{font-size:27px!important}}
 .h2-mission{padding:0!important;gap:14px}
 .h2-mission h2 em{color:inherit}
 .h2-steps .cur{background:transparent}
@@ -1762,9 +1762,10 @@ h1,h2,h3,.home-h1,.ls-h1,h2.page,.h2-mission h2,.fb-t b{font-family:var(--f-seri
 .band-div{height:18px;margin:8px 0;background:var(--band) repeat-x left center/49.5px 18px;border-radius:2px;opacity:.95}
 
 /* Loggan: bandet hänger genom sidhuvudet, från överkanten */
-.brand>svg.brand-band{flex:none;width:19px;height:auto;align-self:stretch;margin:-12px 6px 0 7px;border-radius:0 0 3px 3px}
-@media (max-width:760px){.brand>svg.brand-band{margin-bottom:-12px;border-radius:0;width:17px;margin-left:6px}}
-@media (min-width:1400px){.brand>svg.brand-band{margin-top:-24px;width:21px}}
+/* Loggan: en kort bit av bandet bredvid namnet. Fast höjd, så att sidhuvudet inte växer */
+.brand>svg.brand-band{flex:none;width:16px;height:44px;margin:0 6px 0 4px;border-radius:3px}
+@media (max-width:760px){.brand>svg.brand-band{width:14px;height:38px;margin:0 4px 0 2px}.top-in{padding-block:6px}}
+@media (min-width:1400px){.brand>svg.brand-band{width:18px;height:48px}}
 </style>
 
 </head>
