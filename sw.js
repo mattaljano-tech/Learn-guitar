@@ -1,6 +1,6 @@
 /* NylonGitarr Studio – service worker
    Höj VERSION när appen uppdateras, så hämtar telefonen den nya versionen. */
-const VERSION = 'v140';
+const VERSION = 'v141';
 const CACHE = 'nylongitarr-' + VERSION;
 const SHELL = ['./', 'index.html', 'video/scene.jpg', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png', 'icons/apple-touch-icon.png',
   ...['clap','cowbell','crash','hat-semi','hat','kick-deep','kick-tight','kick','ohat','ride-bell','ride','rim','shaker','snare-brush','snare-tight','snare','tamb','tom-hi','tom-lo','wood-hi','wood-lo'].map((n) => 'audio/drums/' + n + '.mp3'),
@@ -10,7 +10,8 @@ const SHELL = ['./', 'index.html', 'video/scene.jpg', 'manifest.webmanifest', 'i
   ...['A2','A3','A4','C3','C4','C5','Ds3','Ds4','F4','Fs3'].map((n) => 'audio/harmonium/' + n + '.mp3'),
   ...['A1','A2','A3','A4','A5','C2','C3','C4','C5','C6','Ds2','Ds3','Ds4','Ds5','Fs2','Fs3','Fs4','Fs5'].map((n) => 'audio/piano/' + n + '.mp3'),
   ...['A3','A4','A5','C4','C5','E4','E5','G3','G4','G5'].map((n) => 'audio/violin/' + n + '.mp3'),
-  ...['A2','A3','C2','C3','C4','D2','D3','E2','E3','G2','G3'].map((n) => 'audio/cello/' + n + '.mp3')];
+  ...['A2','A3','C2','C3','C4','D2','D3','E2','E3','G2','G3'].map((n) => 'audio/cello/' + n + '.mp3'),
+  ...['A2','A3','A4','C3','C4','C5','Ds3','Ds4','E2','Fs2','Fs3','Fs4'].map((n) => 'audio/elgitarr/' + n + '.mp3')];
 const CDN = ['cdnjs.cloudflare.com', 'fonts.googleapis.com', 'fonts.gstatic.com'];
 
 self.addEventListener('install', (e) => {
