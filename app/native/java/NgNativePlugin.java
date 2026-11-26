@@ -130,6 +130,26 @@ public class NgNativePlugin extends Plugin {
         }).start();
     }
 
+    // Packa om en fil i cache (för delning), så att mottagarens spelare ser hela längden. Ger tillbaka en file://-adress.
+    @PluginMethod
+    public void remuxCache(PluginCall call) {
+        final String path = call.getString("path"), mime = call.getString("mime", "");
+        if (path == null) { call.reject("path saknas"); return; }
+        new Thread(() -> {
+            File src = new File(getContext().getCacheDir(), path);
+            File out = new File(getContext().getCacheDir(), "delning-" + path);
+            try {
+                remux(src, out, mime.contains("webm"));
+                JSObject r = new JSObject();
+                r.put("uri", "file://" + out.getAbsolutePath());
+                call.resolve(r);
+            } catch (Exception e) {
+                out.delete();
+                call.reject(String.valueOf(e.getMessage()));
+            }
+        }).start();
+    }
+
     private static void remux(File in, File out, boolean webm) throws Exception {
         MediaExtractor ex = new MediaExtractor();
         MediaMuxer mx = null;
