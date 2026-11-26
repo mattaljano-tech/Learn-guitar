@@ -30,6 +30,9 @@ app = '''
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/ng_widget_jam_info" />
         </receiver>
     </application>'''
+# appen får vridas (följer telefonens autorotering; i Jamma kan man också tvinga liggande/stående)
+if 'android:screenOrientation' not in s:
+    s = re.sub(r'(<activity\b[^>]*?android:name="\.MainActivity")', r'\1 android:screenOrientation="fullUser"', s, count=1)
 assert s.count('</application>') == 1
 s = s.replace('</application>', app, 1)
 open(m, 'w').write(s)
