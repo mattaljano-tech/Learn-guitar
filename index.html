@@ -2557,9 +2557,13 @@ const INITIAL_SONGS = [
     form: [{ part: 'Vers', bars: ['Am', 'F', 'C', 'G', 'Am', 'F', 'C', 'G'] }, { part: 'Refräng', bars: ['Am', 'F', 'C', 'G', 'Am', 'F', 'C', 'G'] }] },
 
   /* Utmaning: nya grepp, svårare byten */
-  { id: 'wonderwall', strumSrc: 'simple', title: 'Wonderwall', artist: 'Oasis', feel: 'acoustic', level: 'Utmaning', bpm: 87, band: 'folk', capo: 'Capo 2 för originaltonarten',
-    pattern: P_FOLK, accents: [0, 6],
-    tip: 'Ring- och lillfingret ligger kvar på band 3 genom hela låten. Bara pek- och långfingret flyttar. Originalet har ett tätare 16-delskomp, så när detta sitter kan du lägga till fler uppslag.',
+  { id: 'wonderwall', strumSrc: 'orig', title: 'Wonderwall', artist: 'Oasis', feel: 'acoustic', level: 'Utmaning', bpm: 87, band: 'folk', capo: 'Capo 2 för originaltonarten',
+    // Två takter i 16-delar, som originalet: takt 2 har synkoperade uppslag (7 och 7& slås bara uppåt)
+    pattern: ['D', '-', 'D', '-', 'D', '-', 'D', 'U', 'D', 'U', 'D', '-', 'D', '-', 'D', 'U'],
+    barPats: [['D', '-', 'D', '-', 'D', '-', 'D', 'U', 'D', 'U', 'D', '-', 'D', '-', 'D', 'U'],
+              ['D', 'U', 'D', '-', 'D', '-', 'D', 'U', '-', 'U', '-', 'U', 'D', 'U', 'D', 'U']],
+    accents: [4, 12],
+    tip: 'Ring- och lillfingret ligger kvar på band 3 genom hela låten. Bara pek- och långfingret flyttar. Kompet går över två takter: i andra takten hoppar handen över nedslagen på 3 och 3& och tar bara uppslagen efter dem. Det är de som ger Wonderwall sitt gung. Betona 2 och 4.',
     form: [{ part: 'Vers', bars: ['Em7', 'G_rock', 'Dsus4', 'A7sus4', 'Em7', 'G_rock', 'Dsus4', 'A7sus4'] },
       { part: 'Brygga', bars: ['Cadd9', 'Dsus4', 'Em7', 'Em7', 'Cadd9', 'Dsus4', 'Em7', 'Em7', 'Cadd9', 'Dsus4', 'A7sus4', 'A7sus4'] },
       { part: 'Refräng', bars: ['Cadd9', 'Em7', 'G_rock', 'Em7', 'Cadd9', 'Em7', 'G_rock', 'Em7'] }] },
