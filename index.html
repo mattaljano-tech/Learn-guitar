@@ -160,6 +160,37 @@ main{padding-block:22px 64px;display:grid;gap:22px}
 /* Play layout */
 .desk{display:grid;grid-template-columns:250px minmax(0,1fr);gap:22px;align-items:start}
 .songs{display:grid;gap:6px;position:sticky;top:84px;max-height:calc(100vh - 100px);overflow-y:auto;scrollbar-width:thin;padding-right:4px}
+
+/* Låtbiblioteket */
+.songs.lib{grid-template-columns:minmax(0,1fr)!important;gap:8px!important;align-content:start}
+.lib{display:grid;gap:8px;min-width:0}
+.lib-search{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:0 12px;height:44px;color:var(--muted)}
+.lib-search svg{width:18px;height:18px;flex:none}
+.lib-search input{flex:1;min-width:0;border:0;background:transparent;color:var(--text);font:inherit;font-size:16px;outline:none}
+.lib-clr{border:0;background:transparent;color:var(--muted);font-size:22px;line-height:1;padding:0 2px}
+.lib-chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;margin:0 -2px}
+.lib-chips::-webkit-scrollbar{display:none}
+.lib-chips button{flex:none;white-space:nowrap;border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:999px;padding:7px 12px;font:600 13px/1 var(--f-body)}
+.lib-chips button[aria-pressed="true"]{background:var(--brass);border-color:var(--brass);color:var(--brass-ink)}
+.lib-h{font:700 12px/1 var(--f-body);letter-spacing:.04em;text-transform:uppercase;color:var(--brass);margin:12px 2px 2px}
+.lib-h.ok{color:var(--leaf)}
+.lib-sec{display:grid}
+.lib-row{position:relative;border-top:1px solid color-mix(in oklab,var(--line) 70%,transparent)}
+.lib-sec>.lib-row:first-child,.lib-sec>div:first-child .lib-row{border-top:0}
+.lib-hit,.lib-resume{display:flex;align-items:center;gap:12px;width:100%;padding:9px 4px;border:0;background:transparent;color:var(--text);text-align:left;font:inherit;border-radius:10px}
+.lib-row.sel .lib-hit{background:color-mix(in oklab,var(--brass) 10%,transparent)}
+.lib-resume{background:var(--surface);border:1px solid var(--line);padding:10px}
+.lib-cv{width:38px;height:38px;border-radius:9px;flex:none;display:grid;place-items:center;color:#fff;font:800 13px/1 var(--f-body)}
+.lib-tx{flex:1;min-width:0;display:grid;gap:2px}
+.lib-tx b{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lib-tx small{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lib-ch{font-size:12px;color:var(--muted);white-space:nowrap;max-width:38%;overflow:hidden;text-overflow:ellipsis}
+.lib-ok,.lib-new{font:700 11px/1 var(--f-body);padding:5px 8px;border-radius:999px;white-space:nowrap}
+.lib-ok{background:color-mix(in oklab,var(--leaf) 18%,transparent);color:var(--leaf)}
+.lib-new{background:color-mix(in oklab,var(--brass) 16%,transparent);color:var(--brass)}
+.lib-row .del{position:absolute;right:0;top:50%;transform:translateY(-50%);border:0;background:transparent;color:var(--faint);font-size:18px;padding:6px 8px}
+.lib-row:has(.del) .lib-hit{padding-right:34px}
+.lib-empty{padding:16px 4px}
 .tierhead{grid-column:1 / -1;padding:10px 4px 2px}
 .tierhead:first-child{padding-top:0}
 .song{display:block;width:100%;text-align:left;padding:11px 12px;border-radius:12px;border:1px solid transparent;position:relative}
@@ -2952,6 +2983,50 @@ const BAND_ROCK = new Set(['summer-69', 'best-of-you', 'these-days', 'times-like
 const BAND_POP = new Set(['viva-la-vida', 'counting-stars', 'hey-soul-sister', 'wake-me-up', 'rolling-deep', 'dancing-home', 'dancing-dark-li', 'lilla-lady', 'avundsjuk-regnet', 'doesnt-matter', 'better-luck', 'fran-och-med-du', 'chasing-cars', 'losing-religion', 'dreams', 'riptide', 'july', 'bloodshot']);
 const songBand = (s) => (!s ? 'folk' : s.band ? s.band : s.feel === 'reggae' ? 'reggae' : BAND_ROCK.has(s.id) ? 'rock' : BAND_POP.has(s.id) ? 'pop' : s.pattern === P_BALLAD || (s.pattern && s.pattern.join('') === P_BALLAD.join('')) ? 'ballad' : 'folk');
 const TIER_OF = (s) => (s.custom ? 'Egna' : s.tier ? s.tier : s.level === 'Utmaning' ? 'Utmaning' : s.level === 'Nästa steg' ? 'Nästa steg' : 'Kom igång');
+
+// Låtbiblioteket: sök, filter och "vad kan jag spela nu?". Ersätter den gamla rutnätslistan.
+const LIB_CHIPS = [['alla', 'Alla'], ['kan', 'Kan spela'], ['sv', 'Svenska'], ['klass', 'Klassiker'], ['nya', '90-tal och framåt'], ['reggae', 'Reggae'], ['bas', 'Nybörjare'], ['egna', 'Egna']];
+const LIB_COL = { 'Svenska favoriter': '#4b6478', 'Gamla sköna klassiker': '#9a3f2a', 'Från 90-talet och framåt': '#b5652e', 'Mer reggae': '#2e7d5b', Egna: '#6b4fa0' };
+const libInit = (t) => { const w = String(t).replace(/[^\p{L}\p{N} ]/gu, '').trim().split(/\s+/); return (((w[0] || '')[0] || '') + ((w[1] || '')[0] || (w[0] || '')[1] || '')).toUpperCase(); };
+function SongLibrary({ songs, cur, known, easy, onPick, onResume, onDel }) {
+  const [q, setQ] = useState('');
+  const [chip, setChipS] = useState(() => { try { return localStorage.getItem('ng-lib-chip') || 'alla'; } catch (e) { return 'alla'; } });
+  const setChip = (c) => { setChipS(c); try { localStorage.setItem('ng-lib-chip', c); } catch (e) {} };
+  const chordsOf = (s) => [...new Set(s.form.flatMap((p) => p.bars.flat()).map((k) => (easy ? simpler(k) : k)))];
+  const has = (k) => known.has(k) || known.has(simpler(k));
+  const info = useMemo(() => songs.map((s) => { const ch = chordsOf(s), miss = ch.filter((k) => !has(k)); return { s, ch, miss, tier: TIER_OF(s) }; }), [songs, known, easy]);
+  const learned = known.size >= 2;
+  const inChip = (x) => chip === 'alla' ? true : chip === 'kan' ? learned && !x.miss.length : chip === 'sv' ? x.tier === 'Svenska favoriter' : chip === 'klass' ? x.tier === 'Gamla sköna klassiker'
+    : chip === 'nya' ? x.tier === 'Från 90-talet och framåt' : chip === 'reggae' ? x.s.feel === 'reggae' : chip === 'bas' ? ['Kom igång', 'Nästa steg', 'Utmaning'].includes(x.tier) : chip === 'egna' ? !!x.s.custom : true;
+  const nq = q.trim().toLowerCase();
+  const hit = (x) => !nq || (x.s.title + ' ' + x.s.artist).toLowerCase().includes(nq);
+  const byTitle = (a, b) => a.s.title.localeCompare(b.s.title, 'sv');
+  const row = (x) => { const s = x.s, col = LIB_COL[x.tier] || '#7a5a2e';
+    return html`<div key=${s.id} className=${'lib-row' + (s.id === cur.id ? ' sel' : '')}>
+      <button className="lib-hit" onClick=${() => onPick(s)}>
+        <span className="lib-cv" style=${{ background: col }} aria-hidden="true">${libInit(s.title)}</span>
+        <span className="lib-tx"><b>${s.title}</b><small>${s.artist} · ${s.level}${s.meter === 3 ? ' · 3/4' : ''}</small></span>
+        ${learned && !x.miss.length ? html`<span className="lib-ok">Kan spela ✓</span>` : learned && x.miss.length === 1 ? html`<span className="lib-new">+ ${CHORD_DB[x.miss[0]].name}</span>`
+          : html`<span className="lib-ch">${x.ch.slice(0, 4).map((k) => CHORD_DB[k].name).join(' ')}${x.ch.length > 4 ? ' …' : ''}</span>`}
+      </button>
+      ${s.custom ? html`<button className="del" title="Ta bort låten" aria-label=${'Ta bort ' + s.title} onClick=${() => onDel(s)}>×</button>` : null}
+    </div>`; };
+  const list = info.filter((x) => inChip(x) && hit(x));
+  const flat = nq || chip !== 'alla';
+  const canNow = info.filter((x) => learned && !x.miss.length).sort(byTitle), oneMore = info.filter((x) => learned && x.miss.length === 1).sort(byTitle);
+  const tiers = [...new Set(info.map((x) => x.tier))];
+  return html`<div className="lib">
+    <label className="lib-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
+      <input type="search" placeholder="Sök låt eller artist" value=${q} onInput=${(e) => setQ(e.target.value)} aria-label="Sök låt eller artist" />
+      ${q ? html`<button type="button" className="lib-clr" onClick=${() => setQ('')} aria-label="Rensa sökningen">×</button>` : null}</label>
+    <div className="lib-chips" role="group" aria-label="Filter">${LIB_CHIPS.filter(([k]) => k !== 'kan' || learned).filter(([k]) => k !== 'egna' || info.some((x) => x.s.custom)).map(([k, l]) => html`<button key=${k} type="button" aria-pressed=${chip === k} onClick=${() => setChip(k)}>${l}${k === 'alla' ? ' ' + songs.length : ''}</button>`)}</div>
+    ${!flat ? html`<button type="button" className="lib-resume" onClick=${onResume}><span className="lib-cv" style=${{ background: '#2e7d5b' }} aria-hidden="true">▶</span><span className="lib-tx"><b>Fortsätt: ${cur.title}</b><small>${cur.artist}</small></span></button>` : null}
+    ${flat ? html`<div className="lib-sec">${list.length ? list.sort(byTitle).map(row) : html`<p className="muted lib-empty">Ingen låt matchar${nq ? ' "' + q.trim() + '"' : ''}.</p>`}</div>` : html`
+      ${canNow.length ? html`<div className="lib-h ok">Kan spela nu · ${canNow.length}</div><div className="lib-sec">${canNow.map(row)}</div>` : null}
+      ${oneMore.length ? html`<div className="lib-h">Ett nytt ackord bort · ${oneMore.length}</div><div className="lib-sec">${oneMore.map(row)}</div>` : null}
+      ${tiers.map((t) => html`<div key=${t}><div className="lib-h">${t} · ${info.filter((x) => x.tier === t).length}</div><div className="lib-sec">${info.filter((x) => x.tier === t).map(row)}</div></div>`)}`}
+  </div>`;
+}
 
 /* ---------------------------------------------------------------- audio engine */
 const NYLON_SAMPLES = [['B1', 35], ['D2', 38], ['E2', 40], ['Fs2', 42], ['Gs2', 44], ['A2', 45], ['B2', 47], ['Cs3', 49], ['D3', 50], ['E3', 52], ['Fs3', 54], ['G3', 55], ['A3', 57], ['B3', 59], ['Cs4', 61], ['Ds4', 63], ['E4', 64], ['Fs4', 66], ['Gs4', 68], ['A4', 69], ['B4', 71], ['Cs5', 73], ['D5', 74], ['E5', 76], ['Fs5', 78], ['G5', 79], ['Gs5', 80], ['A5', 81], ['As5', 82]];
@@ -8581,7 +8656,7 @@ function App() {
   const [muted, setMuted] = useState(false);
   const [custom, setCustom] = useState(loadCustom);
   const songs = useMemo(() => [...INITIAL_SONGS, ...custom], [custom]);
-  const [songId, setSongId] = useState('three-little-birds');
+  const [songId, setSongId] = useState(() => { try { return localStorage.getItem('ng-last-song') || 'three-little-birds'; } catch (e) { return 'three-little-birds'; } });
   const song0 = songs.find((s) => s.id === songId) || songs[0];
   useEffect(() => { setStyle(songBand(song0)); }, [songId]);
   const [patOv, setPatOv] = useState(() => { try { return JSON.parse(localStorage.getItem('ng-pat') || '{}'); } catch (e) { return {}; } });
@@ -9026,7 +9101,7 @@ function App() {
     return () => clearInterval(iv);
   }, [tab, tLoop, tString]);
 
-  const goTab = (t) => { if (playing) stopAll(); setTab(t); };
+  const goTab = (t) => { if (playing) stopAll(); setTab(t); if (t === 'spela') setPicking(true); };
   useEffect(() => { const W = weeklyNow(); if (prog.weekDone !== W.key && W.val(prog) >= W.goal) award(40, 'Veckans utmaning klar: ' + W.t, (n) => { n.weekDone = W.key; }); }, [prog]);
   // Synk: när appen öppnas, när den visas igen och strax efter att framstegen ändrats
   useEffect(() => {
@@ -9069,7 +9144,7 @@ function App() {
   };
   const pickSong = (s) => {
     if (playing) stopAll();
-    setSongId(s.id); setBpm(ladderOn ? Math.round((s.bpm * ladderPct(s.id)) / 100) : s.startBpm || s.bpm); setStartBar(0); setPicking(false); setLoop(null);
+    setSongId(s.id); try { localStorage.setItem('ng-last-song', s.id); } catch (e) {} setBpm(ladderOn ? Math.round((s.bpm * ladderPct(s.id)) / 100) : s.startBpm || s.bpm); setStartBar(0); setPicking(false); setLoop(null);
     setSelChord([].concat(s.form[0].bars[0])[0]); setStyle(songBand(s));
   };
   const setMix = (k, v) => { engine.setMix(k, v); setMixState((m) => ({ ...m, [k]: v })); };
@@ -9095,21 +9170,10 @@ function App() {
 
   /* ---------- tabs ---------- */
   const SpelaTab = html`<div className=${'desk' + (picking ? ' picking' : '')}>
-    <nav className="songs" aria-label="Låtar">
-      <div className="sheet-head"><h3>Välj låt</h3><button className="btn" onClick=${() => setPicking(false)}>Stäng</button></div>
-      ${canPlay.length ? html`<div className="label tierhead" style=${{ color: 'var(--leaf)' }}>Du kan spela nu</div>
-        ${canPlay.map((s) => html`<button key=${'cp' + s.id} className=${'song can' + (s.id === song.id ? ' sel' : '')} onClick=${() => pickSong(s)}>
-          <b>${s.title}</b><i>${s.artist}</i><span className="chords">${songChords(s).map((k) => CHORD_DB[k].name).join(' · ')}</span></button>`)}` : null}
-      ${songs.flatMap((s, i) => [i === 0 || TIER_OF(songs[i - 1]) !== TIER_OF(s) ? html`<div key=${'h' + i} className="label tierhead">${TIER_OF(s)}</div>` : null,
-        html`<div key=${s.id} style=${{ position: 'relative' }}>
-        <button className=${'song' + (s.id === song.id ? ' sel' : '')} onClick=${() => pickSong(s)}>
-          <b>${s.title}</b><i>${s.artist} · ${s.level}</i>
-          <span className="chords">${[...new Set(s.form.flatMap((p) => p.bars.flat()))].map((k) => CHORD_DB[k].name).join(' · ')}</span>
-        </button>
-        ${s.custom ? html`<button className="del" title="Ta bort låten" aria-label=${'Ta bort ' + s.title} onClick=${() => {
-          const list = custom.filter((c) => c.id !== s.id); setCustom(list); saveCustom(list); if (s.id === song.id) pickSong(INITIAL_SONGS[0]);
-        }}>×</button>` : null}
-      </div>`])}
+    <nav className="songs lib" aria-label="Låtar">
+      <div className="sheet-head"><h3>Låtar</h3><button className="btn" onClick=${() => setPicking(false)}>Till låten</button></div>
+      <${SongLibrary} songs=${songs} cur=${song} known=${known} easy=${easy} onPick=${pickSong} onResume=${() => setPicking(false)}
+        onDel=${(s) => { const list = custom.filter((c) => c.id !== s.id); setCustom(list); saveCustom(list); if (s.id === song.id) pickSong(INITIAL_SONGS[0]); }} />
       <button className="add" onClick=${() => { setPicking(false); setModal(true); }}>+ Lägg till låt (ackordblad eller ljudfil)</button>
     </nav>
 
