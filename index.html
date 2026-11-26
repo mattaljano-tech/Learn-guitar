@@ -591,6 +591,12 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 .ls-done .ls-actions{width:100%}
 .ls-back{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(24px + var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px)));z-index:45;display:inline-flex;align-items:center;gap:8px;height:50px;padding:0 20px;border-radius:25px;border:0;background:linear-gradient(135deg,var(--brass),var(--brass-2));color:var(--brass-ink);font-weight:800;box-shadow:0 10px 30px -8px rgba(0,0,0,.7)}
 .ls-back svg{width:16px;height:16px}
+.ls-chords{display:grid;gap:4px;padding:12px 14px;border-radius:14px;background:var(--surface);border:1px solid var(--line)}
+.ls-chords span{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.ls-chords b{font-size:20px}
+.ls-easy{display:grid;gap:6px;font-size:14px;color:var(--muted)}
+.ls-easy .ls-link{justify-self:start}
+
 @media (max-width:760px){.ls-back{bottom:calc(150px + var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px)))}}
 .gd-six{grid-template-columns:repeat(3,minmax(0,1fr))}
 .gd-deg{display:grid;gap:4px;text-align:center}.gd-deg small{color:var(--muted);font-size:12px;font-weight:600}
@@ -4286,17 +4292,17 @@ const addTag = (n, t) => { n.daily = n.daily || {}; const d = today(); n.daily[d
 const PLAN = [
   { t: 'Första ackorden', steps: [{ k: 'tune' }, { k: 'chord', c: 'Em' }, { k: 'chord', c: 'Am' }, { k: 'chal', p: ['Am', 'Em'], n: 8 }, { k: 'song', s: 'get-up-stand-up' }] },
   { t: 'C-dur och Eleanor Rigby', steps: [{ k: 'tune' }, { k: 'chord', c: 'C' }, { k: 'chal', p: ['Em', 'C'], n: 8 }, { k: 'song', s: 'eleanor-rigby' }] },
-  { t: 'G-dur och What\'s Up', steps: [{ k: 'chord', c: 'G' }, { k: 'chal', p: ['C', 'G'], n: 8 }, { k: 'song', s: 'whats-up' }, { k: 'skank' }] },
-  { t: 'D-dur och Dylan', steps: [{ k: 'chord', c: 'D' }, { k: 'chal', p: ['G', 'D'], n: 10 }, { k: 'song', s: 'knockin' }] },
-  { t: 'Fyra ackord i följd', steps: [{ k: 'tune' }, { k: 'chal', p: ['Em', 'G'], n: 12 }, { k: 'song', s: 'zombie' }, { k: 'song', s: 'ca-reste-la' }] },
-  { t: 'F utan barré', steps: [{ k: 'chord', c: 'Fmaj7' }, { k: 'chal', p: ['C', 'Fmaj7'], n: 8 }, { k: 'song', s: 'no-woman-no-cry' }] },
-  { t: 'Lugnt akustiskt', steps: [{ k: 'chal', p: ['Am', 'C'], n: 15 }, { k: 'song', s: 'july' }, { k: 'skank' }] },
-  { t: 'A och E', steps: [{ k: 'tune' }, { k: 'chord', c: 'A' }, { k: 'chord', c: 'E' }, { k: 'song', s: 'three-little-birds' }] },
-  { t: 'Snabbare byten', steps: [{ k: 'chal', p: ['D', 'A'], n: 12 }, { k: 'chal', p: ['Am', 'E'], n: 10 }, { k: 'song', s: 'stand-by-me' }] },
-  { t: 'Rockgreppen', steps: [{ k: 'chord', c: 'Em7' }, { k: 'chal', p: ['Em7', 'Cadd9'], n: 15 }, { k: 'song', s: 'wonderwall' }] },
-  { t: 'Byten mitt i takten', steps: [{ k: 'tune' }, { k: 'chal', p: ['G', 'D'], n: 15 }, { k: 'song', s: 'redemption-song' }] },
-  { t: 'Litet barré', steps: [{ k: 'chord', c: 'F' }, { k: 'chal', p: ['F', 'C'], n: 8 }, { k: 'song', s: 'red-red-wine' }, { k: 'song', s: 'jag-ar-storre-nu' }] },
-  { t: 'Wonderwall på riktigt', steps: [{ k: 'chal', p: ['C', 'G'], n: 20 }, { k: 'song', s: 'wonderwall' }] },
+  { t: 'G-dur och What\'s Up', steps: [{ k: 'chord', c: 'G' }, { k: 'chal', p: ['G', 'Am'], n: 8 }, { k: 'chal', p: ['C', 'G'], n: 8 }, { k: 'song', s: 'whats-up' }, { k: 'skank' }] },
+  { t: 'D-dur och Dylan', steps: [{ k: 'chord', c: 'D' }, { k: 'chal', p: ['G', 'D'], n: 10 }, { k: 'chal', p: ['D', 'Am'], n: 8 }, { k: 'chal', p: ['C', 'D'], n: 8 }, { k: 'song', s: 'knockin' }] },
+  { t: 'Fyra ackord i följd', steps: [{ k: 'tune' }, { k: 'chal', p: ['Em', 'G'], n: 12 }, { k: 'chal', p: ['D', 'Em'], n: 10 }, { k: 'song', s: 'zombie' }, { k: 'song', s: 'ca-reste-la' }] },
+  { t: 'F utan barré', steps: [{ k: 'chord', c: 'Fmaj7' }, { k: 'chord', c: 'G/B' }, { k: 'chal', p: ['C', 'Fmaj7'], n: 8 }, { k: 'chal', p: ['Am', 'Fmaj7'], n: 8 }, { k: 'song', s: 'no-woman-no-cry' }] },
+  { t: 'Lugnt akustiskt', steps: [{ k: 'chord', c: 'Dm' }, { k: 'chal', p: ['Am', 'Dm'], n: 10 }, { k: 'chal', p: ['Fmaj7', 'G'], n: 10 }, { k: 'song', s: 'july' }, { k: 'skank' }] },
+  { t: 'A och E', steps: [{ k: 'tune' }, { k: 'chord', c: 'A' }, { k: 'chord', c: 'E' }, { k: 'chal', p: ['A', 'D'], n: 8 }, { k: 'chal', p: ['A', 'E'], n: 8 }, { k: 'song', s: 'three-little-birds' }] },
+  { t: 'Snabbare byten', steps: [{ k: 'chal', p: ['G', 'Em'], n: 15 }, { k: 'chal', p: ['C', 'D'], n: 15 }, { k: 'song', s: 'stand-by-me' }] },
+  { t: 'Rockgreppen', steps: [{ k: 'chord', c: 'Em7' }, { k: 'chord', c: 'G_rock' }, { k: 'chord', c: 'Dsus4' }, { k: 'chord', c: 'A7sus4' }, { k: 'chord', c: 'Cadd9' }, { k: 'chal', p: ['Em7', 'G_rock'], n: 12 }, { k: 'song', s: 'wonderwall' }] },
+  { t: 'Byten mitt i takten', steps: [{ k: 'tune' }, { k: 'chal', p: ['G', 'Em'], n: 15 }, { k: 'chal', p: ['C', 'D'], n: 15 }, { k: 'song', s: 'redemption-song' }] },
+  { t: 'Litet barré', steps: [{ k: 'chord', c: 'F' }, { k: 'chal', p: ['F', 'C'], n: 8 }, { k: 'chal', p: ['F', 'G'], n: 8 }, { k: 'song', s: 'red-red-wine' }, { k: 'song', s: 'jag-ar-storre-nu' }] },
+  { t: 'Wonderwall på riktigt', steps: [{ k: 'chal', p: ['Cadd9', 'Dsus4'], n: 15 }, { k: 'chal', p: ['Dsus4', 'A7sus4'], n: 15 }, { k: 'song', s: 'wonderwall' }] },
   { t: 'Spela själv', steps: [{ k: 'tune' }, { k: 'solo' }] },
 ];
 function stepDone(n, st) {
@@ -8646,6 +8652,7 @@ function App() {
   useEffect(() => { try { sessionStorage.setItem('ng-tab', tab); } catch (e) {} }, [tab]);
   const [lesson, setLesson] = useState(null); // { day, look } – dagens lektion i helskärm
   const [lessonAway, setLessonAway] = useState(false);
+  const lessonLeft = useRef(null), lessonTried = useRef('');
   const [prog, setProg] = useState(loadProg);
   const P = useRef(prog);
   const [toasts, setToasts] = useState([]);
@@ -9591,7 +9598,12 @@ function App() {
   const lDone = lSteps.map((st) => stepDone(prog, st));
   const lCur = lDone.indexOf(false);
   const openLesson = (day) => { if (playing) stopAll(); setLessonAway(false); setLesson({ day: day || Math.min(PLAN.length, (prog.planDay || 0) + 1), look: true }); window.scrollTo({ top: 0 }); };
-  const leaveFor = (st) => { setLessonAway(lesson.day); setLesson(null); goMission({ go: stepGo(st) }); };
+  // tillbaka till lektionen av sig själv när steget man gick iväg för är klart (t.ex. hela låten spelad)
+  useEffect(() => {
+    const st = lessonLeft.current; if (!lessonAway || !st || !stepDone(prog, st)) return;
+    const t = setTimeout(() => { lessonLeft.current = null; openLesson(lessonAway); }, 2200); return () => clearTimeout(t);
+  }, [prog, lessonAway]);
+  const leaveFor = (st) => { lessonLeft.current = st; lessonTried.current = lesson.day + ':' + lSteps.indexOf(st); setLessonAway(lesson.day); setLesson(null); goMission({ go: stepGo(st) }); };
   const lessonStepView = () => {
     if (lCur < 0) {
       const next = PLAN[lessonDay] ? PLAN[lessonDay].t : null;
@@ -9637,10 +9649,19 @@ function App() {
       : st.k === 'song' ? { h: songTitle(st.s), p: 'Spela hela låten med kompet.', b: 'Spela ' + songTitle(st.s) }
       : st.k === 'solo' ? { h: 'Spela själv', p: 'Stäng av "Appen spelar gitarren" och spela en hel låt.', b: 'Välj en låt' }
       : { h: st.n + ' stjärnor', p: 'Få ' + st.n + ' stjärnor i ' + (st.s === 'any' ? 'valfri låt' : songTitle(st.s)) + ' i Guitar Hero.', b: 'Starta Guitar Hero' };
+    const sObj = st.k === 'song' ? INITIAL_SONGS.find((x) => x.id === st.s) : null;
+    const sCh = sObj ? [...new Set(sObj.form.flatMap((p) => p.bars.flat()))] : [];
+    const okSet = new Set(prog.chordsOk || []), newCh = sCh.filter((k) => !okSet.has(k) && !okSet.has(simpler(k)) && !(easy && okSet.has(simpler(k))));
+    const hard = sCh.filter((k) => simpler(k) !== k);
+    const tried = lessonAway === false && lessonTried.current === lessonDay + ':' + lCur;
     return html`<div className="ls-body">
       <div><span className="ls-kicker">Spela</span><h1 className="ls-h1">${what.h}</h1><p className="ls-lead">${what.p}</p></div>
-      <p className="ls-tip">När du är klar kommer du tillbaka hit med knappen längst ner.</p>
-      <div className="ls-actions"><button className="ls-btn" onClick=${() => leaveFor(st)}>${I.play}${what.b}</button></div></div>`;
+      ${sObj ? html`<div className="ls-chords"><span>Ackord i låten</span><b>${[...new Set(sCh.map((k) => (easy ? simpler(k) : k)))].map((k) => CHORD_DB[k].name).join(' · ')}</b></div>` : null}
+      ${sObj && hard.length && !easy ? html`<div className="ls-easy"><span>${hard.map((k) => CHORD_DB[k].name).join(', ')} har du inte övat än. Med förenklade ackord blir de ${[...new Set(hard.map((k) => CHORD_DB[simpler(k)].name))].join(', ')}.</span>
+        <button className="ls-link" onClick=${() => setEasy(true)}>Slå på förenklade ackord</button></div>` : null}
+      <p className="ls-tip">${st.k === 'song' ? 'Steget är klart när du har spelat hela låten. Då kommer du tillbaka hit av dig själv.' : 'När du är klar kommer du tillbaka hit av dig själv.'}</p>
+      <div className="ls-actions col"><button className="ls-btn" onClick=${() => leaveFor(st)}>${I.play}${tried ? 'Spela igen' : what.b}</button>
+        ${st.k === 'song' || st.k === 'skank' ? html`<button className="ls-btn ghost" onClick=${() => award(0, '', (n) => addTag(n, st.k === 'song' ? 'song:' + st.s : 'skank'), true)}>${st.k === 'song' ? 'Jag har spelat låten, gå vidare' : 'Klart, gå vidare'}</button>` : null}</div></div>`;
   };
   const LessonView = lesson ? html`<div className="ls" role="dialog" aria-label="Dagens lektion">
     <div className="ls-top">
