@@ -1048,6 +1048,16 @@ html.jam-stage .jam-mode{display:none}
 .bs-del{width:32px;height:32px;border-radius:50%;color:var(--muted);font-size:18px}
 @media (prefers-reduced-motion:reduce){.bs-glow{animation:none}}
 .jam-run{display:grid;gap:12px}
+.jam-rot{height:34px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font:600 13px/1 inherit;white-space:nowrap}
+/* liggande telefon: ringen med kameran till vänster, kontrollerna till höger */
+@media (orientation:landscape) and (max-height:560px){
+  html.jam-stage header.top{display:none}
+  .jam-run{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:8px 14px;align-items:start}
+  .jam-run>*{grid-column:2}
+  .jam-run>.jam-stage{grid-column:1;grid-row:1/span 12;position:sticky;top:8px}
+  .jam-run .jam-ring{height:calc(100dvh - 60px - env(safe-area-inset-bottom));min-height:220px}
+  .jam-run>.jam-btns{flex-wrap:wrap}
+}
 .jam-parts{list-style:none;margin:0;padding:0;display:grid;gap:10px}
 .jam-parts li{display:grid;gap:8px;padding:12px;border-radius:12px;background:var(--surface-2)}
 .jp-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
@@ -1922,6 +1932,11 @@ const NG_SCHEMA = 2;
 // Körs appen som riktig Android-app (Capacitor)? Då sparas och delas filer via appens egna funktioner.
 const NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
 const blobB64 = (b) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1] || ''); r.onerror = rej; r.readAsDataURL(b); });
+function flashMsg(t) {
+  const d = document.createElement('div'); d.textContent = t; d.setAttribute('role', 'status');
+  d.style.cssText = 'position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:9999;background:#1f2a24;color:#fff;padding:10px 16px;border-radius:12px;font:600 14px/1.3 system-ui,sans-serif;box-shadow:0 6px 20px rgba(0,0,0,.4);max-width:88vw;text-align:center';
+  document.body.appendChild(d); setTimeout(() => d.remove(), 3800);
+}
 async function saveFile(blob, name, title) {
   if (NATIVE) {
     const P = window.Capacitor.Plugins, CH = 3 * 1024 * 1024;
@@ -1930,6 +1945,19 @@ async function saveFile(blob, name, title) {
       const data = await blobB64(blob.slice(o, o + CH));
       if (o === 0) w = await P.Filesystem.writeFile({ path: name, data, directory: 'CACHE' });
       else await P.Filesystem.appendFile({ path: name, data, directory: 'CACHE' });
+    }
+    // Spara direkt i telefonen (film -> Filmer/NylonGitarr, ljud -> Musik/NylonGitarr, annat -> Hämtade filer/NylonGitarr).
+    // Delningsmenyn används bara om telefonen är för gammal för det.
+    const ext = (name.split('.').pop() || '').toLowerCase();
+    const mime = blob.type || ({ mp4: 'video/mp4', webm: 'video/webm', m4a: 'audio/mp4', wav: 'audio/wav', mp3: 'audio/mpeg', ogg: 'audio/ogg', json: 'application/json' }[ext] || 'application/octet-stream');
+    if (P.NgNative && P.NgNative.saveToDevice) {
+      try {
+        const r = await P.NgNative.saveToDevice({ path: name, name, mime });
+        try { await P.Filesystem.deleteFile({ path: name, directory: 'CACHE' }); } catch (e) {}
+        const where = /^video/.test(mime) ? 'Filmer › NylonGitarr (syns i Galleriet)' : /^audio/.test(mime) ? 'Musik › NylonGitarr' : 'Hämtade filer › NylonGitarr';
+        flashMsg('✓ Sparad i telefonen: ' + where);
+        return true;
+      } catch (e) { /* faller tillbaka på delningsmenyn */ }
     }
     try { await P.Share.share({ title: title || name, url: w.uri, dialogTitle: title || 'Spara eller dela' }); } catch (e) { if (!/cancel/i.test(String(e && e.message))) throw e; return false; }
     return true;
@@ -5394,6 +5422,13 @@ function Jam({ easy, onSave, onDone }) {
   const [compGtr, setCompGtr] = useState(false);
   const [paused, setPaused] = useState(false);
   const dockR = useRef(null);
+  // vrid skärmen i appen (Android): liggande/stående även om telefonens autorotering är avstängd. Släpps när jammet är klart.
+  const [rot, setRotS] = useState(() => { try { return localStorage.getItem('ng-jam-rot') || 'user'; } catch (e) { return 'user'; } });
+  const setRot = (m) => { setRotS(m); try { localStorage.setItem('ng-jam-rot', m); } catch (e) {} };
+  useEffect(() => { if (!NATIVE) return; const P = window.Capacitor.Plugins; if (!P.NgNative || !P.NgNative.setOrientation) return;
+    P.NgNative.setOrientation({ mode: phase === 'run' ? rot : 'user' }).catch(() => {});
+    return () => { P.NgNative.setOrientation({ mode: 'user' }).catch(() => {}); }; }, [phase, rot]);
+  const rotBtn = NATIVE ? html`<button className="jam-rot" onClick=${() => setRot(rot === 'landscape' ? 'portrait' : rot === 'portrait' ? 'user' : 'landscape')} aria-label="Vrid skärmen">${rot === 'landscape' ? '⟳ Liggande' : rot === 'portrait' ? '⟳ Stående' : '⟳ Auto'}</button>` : null;
   // scenläge: hela sidan byter till ringens tema medan du jammar, och tonar tillbaka när du är klar
   React.useLayoutEffect(() => {
     const el = document.documentElement;
@@ -5732,6 +5767,7 @@ function Jam({ easy, onSave, onDone }) {
         </div>
         <div className="jam-live">
           <span><b>${live.bpm || '–'}</b> BPM</span>
+          ${rotBtn}
           <span style=${{ flex: 1 }}></span>
           ${SkinPick}
         </div>
@@ -7873,10 +7909,11 @@ function SelfiePip({ vref }) {
   // placera i pixlar utifrån scenens storlek (andelar sparas, så det funkar i alla storlekar)
   const place = () => { const el = box.current, par = el && el.parentElement; if (!par) return; const pw = par.clientWidth, ph = par.clientHeight, w = Math.min(pw * W, ph * ar * 0.9), h = w / ar;
     el.style.width = w + 'px'; el.style.height = h + 'px'; el.style.left = (pw - w) * pos.x + 'px'; el.style.top = (ph - h) * pos.y + 'px'; };
-  useEffect(() => { place(); window.addEventListener('resize', place); return () => window.removeEventListener('resize', place); });
+  useEffect(() => { place(); const later = () => { place(); setTimeout(place, 250); }; window.addEventListener('resize', later); window.addEventListener('orientationchange', later);
+    return () => { window.removeEventListener('resize', later); window.removeEventListener('orientationchange', later); }; });
   return html`<div className="jam-selfie" ref=${box}
       onPointerDown=${down} onPointerMove=${move} onPointerUp=${up} onPointerCancel=${up}>
-    <video ref=${vref} muted playsInline autoPlay aria-label="Du, live från framkameran" onLoadedMetadata=${(e) => { const v = e.target; if (v.videoWidth && v.videoHeight) setAr(v.videoWidth / v.videoHeight); }}></video>
+    <video ref=${vref} muted playsInline autoPlay aria-label="Du, live från framkameran" onLoadedMetadata=${(e) => { const v = e.target; if (v.videoWidth && v.videoHeight) setAr(v.videoWidth / v.videoHeight); }} onResize=${(e) => { const v = e.target; if (v.videoWidth && v.videoHeight) setAr(v.videoWidth / v.videoHeight); }}></video>
     <button className="jam-selfie-sz" onPointerDown=${(e) => e.stopPropagation()} onClick=${() => save({ ...pos, s: (pos.s + 1) % 3 })} aria-label="Ändra storlek">⤢</button>
   </div>`;
 }
