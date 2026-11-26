@@ -829,6 +829,13 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 @media (max-width:560px){.fpath{grid-template-columns:1fr}}
 /* Inställningar och vänsterhänt */
 .modal.settings{max-width:520px}
+/* inställningarna får aldrig gå att dra i sidled, inte ens med stor text i telefonen */
+.modal{grid-template-columns:minmax(0,1fr);overflow-x:hidden;overscroll-behavior:contain}
+.modal.settings{touch-action:pan-y}
+.modal.settings :is(.set-sec,.set-row)>*{min-width:0;max-width:100%}
+.modal.settings :is(small,p,b,span,code,label){overflow-wrap:anywhere}
+.modal.settings .row{flex-wrap:wrap}
+.modal.settings input,.modal.settings select{min-width:0;max-width:100%}
 .set-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding-top:12px;border-top:1px solid var(--line)}
 .set-row b,.set-sec b{display:block;font-size:15px}
 .set-row small,.set-sec small{display:block;font-size:12px;color:var(--muted)}
@@ -1630,13 +1637,13 @@ details.card.more{padding:18px 0 0}
 @keyframes recPulse{50%{opacity:.25}}
 @media (prefers-reduced-motion:reduce){.rec-btn.live i{animation:none}}
 .rec-list{list-style:none;margin:0;padding:0;display:grid;gap:4px}
-.rec-item{display:grid;grid-template-columns:130px minmax(0,1fr) auto auto;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid color-mix(in oklab,var(--line) 55%,transparent)}
+.rec-item{display:grid;grid-template-columns:130px minmax(0,1fr) auto auto auto;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid color-mix(in oklab,var(--line) 55%,transparent)}
 .rec-item:last-child{border-bottom:0}
 .rec-meta{display:grid;gap:1px}.rec-meta b{font-size:14px}.rec-meta span{font-size:12px;color:var(--muted)}
 .rec-item audio{width:100%;height:36px}
 .rec-x{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;border:0;background:transparent;color:var(--muted);font-size:18px;font-weight:700;text-decoration:none}
 .rec-x:hover{background:color-mix(in oklab,var(--text) 6%,transparent);color:var(--text)}
-@media (max-width:760px){.rec-item{grid-template-columns:minmax(0,1fr) auto auto}.rec-item audio{grid-column:1/-1;grid-row:2}}
+@media (max-width:760px){.rec-item{grid-template-columns:minmax(0,1fr) auto auto auto}.rec-item audio{grid-column:1/-1;grid-row:2}}
 
 /* ---------- Övningsläge ---------- */
 .focusbar{display:none}
@@ -1942,15 +1949,18 @@ function flashMsg(t) {
   d.style.cssText = 'position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:9999;background:#1f2a24;color:#fff;padding:10px 16px;border-radius:12px;font:600 14px/1.3 system-ui,sans-serif;box-shadow:0 6px 20px rgba(0,0,0,.4);max-width:88vw;text-align:center';
   document.body.appendChild(d); setTimeout(() => d.remove(), 3800);
 }
+async function writeCache(blob, name) {
+  const P = window.Capacitor.Plugins, CH = 3 * 1024 * 1024; let w = null;
+  for (let o = 0; o < Math.max(1, blob.size); o += CH) {
+    const data = await blobB64(blob.slice(o, o + CH));
+    if (o === 0) w = await P.Filesystem.writeFile({ path: name, data, directory: 'CACHE' });
+    else await P.Filesystem.appendFile({ path: name, data, directory: 'CACHE' });
+  }
+  return w;
+}
 async function saveFile(blob, name, title) {
   if (NATIVE) {
-    const P = window.Capacitor.Plugins, CH = 3 * 1024 * 1024;
-    let w = null;
-    for (let o = 0; o < Math.max(1, blob.size); o += CH) {
-      const data = await blobB64(blob.slice(o, o + CH));
-      if (o === 0) w = await P.Filesystem.writeFile({ path: name, data, directory: 'CACHE' });
-      else await P.Filesystem.appendFile({ path: name, data, directory: 'CACHE' });
-    }
+    const P = window.Capacitor.Plugins, w = await writeCache(blob, name);
     // Spara direkt i telefonen (film -> Filmer/NylonGitarr, ljud -> Musik/NylonGitarr, annat -> Hämtade filer/NylonGitarr).
     // Delningsmenyn används bara om telefonen är för gammal för det.
     const ext = (name.split('.').pop() || '').toLowerCase();
@@ -2202,6 +2212,8 @@ Object.assign(CHORD_DB, {
     standard: { frets: [3, 3, 2, 0, 1, 0], fingers: [3, 4, 2, 0, 1, 0] }, easy: { frets: [-1, 3, 2, 0, 1, 0], fingers: [0, 3, 2, 0, 1, 0], note: 'Vanligt C' } },
   'A/G#': { name: 'A/G#', fullName: 'A med G# i basen', description: 'A-dur med lillfingret på band 4 på tjockaste strängen. Basen kliver ner från A mot F#m.',
     standard: { frets: [4, -1, 2, 2, 2, 0], fingers: [4, 0, 1, 2, 3, 0] }, easy: { frets: [-1, 0, 2, 2, 2, 0], fingers: [0, 0, 1, 2, 3, 0], note: 'Vanligt A' } },
+  Em6: { name: 'Em6', fullName: 'E-moll 6', description: 'Em där ringfingret tar band 2 på B-strängen. Ger det sorgsna, nedåtgående draget i Eleanor Rigby.',
+    standard: { frets: [0, 2, 2, 0, 2, 0], fingers: [0, 1, 2, 0, 3, 0] }, easy: { frets: [0, 2, 2, 0, 0, 0], fingers: [0, 2, 3, 0, 0, 0], note: 'Vanligt Em' } },
   'C/B': { name: 'C/B', fullName: 'C med B i basen', description: 'Basen går ner från C till B, på väg till Am.',
     standard: { frets: [-1, 2, 2, 0, 1, 0], fingers: [0, 2, 3, 0, 1, 0] }, easy: { frets: [-1, 2, 2, 0, 1, 0], fingers: [0, 2, 3, 0, 1, 0], note: 'Redan enkelt' } },
   'G/B': { name: 'G/B', fullName: 'G med B i basen', description: 'G med basen på A-strängen band 2. Ett steg på väg ner till Am.',
@@ -2228,7 +2240,7 @@ const voicing = (k, easy) => (easy ? CHORD_DB[k].easy : CHORD_DB[k].standard);
 // Förenklade ackord: låtarna har de riktiga ackorden, och med Förenklat byts svåra ackord mot närmaste lätta (och nybörjargrepp)
 const SIMPLER = { Em7: 'Em', G_rock: 'G', Dsus4: 'D', A7sus4: 'A', Cadd9: 'C', Am7: 'Am', Dm7: 'Dm', Gmaj7: 'G', Asus2: 'A', Asus4: 'A', Dsus2: 'D', Esus4: 'E', Bm7: 'Bm',
   'D/F#': 'D', Cmaj7: 'C', Dmaj7: 'D', E7: 'E', A7: 'A', D7: 'D', G7: 'G', C7: 'C', B_barre: 'B7', F: 'Fmaj7', F_barre: 'Fmaj7',
-  F7: 'Fmaj7', 'Bb/A': 'Bb', 'Bb/F': 'Bb', 'C/E': 'C', 'C/G': 'C', 'C/B': 'C', 'A/G#': 'A', 'G/B': 'G', 'Am/E': 'Am', 'F/C': 'Fmaj7', Am6: 'Am', 'Am/G': 'Am', Fsus2: 'Fmaj7', 'F/G': 'Fmaj7', 'D6add9/F#': 'D' };
+  F7: 'Fmaj7', 'Bb/A': 'Bb', 'Bb/F': 'Bb', 'C/E': 'C', 'C/G': 'C', 'C/B': 'C', 'A/G#': 'A', Em6: 'Em', 'G/B': 'G', 'Am/E': 'Am', 'F/C': 'Fmaj7', Am6: 'Am', 'Am/G': 'Am', Fsus2: 'Fmaj7', 'F/G': 'Fmaj7', 'D6add9/F#': 'D' };
 const simpler = (k) => (k && SIMPLER[k] && CHORD_DB[SIMPLER[k]] ? SIMPLER[k] : k);
 const CHORD_KEYS = Object.keys(CHORD_DB);
 const BARRE_N = CHORD_KEYS.filter((k) => CHORD_DB[k].standard.barre && CHORD_DB[k].standard.barre.to - CHORD_DB[k].standard.barre.from >= 2).length;
@@ -2271,10 +2283,17 @@ const INITIAL_SONGS = [
     pattern: P_SKANK_UP, accents: [],
     tip: 'Originalet går i Bm och F#m. Med capo 2 blir det Am och Em, alltså bara två ackord. Släpp trycket i vänsterhanden direkt efter varje slag så att tonen blir kort.',
     form: [{ part: 'Refräng', bars: ['Am', 'Em', 'Am', 'Em', 'Am', 'Em', 'Am', 'Em'] }, { part: 'Vers', bars: ['Am', 'Am', 'Am', 'Em', 'Am', 'Am', 'Am', 'Em'] }] },
-  { id: 'eleanor-rigby', strumSrc: 'unk', title: 'Eleanor Rigby', artist: 'The Beatles', feel: 'acoustic', level: 'Superlätt', bpm: 137, band: 'strings', startBpm: 70,
-    pattern: ['D', '-', 'D', '-', 'D', '-', 'D', '-'], accents: [0, 4],
-    tip: 'Nybörjarversionen med bara C och Em. Låten börjar med "Ah, look at all the lonely people". Originalet går fort, så börja långsamt och höj tempot när bytet sitter.',
-    form: [{ part: 'Intro', bars: ['C', 'C', 'Em', 'Em', 'C', 'C', 'Em', 'Em'] }, { part: 'Vers', bars: ['Em', 'Em', 'Em', 'C', ['C', 'Em']] }, { part: 'Refräng', bars: ['Em', 'Em', 'Em', 'Em', 'Em', 'Em', 'Em', 'Em'] }] },
+  { id: 'eleanor-rigby', strumSrc: 'simple', title: 'Eleanor Rigby', artist: 'The Beatles', feel: 'acoustic', level: 'Lätt', bpm: 137, band: 'strings', startBpm: 70,
+    pattern: ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'U'], accents: [0, 2, 4, 6],
+    tip: 'Originalets ackord: "Ah, look at all the lonely people" går C och Em. Versen ligger på Em och svänger över till C precis före slutet av raden. Refrängen ("All the lonely people") går Em7, Em6, C/E, Em. Originalet är en stråkoktett utan gitarr, så kompet är korta, drivande nedslag med ett uppslag före bytet.',
+    form: [{ part: 'Intro', bars: ['C', 'C', 'Em', 'Em', 'C', 'C', 'Em', 'Em'] },
+      { part: 'Vers', bars: ['Em', 'Em', 'Em', 'C', 'Em', 'Em', 'Em', 'Em', 'C', 'Em'] },
+      { part: 'Refräng', bars: ['Em7', 'Em6', 'C/E', 'Em', 'Em7', 'Em6', 'C/E', 'Em'] },
+      { part: 'Vers', bars: ['Em', 'Em', 'Em', 'C', 'Em', 'Em', 'Em', 'Em', 'C', 'Em'] },
+      { part: 'Refräng', bars: ['Em7', 'Em6', 'C/E', 'Em', 'Em7', 'Em6', 'C/E', 'Em'] },
+      { part: 'Intro igen', bars: ['C', 'C', 'Em', 'Em', 'C', 'C', 'Em', 'Em'] },
+      { part: 'Vers', bars: ['Em', 'Em', 'Em', 'C', 'Em', 'Em', 'Em', 'Em', 'C', 'Em'] },
+      { part: 'Slut', bars: ['Em7', 'Em6', 'C/E', 'Em', 'Em7', 'Em6', 'C/E', 'Em'] }] },
   { id: 'whats-up', strumSrc: 'orig', title: "What's Up", artist: '4 Non Blondes', feel: 'acoustic', level: 'Lätt', capo: 'Capo 2 för originaltonarten', bpm: 135, band: 'folk', startBpm: 70,
     pattern: P_FOLK, accents: [0, 6],
     tip: 'Samma fyra takter genom hela låten: G, Am, C, G. Originalet går i A, och med capo 2 spelar du det med G-, Am- och C-greppen. Börja långsamt.',
@@ -2644,9 +2663,9 @@ const INITIAL_SONGS = [
       { part: 'Förrefräng', bars: ['G', 'G', 'F', 'F'] },
       { part: 'Refräng', bars: ['Am', 'G', 'F', 'F', 'Am', 'G', 'F', 'F', 'Am', 'G', 'F', 'F', 'Am', 'G', 'F', 'F'] },
       { part: 'Mellandel', bars: ['Am', 'G', 'F', 'Dm', 'Am', 'G', 'F', 'Dm'] }] },
-  { id: 'ff-home', strumSrc: 'simple', tier: 'Från 90-talet och framåt', title: "Home", artist: "Foo Fighters", feel: 'acoustic', level: 'Lätt', bpm: 70, band: 'piano',
-    pattern: ['D', '-', 'D', '-', 'D', '-', 'D', '-'], accents: [0],
-    tip: 'Originalet är Dave Grohl vid pianot i tretakt, men appen kan bara spela fyrtakt, så här blir varje ackord en fyrtakt. Versen går G, Am, F, G. Refrängen ("All I want is to be home") går F, Em, C.',
+  { id: 'ff-home', strumSrc: 'simple', meter: 3, tier: 'Från 90-talet och framåt', title: "Home", artist: "Foo Fighters", feel: 'acoustic', level: 'Lätt', bpm: 54, band: 'piano',
+    pattern: ['D', '-', 'D', 'U', 'D', '-'], accents: [0],
+    tip: 'Home går i tretakt (6/8 i noterna), räkna 1-2-3. Dave Grohl spelar piano, så det här är ett vanligt gitarrkomp: ner, ner-upp, ner. Versen går G, Am, F, G. Refrängen ("All I want is to be home") går F, Em, C. Spela gärna basen omväxlande på G och D som pianot gör.',
     form: [{ part: 'Intro', bars: ['G', 'G'] },
       { part: 'Vers', bars: ['G', 'Am', 'F', 'G', 'G', 'Am', 'F', 'G', 'G', 'Am', 'F', 'G'] },
       { part: 'Refräng', bars: ['F', 'Em', 'C', 'G'] },
@@ -2734,7 +2753,7 @@ const INITIAL_SONGS = [
       { part: 'Sista refrängen', bars: ['Dm', 'C', 'G', 'G', 'Dm', 'C', 'G', 'G'] }] },
   { id: 'tarar-av-guld', strumSrc: 'simple', tier: 'Svenska favoriter', title: "Tårar av guld", artist: "Albin Lee Meldau", feel: 'acoustic', level: 'Lätt', bpm: 78, band: 'piano',
     pattern: P_BALLAD, accents: [0, 4],
-    tip: 'Versen och mellanspelet går Am, E, E7 och tillbaka till Am. Refrängen ("Du går ner för gatan och gråter") går Dm, Am, E, Am. Stickat går C, E, Am, F. Kompet har jag inte hittat nedskrivet, så spela lugnt.',
+    tip: 'Versen och mellanspelet går Am, E, E7 och tillbaka till Am. Refrängen ("Du går ner för gatan och gråter") går Dm, Am, E, Am. Stickat ("Man är inte som de andra") går C, E, Am, F, C, E. Sista raden i sticket har jag inte hittat i något ackordblad, så lyssna in den. Kompet har jag inte hittat nedskrivet, så spela lugnt.',
     form: [{ part: 'Mellanspel', bars: ['Am', 'E', 'E7', 'Am'] },
       { part: 'Vers', bars: ['Am', 'E', 'E7', 'Am', 'Am', 'E', 'E7', 'Am'] },
       { part: 'Refräng', bars: ['Dm', 'Am', 'E', 'Am', 'Dm', 'Am', 'E', 'Am'] },
@@ -2755,10 +2774,13 @@ const INITIAL_SONGS = [
       { part: 'Refräng', bars: ['Am', 'F', 'Am', 'F', ['Am', 'F'], ['C', 'E7']] }] },
   { id: 'avundsjuk-regnet', strumSrc: 'simple', tier: 'Svenska favoriter', title: "Avundsjuk på regnet", artist: "Daniel Adams-Ray & Miriam Bryant", feel: 'acoustic', level: 'Medel', capo: 'Capo 3 för originaltonarten', bpm: 92, band: 'pop',
     pattern: P_FOLK, accents: [0, 6],
-    tip: 'Med capo 3: versen och refrängen går Am, G, C och sedan F, C, G. Bryggan börjar på Dm och C och landar på G. Kompet har jag inte hittat nedskrivet.',
+    tip: 'Med capo 3: versen går Am, G, C och sedan F, C, G. Bryggan ("Jag har surfat Slussen") går Dm, C, G och sedan Dm, C, F. Refrängen ("Jag har aldrig vart en ängel") går som versen och landar på Am. Kompet har jag inte hittat nedskrivet.',
     form: [{ part: 'Vers', bars: [['Am', 'G'], 'C', ['F', 'C'], 'G', ['Am', 'G'], 'C', ['F', 'C'], 'G'] },
-      { part: 'Brygga', bars: ['Dm', 'C', 'G', 'G', 'Dm', 'C', 'G', 'G'] },
-      { part: 'Refräng', bars: [['Am', 'G'], 'C', ['F', 'C'], 'G', ['Am', 'G'], 'C', ['F', 'C'], 'G'] }] },
+      { part: 'Brygga', bars: ['Dm', 'C', 'G', 'G', 'Dm', 'C', 'F', 'F'] },
+      { part: 'Refräng', bars: [['Am', 'G'], 'C', ['F', 'C'], 'G', ['Am', 'G'], 'C', ['F', 'C'], 'G', 'Am'] },
+      { part: 'Vers', bars: [['Am', 'G'], 'C', ['F', 'C'], 'G', ['Am', 'G'], 'C', ['F', 'C'], 'G'] },
+      { part: 'Brygga', bars: ['Dm', 'C', 'G', 'G', 'Dm', 'C', 'F', 'F'] },
+      { part: 'Refräng', bars: [['Am', 'G'], 'C', ['F', 'C'], 'G', ['Am', 'G'], 'C', ['F', 'C'], 'G', 'Am'] }] },
   { id: 'lilla-lady', strumSrc: 'simple', tier: 'Svenska favoriter', title: "Lilla lady", artist: "Daniel Adams-Ray", feel: 'acoustic', level: 'Medel', bpm: 96, band: 'pop',
     pattern: P_FOLK, accents: [0, 6],
     tip: 'Introt går C, Em, Am, F. Versen ligger på C och går över till Am och G. Refrängen ("Lilla Lady, hey, lilla Lady") går C, G, Am och sedan G, F, G, och slutar på F, G, C. Kompet har jag inte hittat nedskrivet.',
@@ -3493,6 +3515,14 @@ class Engine {
     const E = this.energy || 1, intro = this.sinceStart === 0;
     const D = (kind, vel, ch = '', dt = 0) => { if (intro && kind !== 'kick') return; this.drum(kind, hum() + dt, vv(vel * E * (intro ? 0.7 : 1)), ch, 'riktig'); };
     const fill = bar % 4 === 3 && !intro, tri = this.triad(key, r);
+    if (this.meter === 3) { // valstakt: BOM-tjack-tjack, basen på ettan och en kvint på trean
+      D('hat', step % 2 ? 0.32 : 0.5, 'luftig');
+      if (step === 0) { D('kick', 0.85, 'djup'); this.bassAs(r, t, sd * 1.8, 0.85, 'mjuk'); }
+      if (step === 2 || step === 4) D(E >= 1.1 ? 'snare' : 'rim', 0.42);
+      if (step === 4) this.bassAs(fifth, t, sd * 1.4, 0.6, 'mjuk');
+      if (fill && step === 5) D('tom', 0.4);
+      return;
+    }
     if (style === 'reggae') { // One Drop: allt landar på 3, orgeln studsar på &
       D('hat', step % 2 ? 0.7 : 0.38, 'luftig');
       if (step === 4) { D('kick', 1.05, 'djup'); D('rim', 0.95); }
@@ -3605,7 +3635,7 @@ class Engine {
   // precis schemaläggning med AudioContext-klockan (ingen setInterval-glidning)
   start(prog) {
     this.energy = 1; this.sinceStart = null;
-    this.init(); this.stop(); this.prog = prog;
+    this.init(); this.stop(); this.prog = prog; this.meter = (prog.meter && prog.meter()) || 4; this.spb = this.meter * 2;
     this.step = 0; this.bar = prog.countIn() ? -1 : 0; this.next = this.ctx.currentTime + 0.08;
     this.timer = setInterval(() => this.tick(), 25); this.tick();
     if (typeof ngBg !== 'undefined') ngBg.start();
@@ -3623,10 +3653,10 @@ class Engine {
       this.queue.push({ t, type: 'step', step: this.step, bar: this.bar });
       this.log.push({ t, step: this.step, bar: this.bar, sd }); if (this.log.length > 40) this.log.shift();
       this.next += sd;
-      if (++this.step === 8) { this.step = 0; this.bar++; }
+      if (++this.step >= (this.spb || 8)) { this.step = 0; this.bar++; }
     }
   }
-  stop() { clearInterval(this.timer); this.timer = null; this.prog = null; this.queue = []; this.log = []; if (typeof ngBg !== 'undefined') ngBg.stop(); }
+  stop() { clearInterval(this.timer); this.timer = null; this.prog = null; this.meter = 4; this.spb = 8; this.queue = []; this.log = []; if (typeof ngBg !== 'undefined') ngBg.stop(); }
   flush() {
     if (!this.ctx || !this.queue.length) return;
     const now = this.ctx.currentTime - this.lat(), due = [], keep = [];
@@ -3819,11 +3849,12 @@ function Fretboard({ k, ghost = null, easy, title, extra }) {
 
 const vib = (pat) => { try { if (localStorage.getItem('ng-vibe') !== '0' && navigator.vibrate) navigator.vibrate(pat); } catch (e) {} };
 const DIR_NEXT = { '-': 'D', D: 'U', U: '-' };
+const beatLabels = (n) => (n === 16 ? BEATS16 : n === 12 ? BEATS16.slice(0, 12) : n === 6 ? BEATS.slice(0, 6) : BEATS);
 function BeatStrip({ pattern, accents = [], cur, half = 0, count, onEdit }) {
-  const s16 = pattern.length === 16, per = s16 ? 4 : 2, curI = s16 && cur >= 0 ? cur * 2 + half : cur;
-  return html`<div className=${'beats' + (s16 ? ' b16' : '')} aria-label="Slagmönster">
+  const n = pattern.length, s16 = n >= 12, per = s16 ? 4 : 2, curI = s16 && cur >= 0 ? cur * 2 + half : cur, beats = n / per;
+  return html`<div className=${'beats' + (s16 ? ' b16' : '')} style=${beats === 3 ? { gridTemplateColumns: 'repeat(6,minmax(0,1fr))' } : null} aria-label="Slagmönster">
     ${pattern.map((dir, i) => html`<div key=${i} className=${'beat' + (dir === '-' ? ' rest' : dir === 'X' ? ' hit tj' : ' hit') + (dir === 'D' ? ' d' : dir === 'U' ? ' u' : '') + (dir === 'D' && accents.includes(i) ? ' acc' : '') + (curI === i ? ' cur' : '') + (onEdit ? ' edit' : '')} onClick=${onEdit ? () => onEdit(i) : null} role=${onEdit ? 'button' : null}>
-      <div className="n">${count != null && i % per === 0 ? html`<span className="count">${4 - i / per}</span>` : (s16 ? BEATS16 : BEATS)[i]}</div>
+      <div className="n">${count != null && i % per === 0 ? html`<span className="count">${beats - i / per}</span>` : beatLabels(n)[i]}</div>
       <div className="a">${dir === 'D' ? I.down : dir === 'U' ? I.up : dir === 'X' ? html`<svg viewBox="0 0 24 20" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><path d="M2 16h20M6 4l2 6M12 2v7M18 4l-2 6" /></svg>` : '·'}</div>
       <div className="t">${dir === 'D' ? (accents.includes(i) ? 'Ner!' : 'Ner') : dir === 'U' ? 'Upp' : dir === 'X' ? 'Tjack' : 'Paus'}</div>
     </div>`)}
@@ -3848,7 +3879,7 @@ function rgFit(c) {
 }
 function RhythmGame({ song, bars, bpm, style, easy, onBefore, onClose, award }) {
   const patAt = (bi) => { const b = bars[((bi % bars.length) + bars.length) % bars.length]; return (b && b.pat) || song.pattern; };
-  const pat0 = patAt(0), s16 = pat0.length === 16, accents = song.accents || [];
+  const SPB = (song.meter || 4) * 2, pat0 = patAt(0), s16 = pat0.length === SPB * 2, accents = song.accents || [];
   const [phase, setPhase] = useState('learn'); // learn, listen, practice, score, done
   const [pct, setPct] = useState(0.5);
   const [heard, setHeard] = useState(false);
@@ -3868,8 +3899,8 @@ function RhythmGame({ song, bars, bpm, style, easy, onBefore, onClose, award }) 
 
   // alla slag (och pauser) i ett steg k (åttondel), med tid
   const notesAt = (r, k) => {
-    const bi = Math.floor(k / 8), st = ((k % 8) + 8) % 8, p = patAt(r.mode === 'listen' ? 0 : bi), t = r.t0 + k * r.sd, out = [];
-    if (p.length === 16) for (let h = 0; h < 2; h++) out.push({ id: k * 2 + h, t: t + h * r.sd / 2, dir: p[st * 2 + h], i: st * 2 + h, acc: accents.includes(st * 2 + h), bi, gap: r.sd / 2 });
+    const bi = Math.floor(k / SPB), st = ((k % SPB) + SPB) % SPB, p = patAt(r.mode === 'listen' ? 0 : bi), t = r.t0 + k * r.sd, out = [];
+    if (p.length === SPB * 2) for (let h = 0; h < 2; h++) out.push({ id: k * 2 + h, t: t + h * r.sd / 2, dir: p[st * 2 + h], i: st * 2 + h, acc: accents.includes(st * 2 + h), bi, gap: r.sd / 2 });
     else out.push({ id: k * 2, t, dir: p[st], i: st, acc: accents.includes(st), bi, gap: r.sd });
     return out;
   };
@@ -3877,8 +3908,8 @@ function RhythmGame({ song, bars, bpm, style, easy, onBefore, onClose, award }) 
     const c = engine.ctx, hor = c.currentTime + 0.15;
     while (r.k < r.endK && r.t0 + r.k * r.sd < hor) {
       const k = r.k++, t = r.t0 + k * r.sd;
-      if (k < 0) { if (k % 2 === 0) engine.click(t, k === -8 || (r.bpm < 60 && k === -4)); continue; }
-      const bi = Math.floor(k / 8), st = k % 8, b = bars[(r.mode === 'listen' ? 0 : bi) % bars.length], ch = chordAt(b, st);
+      if (k < 0) { if (k % 2 === 0) engine.click(t, k === -SPB || (r.bpm < 60 && SPB === 8 && k === -4)); continue; }
+      const bi = Math.floor(k / SPB), st = k % SPB, b = bars[(r.mode === 'listen' ? 0 : bi) % bars.length], ch = chordAt(b, Math.floor(st * 8 / SPB));
       engine.band(style, st, t, r.sd, CHORD_DB[ch].root, ch, bi);
       if (st % 2 === 0) beatVib(t, st === 0);
       if (r.gtr) {
@@ -3926,7 +3957,7 @@ function RhythmGame({ song, bars, bpm, style, easy, onBefore, onClose, award }) 
   const go = async (mode) => {
     halt(); onBefore(); engine.init(); if (engine.ctx.state === 'suspended') { try { await engine.ctx.resume(); } catch (e) {} }
     const c = engine.ctx, b = Math.max(48, Math.round(bpm * pct)), sd = 30 / b;
-    const r = { mode, bpm: b, sd, t0: c.currentTime + 0.3 + (b < 60 ? 4 : 8) * sd, k: b < 60 ? -4 : -8, endK: mode === 'score' ? bars.length * 8 : mode === 'listen' ? 32 : 1e9,
+    const r = { mode, bpm: b, sd, t0: c.currentTime + 0.3 + (b < 60 && SPB === 8 ? 4 : SPB) * sd, k: b < 60 && SPB === 8 ? -4 : -SPB, endK: mode === 'score' ? bars.length * SPB : mode === 'listen' ? 32 : 1e9,
       gtr: mode === 'listen' || (mode === 'practice' ? gtr : false), live: [], on: [], pops: [], sparks: [], score: 0, combo: 0, best: 0, mult: 1, hits: 0, tot: 0, lastWait: 0, noMic: mode === 'listen', hs: -1, hc: -1 };
     R.current = r; setHud({ score: 0, combo: 0, mult: 1, acc: 100 }); setRes(null); setMicMsg(''); setPhase(mode);
     if (mode !== 'listen') {
@@ -3954,9 +3985,9 @@ function RhythmGame({ song, bars, bpm, style, easy, onBefore, onClose, award }) 
 
   // ---------- översikten: hela takten som rutor
   const drawOverview = (x, W, H, r, now) => {
-    const p = pat0, n = p.length, rows = n === 16 ? 2 : 1, per = n / rows, pad = 10, cw = (W - pad * 2) / per, ch = rows === 2 ? (H - 70) / 2 - 8 : H - 78;
+    const p = pat0, n = p.length, rows = n >= 12 ? 2 : 1, per = n / rows, pad = 10, cw = (W - pad * 2) / per, ch = rows === 2 ? (H - 70) / 2 - 8 : H - 78;
     let cur = -1, f = 0;
-    if (r && now >= r.t0) { const q = (now - r.t0) / (n === 16 ? r.sd / 2 : r.sd); cur = Math.floor(q) % n; f = q - Math.floor(q); }
+    if (r && now >= r.t0) { const q = (now - r.t0) / (n >= 12 ? r.sd / 2 : r.sd); cur = Math.floor(q) % n; f = q - Math.floor(q); }
     x.fillStyle = RG_COL.bg; x.beginPath(); x.roundRect(0, 0, W, H, 18); x.fill();
     for (let i = 0; i < n; i++) {
       const row = Math.floor(i / per), col = i % per, cx = pad + cw * col + cw / 2, cy = 14 + row * (ch + 34) + ch / 2, d = p[i], on = i === cur, acc = accents.includes(i);
@@ -3964,10 +3995,10 @@ function RhythmGame({ song, bars, bpm, style, easy, onBefore, onClose, award }) 
       x.save(); x.translate(cx, cy); x.scale(pp, pp);
       if (d && d !== '-') { x.fillStyle = on ? colr : RG_COL.card; x.beginPath(); x.roundRect(-cw / 2 + 2.5, -ch / 2, cw - 5, ch, 10); x.fill(); rgArrow(x, 0, 0, Math.min(cw * 0.62, acc ? 38 : 30), d, on ? '#0b1a13' : colr, acc ? 6 : 4.5); }
       else { x.setLineDash([4, 4]); x.strokeStyle = on ? RG_COL.ink : RG_COL.calm; x.lineWidth = 1.5; x.beginPath(); x.roundRect(-cw / 2 + 2.5, -ch / 2, cw - 5, ch, 10); x.stroke(); x.setLineDash([]);
-        x.fillStyle = on ? RG_COL.ink : RG_COL.calm; x.font = '700 ' + (n === 16 ? 9 : 12) + 'px "Plus Jakarta Sans", system-ui'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('paus', 0, 0); }
+        x.fillStyle = on ? RG_COL.ink : RG_COL.calm; x.font = '700 ' + (n >= 12 ? 9 : 12) + 'px "Plus Jakarta Sans", system-ui'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('paus', 0, 0); }
       x.restore();
-      x.fillStyle = on ? RG_COL.ink : (n === 16 ? BEATS16 : BEATS)[i].match(/\d/) ? RG_COL.mut : RG_COL.dim; x.font = (on ? '900 ' : '800 ') + (n === 16 ? 13 : 16) + 'px "Plus Jakarta Sans", system-ui'; x.textAlign = 'center'; x.textBaseline = 'middle';
-      x.fillText((n === 16 ? BEATS16 : BEATS)[i], cx, cy + ch / 2 + 14);
+      x.fillStyle = on ? RG_COL.ink : beatLabels(n)[i].match(/\d/) ? RG_COL.mut : RG_COL.dim; x.font = (on ? '900 ' : '800 ') + (n >= 12 ? 13 : 16) + 'px "Plus Jakarta Sans", system-ui'; x.textAlign = 'center'; x.textBaseline = 'middle';
+      x.fillText(beatLabels(n)[i], cx, cy + ch / 2 + 14);
     }
     x.fillStyle = RG_COL.mut; x.font = '600 12px "Plus Jakarta Sans", system-ui'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(r && now < r.t0 ? 'Räknar in … ' + Math.ceil((r.t0 - now) / (2 * r.sd)) : 'Röd = tungt slag · streckad = handen går i luften', W / 2, H - 12);
   };
@@ -3988,7 +4019,7 @@ function RhythmGame({ song, bars, bpm, style, easy, onBefore, onClose, award }) 
       x.setLineDash([6, 6]); x.strokeStyle = C.calm; x.lineWidth = 1.5; x.stroke(); x.setLineDash([]);
       if (cur) continue; const zm = (z0 + z1) / 2, fs = 7 + 15 * P(zm); x.fillStyle = C.calm; x.font = '700 ' + fs + 'px "Plus Jakarta Sans", system-ui'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(n.gap < r.sd ? 'paus' : 'paus · andas', cx, Y(zm)); }
     // taktlinjer, räkning och ackord
-    const B = s16 ? BEATS16 : BEATS;
+    const B = beatLabels(pat0.length);
     for (const n of live) { const z = Z(n.t); if (z < -0.12 || z > 1) continue; const yy = Y(z), w = HW(z), main = /\d/.test(B[n.i] || '');
       x.strokeStyle = n.i === 0 ? 'rgba(242,194,48,0.55)' : main ? 'rgba(251,242,220,0.16)' : 'rgba(251,242,220,0.06)'; x.lineWidth = n.i === 0 ? 3 : 1.5; x.beginPath(); x.moveTo(cx - w, yy); x.lineTo(cx + w, yy); x.stroke();
       x.fillStyle = main ? C.mut : C.dim; x.font = '800 ' + (7 + 11 * P(z)) + 'px "Plus Jakarta Sans", system-ui'; x.textAlign = 'right'; x.textBaseline = 'middle'; x.fillText(B[n.i] || '', cx - w - 6, yy);
@@ -5621,7 +5652,7 @@ function Jam({ easy, onSave, onDone }) {
     try { if (navigator.wakeLock) st.wake = await navigator.wakeLock.request('screen'); } catch (e) {}
     // spela in samtidigt som appen lyssnar
     try {
-      const mime = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm'].find((x) => window.MediaRecorder && MediaRecorder.isTypeSupported(x)) || '';
+      const mime = ['audio/mp4;codecs=mp4a.40.2', 'audio/mp4', 'audio/webm;codecs=opus', 'audio/webm'].find((x) => window.MediaRecorder && MediaRecorder.isTypeSupported(x)) || '';
       st.ctx0 = ctx0;
       st.dest = engine.ctx.createMediaStreamDestination(); engine.master.connect(st.dest);
       if (ngSet('ng-studio', true)) st.studio = studioChain(engine.ctx, m.src, st.dest); else m.src.connect(st.dest);
@@ -5731,10 +5762,10 @@ function Jam({ easy, onSave, onDone }) {
 
   const flipStrum = (i) => { setRes((r) => { if (!r) return r; const p = r.pattern.slice(); p[i] = p[i] === 'D' ? 'U' : p[i] === 'U' ? '-' : 'D'; return { ...r, pattern: p, edited: true }; }); };
   const save = () => {
-    const r = res; if (!r || !r.loop.length || r.meter !== 4) return;
+    const r = res; if (!r || !r.loop.length || (r.meter !== 4 && r.meter !== 3)) return;
     const L = r.pattern.length;
     onSave({ id: 'custom-' + Date.now(), custom: true, title: name.trim() || 'Min jam', artist: 'Egen jam', level: 'Egen',
-      bpm: Math.max(40, Math.min(200, r.bpm || 80)), feel: r.feel, pattern: r.pattern, accents: r.feel === 'reggae' ? [] : [0, L / 2],
+      bpm: Math.max(40, Math.min(200, r.bpm || 80)), feel: r.feel, pattern: r.pattern, accents: r.feel === 'reggae' ? [] : r.meter === 3 ? [0] : [0, L / 2], ...(r.meter === 3 ? { meter: 3 } : {}),
       tip: 'Det här är rundan du jammade. Kompet är det slagmönster appen hörde: ' + r.name.toLowerCase() + '.', form: [{ part: 'Runda', bars: r.loop }] });
   };
   const playLoop = () => {
@@ -5876,10 +5907,10 @@ function Jam({ easy, onSave, onDone }) {
           </li>`)}</ol></div>` : null}
         ${res.loop.length ? html`<div className="row" style=${{ gap: 8, flexWrap: 'wrap' }}>
           <button className="btn" onClick=${playLoop}>Lyssna på rundan</button>
-          ${res.meter === 4 && res.bpm ? html`<input type="text" className="jam-name" aria-label="Namn på låten" value=${name} onInput=${(e) => setName(e.target.value)} onChange=${() => {}} />
+          ${res.bpm ? html`<input type="text" className="jam-name" aria-label="Namn på låten" value=${name} onInput=${(e) => setName(e.target.value)} onChange=${() => {}} />
             <button className="btn primary" onClick=${save}>Spara som låt</button>` : null}
         </div>
-        ${res.meter === 3 ? html`<small className="muted">Kompbandet kan bara spela fyrtakt än, så valstakter kan inte sparas som låt.</small>` : null}` : null}
+` : null}
         ${riskBox}
         <button className="play" style=${{ justifySelf: 'center' }} onClick=${start}>${I.play}Jamma igen</button>
       </div>` : null}
@@ -6178,7 +6209,7 @@ function BeatStudio({ toast, onJam }) {
     if (smpRec) { smpRec.stop(); return; }
     const m = new Mic();
     try { await m.start({ aec: false }); } catch (e) { toast && toast({ x: '🎙', t: 'Mikrofonen är blockerad', s: 'Tillåt mikrofonen för appen och försök igen.' }); return; }
-    const mime = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm'].find((x) => window.MediaRecorder && MediaRecorder.isTypeSupported(x)) || '';
+    const mime = ['audio/mp4;codecs=mp4a.40.2', 'audio/mp4', 'audio/webm;codecs=opus', 'audio/webm'].find((x) => window.MediaRecorder && MediaRecorder.isTypeSupported(x)) || '';
     const mr = new MediaRecorder(m.stream, mime ? { mimeType: mime } : undefined), chunks = [], at = Date.now();
     mr.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
     const ctl = { stop: () => { try { if (mr.state !== 'inactive') mr.stop(); } catch (e) {} } };
@@ -6445,7 +6476,9 @@ function clockNow() {
   const now = engine.ctx.currentTime - engine.lat();
   let cur = null; for (const e of engine.log) if (e.t <= now) cur = e;
   if (!cur) return null;
-  return { step: cur.step, bar: cur.bar, frac: Math.max(0, Math.min(0.999, (now - cur.t) / cur.sd)) };
+  const fr = Math.max(0, Math.min(0.999, (now - cur.t) / cur.sd)), spb = engine.spb || 8;
+  if (spb === 8) return { step: cur.step, bar: cur.bar, frac: fr };
+  const x = (cur.step + fr) * 8 / spb; return { step: Math.floor(x), bar: cur.bar, frac: x - Math.floor(x) };
 }
 // En takt kan ha två ackord (två slag var): { chord, chord2 }. Segmenten räknas i halvtakter.
 // Fyra ackord i en takt (ett slag var) ligger i q: ['C', 'Cmaj7', 'E', 'E7']. step räknas i åttondelar (0–7).
@@ -7950,6 +7983,22 @@ const recVictims = (list, max, extra = 0) => {
 };
 const recWhen = (r) => { const d = new Date(r.at); return d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }); };
 const recFileName = (r) => r.title + ' ' + recWhen(r).replace(/[: ]/g, '-') + '.' + (r.kind === 'video' ? (/mp4/.test(r.blob.type) ? 'mp4' : 'webm') : /mp4/.test(r.blob.type) ? 'm4a' : 'webm');
+async function markRecSaved(r) {
+  try { const cur = ((await RecDB.list(r.song)) || []).find((x) => x.id === r.id); if (cur && !cur.saved) { await RecDB.put({ ...cur, saved: true }); window.dispatchEvent(new Event('ng-jams-imported')); } } catch (e) {}
+}
+// Dela en inspelning (Messenger, mejl, Drive …). Video/ljud packas om först i appen så att längden blir rätt även hos mottagaren.
+async function shareRec(r) {
+  const name = recFileName(r), title = r.kind === 'video' ? 'Min jamvideo' : 'Min jam';
+  if (NATIVE) {
+    const P = window.Capacitor.Plugins; let w = await writeCache(r.blob, name);
+    try { if (P.NgNative && P.NgNative.remuxCache) { const x = await P.NgNative.remuxCache({ path: name, mime: r.blob.type || '' }); if (x && x.uri) w = { uri: x.uri }; } } catch (e) {}
+    try { await P.Share.share({ title, url: w.uri, dialogTitle: 'Dela' }); } catch (e) { if (!/cancel/i.test(String(e && e.message))) throw e; }
+    return;
+  }
+  const f = new File([r.blob], name, { type: r.blob.type });
+  if (navigator.canShare && navigator.canShare({ files: [f] })) { try { await navigator.share({ files: [f], title }); } catch (e) {} return; }
+  flashMsg('Den här webbläsaren kan inte dela filer. Ladda ner med ↓ och dela därifrån.');
+}
 async function saveRec(r) { const ok = await saveFile(r.blob, recFileName(r), 'Inspelning'); if (ok) { const n = { ...r, saved: true }; await RecDB.put(n); window.dispatchEvent(new Event('ng-jams-imported')); return n; } return null; }
 const fmtDur = (s) => Math.floor(s / 60) + ':' + String(Math.round(s % 60)).padStart(2, '0');
 // Du själv under jammet: hela kamerabilden i ett fönster som går att dra runt och byta storlek på (sparas)
@@ -8034,7 +8083,9 @@ function JamVideo({ r, url, vRef }) {
       const b = await exportJamVideo(r, url, (p) => setEx(Math.max(0.001, p)), cancelR, v0);
       if (b) {
         const d = new Date(r.at), nm = 'Jam ' + d.toLocaleDateString('sv-SE') + ' ' + d.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }).replace(':', '-') + (/mp4/.test(b.type) ? '.mp4' : '.webm');
-        if (NATIVE) await saveFile(b, nm, 'Jamvideo med pilar'); else { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = nm; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 60000); }
+        let ok = true;
+        if (NATIVE) ok = await saveFile(b, nm, 'Jamvideo med pilar'); else { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = nm; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 60000); }
+        if (ok) await markRecSaved(r);
         setExMsg('Klart! Videon med ackord och pilar är sparad.');
       }
     } catch (e) { setExMsg('Det gick inte att göra videon (' + ((e && (e.name || e.message)) || 'okänt fel') + '). Ta en skärmbild och skicka till Claude.'); }
@@ -8137,6 +8188,7 @@ function RecItem({ r: r0, onDel }) {
     ${!isJam && r.pattern && r.pattern.some((d) => d !== '-') ? html`<div className="rec-strum">${r.loop && r.loop.length ? html`<div className="ns-bars">${r.loop.slice(0, 8).map((b, i) => html`<span key=${i}>${[].concat(b).map((k) => (CHORD_DB[k] ? CHORD_DB[k].name : k)).join(' · ')}</span>`)}</div>` : null}<${BeatStrip} pattern=${r.pattern} accents=${[0]} cur=${-1} /></div>` : null}
     ${r.kind === 'video' ? html`<${JamVideo} r=${r} url=${url} vRef=${aRef} />` : html`<audio ref=${aRef} controls preload="metadata" src=${url}></audio>`}
     <a className="rec-x" href=${url} download=${recFileName(r)} onClick=${NATIVE ? (e) => { e.preventDefault(); saveRec(r).then((n) => n && setR(n)).catch(() => {}); } : () => { const n = { ...r, saved: true }; RecDB.put(n).then(() => setR(n)).catch(() => {}); }} title="Spara i telefonen" aria-label="Spara inspelningen i telefonen">↓</a>
+    <button className="rec-x" onClick=${() => shareRec(r).catch(() => flashMsg('Det gick inte att dela inspelningen.'))} title="Dela" aria-label="Dela inspelningen"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="2.6" /><circle cx="6" cy="12" r="2.6" /><circle cx="18" cy="19" r="2.6" /><path d="M8.3 10.8l7.4-4.3M8.3 13.2l7.4 4.3" /></svg></button>
     <button className="rec-x" onClick=${() => onDel(r.id)} title="Ta bort" aria-label="Ta bort inspelningen">×</button>
     ${isJam ? html`<div className="rec-sheet">
       ${busy ? html`<div className="js-busy"><span>Lyssnar igenom inspelningen … ${Math.round(busy * 100)} %</span><div className="bar"><i style=${{ width: Math.round(busy * 100) + '%' }}></i></div></div>`
@@ -8712,7 +8764,7 @@ function App() {
   const startRec = async () => {
     try {
       const st = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
-      const mime = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm'].find((m) => window.MediaRecorder && MediaRecorder.isTypeSupported(m)) || '';
+      const mime = ['audio/mp4;codecs=mp4a.40.2', 'audio/mp4', 'audio/webm;codecs=opus', 'audio/webm'].find((m) => window.MediaRecorder && MediaRecorder.isTypeSupported(m)) || '';
       const mr = new MediaRecorder(st, mime ? { mimeType: mime } : undefined), chunks = [], t0 = Date.now();
       const sid = song.id, stitle = song.title, b0 = origOn ? song.bpm : bpm;
       mr.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
@@ -8792,8 +8844,9 @@ function App() {
   const songChords = (s) => [...new Set(s.form.flatMap((p) => p.bars.flat()))];
   const known = new Set(prog.chordsOk || []);
   const canPlay = known.size >= 2 ? songs.filter((s) => songChords(s).every((k) => known.has(k))) : [];
+  const SPB = (song.meter || 4) * 2;
   const songChordAt = (k) => { const b = bars[(startBar + Math.floor(k / 8)) % bars.length]; return b ? chordAt(b, k % 8) : null; };
-  const songCur = chordAt(bars[barIdx] || bars[0], playing === 'song' && pos.step >= 0 && pos.bar >= 0 ? pos.step : 0);
+  const songCur = chordAt(bars[barIdx] || bars[0], playing === 'song' && pos.step >= 0 && pos.bar >= 0 ? Math.floor(pos.step * 8 / SPB) : 0);
 
   const stopAll = () => {
     if (AUDIO_SYNC) {
@@ -8872,14 +8925,14 @@ function App() {
     engine.prep(S.current.style);
     setStartBar(fromBar); S.current.startBar = fromBar;
     engine.start({
-      bpm: () => S.current.bpm, swing: () => S.current.swing, countIn: () => S.current.countIn,
+      bpm: () => S.current.bpm, swing: () => S.current.swing, countIn: () => S.current.countIn, meter: () => S.current.song.meter || 4,
       onStep: (step, bar, t, sd) => {
-        const s = S.current, bl = s.bars, b = bl[(s.startBar + bar) % bl.length], ch = chordAt(b, step), v = voicing(ch, s.easy);
+        const s = S.current, spb = (s.song.meter || 4) * 2, bl = s.bars, b = bl[(s.startBar + bar) % bl.length], ch = chordAt(b, Math.floor(step * 8 / spb)), v = voicing(ch, s.easy);
         engine.sinceStart = bar; engine.energy = partEnergy(b.part);
         engine.band(s.style, step, t, sd, CHORD_DB[ch].root, ch, s.startBar + bar);
         if (step % 2 === 0) beatVib(t, step === 0);
         if (!s.autoGuitar) return;
-        const pat = b.pat || s.song.pattern, s16 = pat.length === 16;
+        const pat = b.pat || s.song.pattern, s16 = pat.length === spb * 2;
         if (s16) engine.queue.push({ t: t + sd / 2, type: 'half', step });
         (s16 ? [[step * 2, t], [step * 2 + 1, t + sd / 2]] : [[step, t]]).forEach(([k, tk]) => {
           const dir = pat[k];
@@ -9029,7 +9082,7 @@ function App() {
     const start = playing === 'song' && pos.bar >= 0 ? barIdx : startBar, st0 = playing === 'song' && pos.bar >= 0 ? pos.step : -1;
     for (let i = 0; i <= n; i++) { const b = bars[(start + i) % n]; for (let st = i === 0 ? st0 + 1 : 0; st < 8; st++) { const c = chordAt(b, st); if (c !== c0) return c; } }
     return null; })();
-  const handNext = playing === 'song' && pos.bar >= 0 ? (pos.step < 7 ? chordAt(bars[barIdx], pos.step + 1) : chordAt(bars[(barIdx + 1) % bars.length], 0)) : null;
+  const handNext = playing === 'song' && pos.bar >= 0 ? (pos.step < SPB - 1 ? chordAt(bars[barIdx], Math.floor((pos.step + 1) * 8 / SPB)) : chordAt(bars[(barIdx + 1) % bars.length], 0)) : null;
   const nextChord = bars[(barIdx + 1) % bars.length].chord;
   const skShown = skLevel === 3 ? (playing === 'skank' && pos.bar >= 0 && pos.bar % 2 === 1 ? 'Em' : 'Am') : skChord;
   const btShown = playing === 'byten' && pos.bar >= 0 ? (pos.bar % 2 === 0 ? 'from' : 'to') : tActive;
@@ -9191,7 +9244,7 @@ function App() {
                 setStartBar(rel); if (playing === 'song') { engine.stop(); startSong(rel); } else hear(c0); }}>
               <small>${i + 1}</small>${(() => { const cc = [].concat(c).map((k) => (easy ? simpler(k) : k)).filter((k, j, a) => j === 0 || k !== a[j - 1]);
                 return cc.length > 1 ? html`<b className=${'split' + (cc.length > 2 ? ' q' : '')}>${CHORD_DB[cc[0]].name}${cc.slice(1).map((k, j) => html`<i key=${j}>${CHORD_DB[k].name}</i>`)}</b>` : html`<b>${CHORD_DB[cc[0]].name}</b>`; })()}
-              ${cur ? html`<span className="prog" style=${{ width: ((pos.step + 1) / 8 * 100) + '%' }}></span>` : null}
+              ${cur ? html`<span className="prog" style=${{ width: ((pos.step + 1) / SPB * 100) + '%' }}></span>` : null}
             </button>`; })}</div>
         </div>`; }); })()}
       </section>`)}
@@ -9870,7 +9923,6 @@ function App() {
         <${PhoneSettings} />
         <${LatencySettings} />
         <${ReportSettings} />
-        <${TestRecSettings} easy=${easy} />
         <${DataSettings} />
         <div className="set-sec"><b>Flytta framsteg</b><small>XP, märken, rekord, egna låtar och kalibrering följer med. Gör så här: kopiera koden på enheten du övat på och klistra in den på den andra.</small>
           <div className="row"><button className="btn primary" onClick=${makeCode}>Kopiera min kod</button></div>
@@ -10049,7 +10101,6 @@ function NewSong({ onClose, onSave, easy }) {
       const r = await analyzeAudioFile(f, easy, (p) => setImpBusy(Math.max(0.01, p)));
       setImpBusy(0);
       if (!r.bpm || !r.bars.length) { setImpErr('Appen hittade inte tempo och ackord i filen. Prova en låt med tydlig gitarr eller piano och trummor.'); return; }
-      if (r.meter !== 4) { setImpErr('Låten verkar gå i tretakt, och kompbandet kan bara spela fyrtakt än.'); return; }
       setImp(r); setBpm(Math.max(40, Math.min(200, Math.round(r.bpm)))); setFeel(r.feel === 'reggae' ? 'reggae' : 'acoustic');
     } catch (err) { setImpBusy(0); setImpErr('Filen gick inte att läsa. Välj en mp3, m4a eller wav.'); }
   };
@@ -10060,7 +10111,7 @@ function NewSong({ onClose, onSave, easy }) {
     const simp = parsed && Object.keys(parsed.simplified).length ? ' Förenklade ackord: ' + Object.entries(parsed.simplified).map(([a, b]) => a + ' → ' + b).join(', ') + '.' : '';
     onSave({ id: 'custom-' + Date.now(), custom: true, title: name.trim(), artist: artist.trim() || (tab === 'paste' ? 'Inklistrat ackordblad' : tab === 'file' ? 'Från ljudfil' : 'Egen ackordföljd'), level: 'Egen', bpm, feel,
       capo: tab === 'paste' && parsed.capo ? 'Capo ' + parsed.capo : undefined,
-      pattern: tab === 'file' && imp.pattern ? imp.pattern : feel === 'reggae' ? P_SKANK : P_FOLK, accents: feel === 'reggae' ? [] : tab === 'file' && imp.pattern ? [0, imp.pattern.length / 2] : [0, 6],
+      pattern: tab === 'file' && imp.pattern ? imp.pattern : feel === 'reggae' ? P_SKANK : P_FOLK, accents: feel === 'reggae' ? [] : tab === 'file' && imp.pattern ? (imp.meter === 3 ? [0] : [0, imp.pattern.length / 2]) : [0, 6], ...(tab === 'file' && imp.meter === 3 && imp.pattern ? { meter: 3 } : {}),
       tip: tab === 'file' ? 'Ackorden och kompet är uträknade ur ljudfilen, så jämför gärna med originalet och rätta det som låter fel.' : 'Börja med tempotrappan och låt appen höja tempot när bytena sitter.' + simp, form });
   };
   return html`<div className="scrim" onClick=${(e) => e.target === e.currentTarget && onClose()}>
