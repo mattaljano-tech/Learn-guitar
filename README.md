@@ -34,6 +34,7 @@ Mikrofonen (stämmaren och ackordkollen) fungerar här, eftersom appen ligger p�
 - `icons/` – appikoner
 - `hand/` – 3D-handens ackordbyten, ett kort WebM-klipp per byte (renderade i Blender)
 - `audio/nylon/` – inspelade nylongitarrtoner till kompet (29 toner). Källa: [tonejs-instruments](https://github.com/nbrosowsky/tonejs-instruments) av Nicholaus P. Brosowsky, licens [CC-BY 3.0](https://creativecommons.org/licenses/by/3.0/). Klippta, mono och normaliserade.
+- `audio/strums/` – egna inspelade slag på en Bjärton-nylongitarr (fingrar, utan plektrum): mjukt och kraftigt nedslag, uppslag och dämpat slag för 12 ackord. Klippta, rensade och nivåjusterade.
 - `audio/bass/` (elbas, Karoryfer), `audio/kontrabas/` (kontrabas, VSO2) `audio/harmonium/` (harmonium, donyaquick via Freesound), `audio/piano/` och `audio/violin/` (VSO2) samt `audio/cello/` (flcellogrl via Freesound) och `audio/elgitarr/` (elgitarr, Karoryfer) – inspelade bastoner till kompbandet. Källa: [tonejs-instruments](https://github.com/nbrosowsky/tonejs-instruments) av Nicholaus P. Brosowsky, licens [CC-BY 3.0](https://creativecommons.org/licenses/by/3.0/). Klippta, mono och normaliserade.
 - `audio/drums/` – riktiga trumljud till Beatstudion, klippta, mono och normaliserade:
   - Bastrumma, virvel, hi-hat, ride, crash och pukor från *Pearl Master Studio Pack 1* av enoe, licens [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), via [oramics/sampled](https://github.com/oramics/sampled).
