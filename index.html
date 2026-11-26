@@ -250,6 +250,7 @@ input[type=range]{width:100%;accent-color:var(--brass);height:20px}
 .bar b{font-family:var(--f-display);font-size:20px;font-weight:800;display:block;line-height:1.1}
 .bar b.split{font-size:15px;display:flex;justify-content:center;gap:6px;align-items:baseline}
 .bar b.split i{font-style:normal;padding-left:6px;border-left:1px solid currentColor;opacity:.85}
+.bar b.split.q{font-size:12px;display:grid;grid-template-columns:auto auto;gap:1px 8px;margin-top:8px;line-height:1.15}.bar b.split.q i{border-left:0;padding-left:0}
 .bar small{position:absolute;left:7px;top:4px;font-family:var(--f-mono);font-size:10px;color:var(--faint)}
 .bar.cur{background:linear-gradient(160deg,var(--brass),var(--brass-2));color:var(--brass-ink)}
 .bar.cur small{color:var(--brass-ink)}
@@ -2152,13 +2153,41 @@ Object.assign(CHORD_DB, {
   Bb: { name: 'Bb', fullName: 'Bb-dur (barré, band 1)', description: 'A-formen flyttad till band 1 med pekfingret som barré.',
     standard: { frets: [-1, 1, 3, 3, 3, 1], fingers: [0, 1, 2, 3, 4, 1], barre: { fret: 1, from: 1, to: 5, finger: 1 } }, easy: { frets: [-1, -1, 3, 3, 3, 1], fingers: [0, 0, 2, 3, 4, 1], note: '4 strängar' } },
 });
+// Ackord med annan bas (slash) och fler färger, så att låtarna kan ha originalets ackord
+Object.assign(CHORD_DB, {
+  F7: { name: 'F7', fullName: 'F7 (barré)', description: 'F-barré där lillfingret lyfts bort, så att pekfingret tar Eb på G-strängen.',
+    standard: { frets: [1, 3, 1, 2, 1, 1], fingers: [1, 3, 1, 2, 1, 1], barre: { fret: 1, from: 0, to: 5, finger: 1 } }, easy: { frets: [-1, -1, 1, 2, 1, 1], fingers: [0, 0, 1, 2, 1, 1], barre: { fret: 1, from: 2, to: 5, finger: 1 }, note: 'Bara fyra strängar' } },
+  Eb: { name: 'Eb', fullName: 'Eb-dur (barré, band 6)', description: 'A-formen flyttad till band 6.',
+    standard: { frets: [-1, 6, 8, 8, 8, 6], fingers: [0, 1, 2, 3, 4, 1], barre: { fret: 6, from: 1, to: 5, finger: 1 } }, easy: { frets: [-1, -1, 1, 3, 4, 3], fingers: [0, 0, 1, 2, 4, 3], note: 'Fyra strängar nere vid band 1–4' } },
+  'Bb/A': { name: 'Bb/A', fullName: 'Bb med A i basen', description: 'Bb där basen går ner ett halvt steg till öppen A-sträng.',
+    standard: { frets: [-1, 0, 3, 3, 3, 1], fingers: [0, 0, 2, 3, 4, 1] }, easy: { frets: [-1, 0, 3, 3, 3, -1], fingers: [0, 0, 1, 1, 1, 0], note: 'Pekfingret över tre strängar' } },
+  'Bb/F': { name: 'Bb/F', fullName: 'Bb med F i basen', description: 'Bb-barré där tjockaste strängen också tas på band 1.',
+    standard: { frets: [1, 1, 3, 3, 3, 1], fingers: [1, 1, 2, 3, 4, 1], barre: { fret: 1, from: 0, to: 5, finger: 1 } }, easy: { frets: [-1, -1, 3, 3, 3, 1], fingers: [0, 0, 2, 3, 4, 1], note: 'Fyra strängar' } },
+  'C/E': { name: 'C/E', fullName: 'C med E i basen', description: 'Vanligt C, men slå an från öppen E-sträng.',
+    standard: { frets: [0, 3, 2, 0, 1, 0], fingers: [0, 3, 2, 0, 1, 0] }, easy: { frets: [0, 3, 2, 0, 1, 0], fingers: [0, 3, 2, 0, 1, 0], note: 'Redan enkelt' } },
+  'C/G': { name: 'C/G', fullName: 'C med G i basen', description: 'C där ringfingret flyttar till band 3 på tjockaste strängen och lillfingret tar A-strängen.',
+    standard: { frets: [3, 3, 2, 0, 1, 0], fingers: [3, 4, 2, 0, 1, 0] }, easy: { frets: [-1, 3, 2, 0, 1, 0], fingers: [0, 3, 2, 0, 1, 0], note: 'Vanligt C' } },
+  'C/B': { name: 'C/B', fullName: 'C med B i basen', description: 'Basen går ner från C till B, på väg till Am.',
+    standard: { frets: [-1, 2, 2, 0, 1, 0], fingers: [0, 2, 3, 0, 1, 0] }, easy: { frets: [-1, 2, 2, 0, 1, 0], fingers: [0, 2, 3, 0, 1, 0], note: 'Redan enkelt' } },
+  'G/B': { name: 'G/B', fullName: 'G med B i basen', description: 'G med basen på A-strängen band 2. Ett steg på väg ner till Am.',
+    standard: { frets: [-1, 2, 0, 0, 0, 3], fingers: [0, 1, 0, 0, 0, 3] }, easy: { frets: [-1, 2, 0, 0, 0, 3], fingers: [0, 1, 0, 0, 0, 3], note: 'Redan enkelt' } },
+  'Am/E': { name: 'Am/E', fullName: 'Am med E i basen', description: 'Vanligt Am, men slå an från öppen E-sträng.',
+    standard: { frets: [0, 0, 2, 2, 1, 0], fingers: [0, 0, 2, 3, 1, 0] }, easy: { frets: [0, 0, 2, 2, 1, 0], fingers: [0, 0, 2, 3, 1, 0], note: 'Redan enkelt' } },
+  'F/C': { name: 'F/C', fullName: 'F med C i basen', description: 'F utan barré, med C i basen på A-strängen band 3.',
+    standard: { frets: [-1, 3, 3, 2, 1, 1], fingers: [0, 3, 4, 2, 1, 1], barre: { fret: 1, from: 4, to: 5, finger: 1 } }, easy: { frets: [-1, -1, 3, 2, 1, 1], fingers: [0, 0, 3, 2, 1, 1], barre: { fret: 1, from: 4, to: 5, finger: 1 }, note: 'Fyra strängar' } },
+  Am6: { name: 'Am6', fullName: 'A-moll 6', description: 'Am där lillfingret tar band 2 på tunnaste strängen.',
+    standard: { frets: [-1, 0, 2, 2, 1, 2], fingers: [0, 0, 2, 3, 1, 4] }, easy: { frets: [-1, 0, 2, 2, 1, 2], fingers: [0, 0, 2, 3, 1, 4], note: 'Redan enkelt' } },
+  'D6add9/F#': { name: 'D6add9/F#', fullName: 'D6add9 med F# i basen', description: 'Greppet i A Horse with No Name: band 2 på tjockaste strängen och på G-strängen, resten öppet.',
+    standard: { frets: [2, 0, 0, 2, 0, 0], fingers: [1, 0, 0, 2, 0, 0] }, easy: { frets: [2, 0, 0, 2, 0, 0], fingers: [1, 0, 0, 2, 0, 0], note: 'Redan enkelt' } },
+});
 // grundton för basen tas från ackordets namn (klarar # och b)
 const NOTE_SEMI = { C: 8, 'C#': 9, Db: 9, D: 10, 'D#': 11, Eb: 11, E: 0, F: 1, 'F#': 2, Gb: 2, G: 3, 'G#': 4, Ab: 4, A: 5, 'A#': 6, Bb: 6, B: 7 };
 for (const k of Object.keys(CHORD_DB)) { const r = (/\/([A-G](#|b)?)$/.exec(CHORD_DB[k].name) || [])[1] || /^[A-G](#|b)?/.exec(CHORD_DB[k].name)[0]; CHORD_DB[k].root = 41.2 * Math.pow(2, NOTE_SEMI[r] / 12); }
 const voicing = (k, easy) => (easy ? CHORD_DB[k].easy : CHORD_DB[k].standard);
 // Förenklade ackord: låtarna har de riktiga ackorden, och med Förenklat byts svåra ackord mot närmaste lätta (och nybörjargrepp)
 const SIMPLER = { Em7: 'Em', G_rock: 'G', Dsus4: 'D', A7sus4: 'A', Cadd9: 'C', Am7: 'Am', Dm7: 'Dm', Gmaj7: 'G', Asus2: 'A', Asus4: 'A', Dsus2: 'D', Esus4: 'E', Bm7: 'Bm',
-  'D/F#': 'D', Cmaj7: 'C', Dmaj7: 'D', E7: 'E', A7: 'A', D7: 'D', G7: 'G', C7: 'C', B_barre: 'B7', F: 'Fmaj7', F_barre: 'Fmaj7' };
+  'D/F#': 'D', Cmaj7: 'C', Dmaj7: 'D', E7: 'E', A7: 'A', D7: 'D', G7: 'G', C7: 'C', B_barre: 'B7', F: 'Fmaj7', F_barre: 'Fmaj7',
+  F7: 'Fmaj7', 'Bb/A': 'Bb', 'Bb/F': 'Bb', 'C/E': 'C', 'C/G': 'C', 'C/B': 'C', 'G/B': 'G', 'Am/E': 'Am', 'F/C': 'Fmaj7', Am6: 'Am', 'D6add9/F#': 'D' };
 const simpler = (k) => (k && SIMPLER[k] && CHORD_DB[SIMPLER[k]] ? SIMPLER[k] : k);
 const CHORD_KEYS = Object.keys(CHORD_DB);
 const BARRE_N = CHORD_KEYS.filter((k) => CHORD_DB[k].standard.barre && CHORD_DB[k].standard.barre.to - CHORD_DB[k].standard.barre.from >= 2).length;
@@ -2210,15 +2239,22 @@ const INITIAL_SONGS = [
     pattern: P_SKANK, accents: [],
     tip: 'Allt går i G med D och C. Versen ligger kvar länge på G, så du har gott om tid att förbereda bytet.',
     form: [{ part: 'Vers', bars: ['G', 'G', 'G', 'G', 'D', 'D', 'G', 'G'] }, { part: 'Refräng', bars: ['G', 'G', 'C', 'G', 'D', 'D', 'D', 'G'] }, { part: 'Avslut', bars: ['G', 'D', 'G', 'D', 'D', 'D', 'D', 'G'] }] },
-  { id: 'no-woman-no-cry', strumSrc: 'simple', title: 'No Woman, No Cry', artist: 'Bob Marley', feel: 'acoustic', level: 'Medel', bpm: 78, band: 'gospel',
-    pattern: P_FOLK, accents: [0, 6],
-    tip: 'Versen är C, G, Am, F hela vägen. I refrängen går andra halvan C, F, C, G. Det enkla Fmaj7-trappsteget låter bra på nylon.',
-    form: [{ part: 'Refräng', bars: ['C', 'G', 'Am', 'F', 'C', 'F', 'C', 'G'] }, { part: 'Vers', bars: ['C', 'G', 'Am', 'F', 'C', 'G', 'Am', 'F'] }] },
-  { id: 'redemption-song', strumSrc: 'simple', title: 'Redemption Song', artist: 'Bob Marley', feel: 'acoustic', level: 'Medel', bpm: 118, band: 'solo', startBpm: 80,
-    pattern: P_BALLAD, accents: [0, 4],
-    tip: 'Originalet är bara Bob Marley och en akustisk gitarr. I refrängen tar C och D två slag var. Bas på slag 1 och 3, ljusa strängar däremellan.',
-    form: [{ part: 'Vers', bars: [['G', 'Em'], ['C', 'Am'], ['G', 'Em'], ['C', 'Am'], ['G', 'Em'], ['C', 'Am'], ['G', 'Em'], ['C', 'D']] }, { part: 'Refräng', bars: ['G', ['C', 'D'], 'G', ['C', 'D'], 'Em', ['C', 'D'], 'G', ['C', 'D']] }] },
-
+  { id: 'no-woman-no-cry', strumSrc: 'orig', title: 'No Woman, No Cry', artist: 'Bob Marley', feel: 'reggae', level: 'Medel', bpm: 78, band: 'reggae',
+    pattern: P_SKANK, accents: [],
+    tip: 'Livet-versionen: allt bygger på C, G/B, Am och F med två slag per ackord. Refrängen slutar C, F, C, G. Det är reggae, så slå kort på varje & och var tyst på slagen.',
+    form: [{ part: 'Intro', bars: [['C', 'G/B'], ['Am', 'F'], ['C', 'F'], ['C', 'G'], ['C', 'G/B'], ['Am', 'F'], ['C', 'F'], ['C', 'G']] },
+      { part: 'Refräng', bars: [['C', 'G/B'], ['Am', 'F'], ['C', 'F'], ['C', 'G'], ['C', 'G/B'], ['Am', 'F'], ['C', 'F'], ['C', 'G']] },
+      { part: 'Vers', bars: [['C', 'G/B'], ['Am', 'F'], ['C', 'G/B'], ['Am', 'F'], ['C', 'G/B'], ['Am', 'F'], ['C', 'G/B'], ['Am', 'F']] },
+      { part: 'Refräng', bars: [['C', 'G/B'], ['Am', 'F'], ['C', 'F'], ['C', 'G'], ['C', 'G/B'], ['Am', 'F'], ['C', 'F'], ['C', 'G']] },
+      { part: 'Allt ordnar sig', bars: [['C', 'G/B'], ['Am', 'F'], ['C', 'G/B'], ['Am', 'F'], ['C', 'G/B'], ['Am', 'F'], ['C', 'G/B'], ['Am', 'F']] }] },
+  { id: 'redemption-song', strumSrc: 'orig', title: 'Redemption Song', artist: 'Bob Marley', feel: 'acoustic', level: 'Medel', bpm: 118, band: 'solo', startBpm: 80,
+    pattern: P_FOLK, accents: [0],
+    tip: 'Bara Bob Marley och en akustisk gitarr. Versen går G, Em, C till G/B och Am, tre gånger, och slutar G, Em, C, D. I refrängen tar C och D två slag var. Slutet går C, C/B, Am och Am6.',
+    form: [{ part: 'Vers', bars: ['G', 'Em', ['C', 'G/B'], 'Am', 'G', 'Em', ['C', 'G/B'], 'Am', 'G', 'Em', ['C', 'G/B'], 'Am', 'G', 'Em', 'C', 'D'] },
+      { part: 'Refräng', bars: ['G', ['C', 'D'], 'G', ['C', 'D'], 'Em', ['C', 'D'], 'G', ['C', 'D'], 'G', ['C', 'D'], 'G'] },
+      { part: 'Vers', bars: ['G', 'Em', ['C', 'G/B'], 'Am', 'G', 'Em', ['C', 'G/B'], 'Am', 'G', 'Em', ['C', 'G/B'], 'Am', 'G', 'Em', 'C', 'D'] },
+      { part: 'Refräng', bars: ['G', ['C', 'D'], 'G', ['C', 'D'], 'Em', ['C', 'D'], 'G', ['C', 'D'], 'G', ['C', 'D'], 'G'] },
+      { part: 'Avslut', bars: [['C', 'C/B'], 'Am', 'Am', 'Am6'] }] },
   /* Mer reggae: andra artister */
   { id: 'tide-is-high', strumSrc: 'orig', tier: 'Mer reggae', title: 'The Tide Is High', artist: 'The Paragons', feel: 'reggae', level: 'Lätt', bpm: 98, band: 'reggae',
     pattern: P_SKANK, accents: [],
@@ -2255,10 +2291,16 @@ const INITIAL_SONGS = [
     form: [{ part: 'Hela låten', bars: ['G', 'D', 'Em', 'C', 'G', 'D', 'Em', 'C'] }] },
 
   /* Sköna låtar att växa upp med */
-  { id: 'country-roads', strumSrc: 'simple', tier: 'Gamla sköna klassiker', title: "Take Me Home, Country Roads", artist: "John Denver", feel: 'acoustic', level: 'Lätt', capo: 'Capo 2 för originaltonarten', bpm: 82, band: 'country',
-    pattern: P_FOLK, accents: [0, 6],
-    tip: 'G, Em, D och C räcker till hela låten. Refrängen går G, D, Em, C och landar på G.',
-    form: [{ part: 'Vers', bars: ['G', 'Em', 'D', 'C', 'G', 'D', 'C', 'G'] }, { part: 'Refräng', bars: ['G', 'D', 'Em', 'C', 'G', 'D', 'C', 'G'] }] },
+  { id: 'country-roads', strumSrc: 'orig', tier: 'Gamla sköna klassiker', title: "Take Me Home, Country Roads", artist: "John Denver", feel: 'acoustic', level: 'Lätt', capo: 'Capo 2 för originaltonarten', bpm: 82, band: 'country',
+    pattern: ['D', '-', 'D', '-', 'D', 'U', 'D', 'U'], accents: [0, 4],
+    tip: 'Versen: G, Em, D, C och G, två takter var på G och Em. Refrängen: G, D, Em, C, G, D, C, G. Bryggan går Em, D, G och sedan Em, F, C, G och fyra takter D in i sista refrängen. Kompet är ner, ner, ner-upp, ner-upp.',
+    form: [{ part: 'Intro', bars: ['G', 'G'] },
+      { part: 'Vers', bars: ['G', 'G', 'Em', 'Em', 'D', 'D', 'C', 'G', 'G', 'G', 'Em', 'Em', 'D', 'D', 'C', 'G'] },
+      { part: 'Refräng', bars: ['G', 'D', 'Em', 'C', 'G', 'D', 'C', 'G'] },
+      { part: 'Vers', bars: ['G', 'G', 'Em', 'Em', 'D', 'D', 'C', 'G', 'G', 'G', 'Em', 'Em', 'D', 'D', 'C', 'G'] },
+      { part: 'Refräng', bars: ['G', 'D', 'Em', 'C', 'G', 'D', 'C', 'G'] },
+      { part: 'Brygga', bars: ['Em', 'D', 'G', 'G', 'C', 'G', 'D', 'D', 'Em', 'F', 'C', 'G', 'D', 'D', 'D', 'D'] },
+      { part: 'Refräng', bars: ['G', 'D', 'Em', 'C', 'G', 'D', 'C', 'G', 'G', 'D', 'Em', 'C', 'G', 'D', 'C', 'G'] }] },
   { id: 'brown-eyed-girl', strumSrc: 'simple', tier: 'Gamla sköna klassiker', title: "Brown Eyed Girl", artist: "Van Morrison", feel: 'acoustic', level: 'Lätt', bpm: 148, band: 'rock', startBpm: 80,
     pattern: P_FOLK, accents: [0, 6],
     tip: 'Versen pendlar G, C, G, D. Refrängen börjar på C. Låten går fort, så börja på halva tempot.',
@@ -2283,10 +2325,12 @@ const INITIAL_SONGS = [
     pattern: P_FOLK, accents: [0, 6],
     tip: 'Em, C, D och G runt runt. Låt Em klinga ut ordentligt, det är där stämningen sitter.',
     form: [{ part: 'Hela låten', bars: ['Em', 'C', 'D', 'G', 'Em', 'C', 'D', 'G'] }] },
-  { id: 'horse-no-name', strumSrc: 'simple', tier: 'Gamla sköna klassiker', title: "A Horse with No Name", artist: "America", feel: 'acoustic', level: 'Superlätt', bpm: 123, band: 'country', startBpm: 70,
-    pattern: P_FOLK, accents: [0, 6],
-    tip: 'Bara två ackord, Em och D, en takt var hela låten. Fokusera på ett jämnt, svängigt komp.',
-    form: [{ part: 'Hela låten', bars: ['Em', 'D', 'Em', 'D', 'Em', 'D', 'Em', 'D'] }] },
+  { id: 'horse-no-name', strumSrc: 'orig', tier: 'Gamla sköna klassiker', title: "A Horse with No Name", artist: "America", feel: 'acoustic', level: 'Superlätt', bpm: 123, band: 'country', startBpm: 70,
+    pattern: ['D', 'U', 'D', 'U', 'D', 'U', 'D', 'U'], accents: [2, 6],
+    tip: 'Hela låten är bara Em och D6add9/F#, en takt var. Pek- och långfingret ligger på band 2 i Em och flyttar till tjockaste strängen och G-strängen i det andra greppet. Dämpa basslagen lätt med handflatan och betona 2 och 4.',
+    form: [{ part: 'Intro', bars: ['Em', 'D6add9/F#', 'Em', 'D6add9/F#'] },
+      { part: 'Vers', bars: ['Em', 'D6add9/F#', 'Em', 'D6add9/F#', 'Em', 'D6add9/F#', 'Em', 'D6add9/F#', 'Em', 'D6add9/F#', 'Em', 'D6add9/F#', 'Em', 'D6add9/F#', 'Em', 'D6add9/F#'] },
+      { part: 'Refräng', bars: ['Em', 'D6add9/F#', 'Em', 'D6add9/F#', 'Em', 'D6add9/F#', 'Em', 'D6add9/F#', 'Em', 'D6add9/F#', 'Em', 'D6add9/F#', 'Em', 'D6add9/F#', 'Em', 'D6add9/F#'] }] },
   { id: 'jet-plane', strumSrc: 'simple', tier: 'Gamla sköna klassiker', title: "Leaving on a Jet Plane", artist: "John Denver", feel: 'acoustic', level: 'Lätt', bpm: 120, band: 'country', startBpm: 85,
     pattern: P_FOLK, accents: [0, 6],
     tip: 'G och C fram och tillbaka, D i slutet av varje rad. Samma runda i vers och refräng.',
@@ -2307,14 +2351,23 @@ const INITIAL_SONGS = [
     pattern: P_BALLAD, accents: [0, 4],
     tip: 'Versen går G, D, C, D. Spela mjukt och lugnt, låten ska andas.',
     form: [{ part: 'Vers', bars: ['G', 'D', 'C', 'D', 'G', 'D', 'C', 'D'] }, { part: 'Refräng', bars: ['C', 'D', 'G', ['D', 'Em'], 'C', 'D', 'G', 'G'] }] },
-  { id: 'let-it-be', strumSrc: 'simple', tier: 'Gamla sköna klassiker', title: "Let It Be", artist: "The Beatles", feel: 'acoustic', level: 'Medel', bpm: 72, band: 'piano',
-    pattern: P_BALLAD, accents: [0, 4],
-    tip: 'Två ackord per takt: C, G, Am, F. Refrängen startar på Am. Fmaj7 låter fint på nylon.',
-    form: [{ part: 'Vers', bars: [['C', 'G'], ['Am', 'F'], ['C', 'G'], ['F', 'C'], ['C', 'G'], ['Am', 'F'], ['C', 'G'], ['F', 'C']] }, { part: 'Refräng', bars: [['Am', 'G'], ['F', 'C'], ['C', 'G'], ['F', 'C'], ['Am', 'G'], ['F', 'C'], ['C', 'G'], ['F', 'C']] }] },
-  { id: 'imagine', strumSrc: 'simple', tier: 'Gamla sköna klassiker', title: "Imagine", artist: "John Lennon", feel: 'acoustic', level: 'Medel', bpm: 76, band: 'piano',
-    pattern: P_BALLAD, accents: [0, 4],
-    tip: 'Versen pendlar C och F. Mellandelen går via Am och Dm, och refrängen slutar på E7 som drar tillbaka till F.',
-    form: [{ part: 'Vers', bars: ['C', 'F', 'C', 'F', 'C', 'F', 'C', 'F'] }, { part: 'Mellandel', bars: ['F', 'Am', 'Dm', 'F', 'G', 'G', 'G7', 'G7'] }, { part: 'Refräng', bars: ['F', 'G', 'C', 'E7', 'F', 'G', 'C', 'C'] }] },
+  { id: 'let-it-be', strumSrc: 'orig', tier: 'Gamla sköna klassiker', title: "Let It Be", artist: "The Beatles", feel: 'acoustic', level: 'Medel', bpm: 72, band: 'piano',
+    pattern: ['D', '-', 'D', 'U', 'D', '-', 'D', 'U'], accents: [0, 4],
+    tip: 'Varje ackord får två slag, så kompet är ner, ner-upp på varje ackord. Versen går C, G, Am, F och sedan C, G, F, C. Refrängen startar på Am: Am, G, F, C. Originalet är piano, så spela mjukt och jämnt.',
+    form: [{ part: 'Intro', bars: [['C', 'G'], ['Am', 'F'], ['C', 'G'], ['F', 'C']] },
+      { part: 'Vers', bars: [['C', 'G'], ['Am', 'F'], ['C', 'G'], ['F', 'C'], ['C', 'G'], ['Am', 'F'], ['C', 'G'], ['F', 'C']] },
+      { part: 'Refräng', bars: [['Am', 'G'], ['F', 'C'], ['C', 'G'], ['F', 'C'], ['Am', 'G'], ['F', 'C'], ['C', 'G'], ['F', 'C']] },
+      { part: 'Vers', bars: [['C', 'G'], ['Am', 'F'], ['C', 'G'], ['F', 'C'], ['C', 'G'], ['Am', 'F'], ['C', 'G'], ['F', 'C']] },
+      { part: 'Refräng', bars: [['Am', 'G'], ['F', 'C'], ['C', 'G'], ['F', 'C'], ['Am', 'G'], ['F', 'C'], ['C', 'G'], ['F', 'C']] }] },
+  { id: 'imagine', strumSrc: 'orig', tier: 'Gamla sköna klassiker', title: "Imagine", artist: "John Lennon", feel: 'acoustic', level: 'Medel', bpm: 76, band: 'piano',
+    pattern: ['D', '-', 'D', 'U', 'D', '-', 'D', 'U'], accents: [0, 4],
+    tip: 'Originalet är Lennon vid pianot. Versen gungar C, Cmaj7 och F. Mellandelen går F, Am/E, Dm7, F/C och vilar på G. I refrängen går takten C, Cmaj7, E, E7 med ett slag per ackord, och E7 drar tillbaka till F.',
+    form: [{ part: 'Intro', bars: [['C', 'Cmaj7'], 'F', ['C', 'Cmaj7'], 'F'] },
+      { part: 'Vers', bars: [['C', 'Cmaj7'], 'F', ['C', 'Cmaj7'], 'F', ['C', 'Cmaj7'], 'F', ['C', 'Cmaj7'], 'F'] },
+      { part: 'Mellandel', bars: [['F', 'Am/E'], ['Dm7', 'F/C'], 'G', ['C/G', 'G7']] },
+      { part: 'Vers', bars: [['C', 'Cmaj7'], 'F', ['C', 'Cmaj7'], 'F', ['C', 'Cmaj7'], 'F', ['C', 'Cmaj7'], 'F'] },
+      { part: 'Mellandel', bars: [['F', 'Am/E'], ['Dm7', 'F/C'], 'G', ['C/G', 'G7']] },
+      { part: 'Refräng', bars: [['F', 'G'], ['C', 'Cmaj7', 'E', 'E7'], ['F', 'G'], ['C', 'Cmaj7', 'E', 'E7'], ['F', 'G'], ['C', 'Cmaj7', 'E', 'E7'], ['F', 'G'], 'C'] }] },
   { id: 'blowin', strumSrc: 'simple', tier: 'Gamla sköna klassiker', title: "Blowin' in the Wind", artist: 'Bob Dylan', feel: 'acoustic', level: 'Lätt', bpm: 88, band: 'solo',
     pattern: P_FOLK, accents: [0, 6],
     tip: 'G, C och D i versen. Refrängen börjar på C och går via Em. Lugnt och jämnt.',
@@ -2529,9 +2582,9 @@ const INITIAL_SONGS = [
     tip: 'Am, F, C och G. Lugnt och vemodigt.',
     form: [{ part: 'Hela låten', bars: ['Am', 'F', 'C', 'G', 'Am', 'F', 'C', 'G'] }] },
   /* Nästa steg: snabbare tempo och fler byten */
-  { id: 'knockin', strumSrc: 'simple', title: "Knockin' on Heaven's Door", artist: 'Bob Dylan', feel: 'acoustic', level: 'Nästa steg', bpm: 68, band: 'gospel',
+  { id: 'knockin', strumSrc: 'orig', title: "Knockin' on Heaven's Door", artist: 'Bob Dylan', feel: 'acoustic', level: 'Nästa steg', bpm: 68, band: 'gospel',
     pattern: P_FOLK, accents: [0, 6],
-    tip: 'Fyra ackord i en evig loop. Bytet D till Am är det knepiga: håll pek- och långfingret nära varandra och glid över.',
+    tip: 'Dylans original: G, D och Am i två takter, sedan G, D och C i två takter. Refrängen är samma fyra rader om och om igen. Bytet D till Am är det knepiga: håll pek- och långfingret nära varandra och glid över.',
     // Alternativt komp från en videolektion: eget mönster för G/D (en takt) och Am/C (två takter), med tidigt lyft inför varje byte
     alt: {
       label: 'Lärarens variant', accents: [0],
@@ -2544,17 +2597,23 @@ const INITIAL_SONGS = [
       ],
       legend: [['G och D', 0], ['Am och C, takt 1', 2], ['Am och C, takt 2', 3]],
     },
-    form: [{ part: 'Vers', bars: ['G', 'D', 'Am', 'Am', 'G', 'D', 'C', 'C'] }, { part: 'Refräng', bars: ['G', 'D', 'Am', 'Am', 'G', 'D', 'C', 'C'] }] },
-
-
-  { id: 'zombie', strumSrc: 'simple', title: 'Zombie', artist: 'The Cranberries', feel: 'acoustic', level: 'Nästa steg', bpm: 84, band: 'rock',
-    pattern: P_BALLAD, accents: [0, 4],
-    tip: 'Em, C, G, D hela låten men i drivande tempo. Spela kraftigt på 1 och 3. Klarar du 84 BPM utan att tappa takten har du riktigt bra byten.',
-    form: [{ part: 'Vers', bars: ['Em', 'C', 'G', 'D', 'Em', 'C', 'G', 'D'] }, { part: 'Refräng', bars: ['Em', 'C', 'G', 'D', 'Em', 'C', 'G', 'D'] }] },
-  { id: 'stand-by-me', strumSrc: 'simple', title: 'Stand By Me', artist: 'Ben E. King', feel: 'acoustic', level: 'Nästa steg', bpm: 118, band: 'soul', capo: 'Capo 2 för originaltonarten',
-    pattern: P_SKANK_UP, accents: [],
-    tip: 'Snabbt tempo men luftigt komp. Låt basen gå på slagen och spela korta slag på varje &. Börja på 90 BPM och öka två steg i taget.',
-    form: [{ part: 'Vers', bars: ['G', 'G', 'Em', 'Em', 'C', 'D', 'G', 'G'] }, { part: 'Refräng', bars: ['G', 'G', 'Em', 'Em', 'C', 'D', 'G', 'G'] }] },
+    form: [{ part: 'Intro', bars: ['G', 'D', 'Am', 'Am', 'G', 'D', 'C', 'C'] },
+      { part: 'Vers 1', bars: ['G', 'D', 'Am', 'Am', 'G', 'D', 'C', 'C', 'G', 'D', 'Am', 'Am', 'G', 'D', 'C', 'C'] },
+      { part: 'Refräng', bars: ['G', 'D', 'Am', 'Am', 'G', 'D', 'C', 'C', 'G', 'D', 'Am', 'Am', 'G', 'D', 'C', 'C'] },
+      { part: 'Vers 2', bars: ['G', 'D', 'Am', 'Am', 'G', 'D', 'C', 'C', 'G', 'D', 'Am', 'Am', 'G', 'D', 'C', 'C'] },
+      { part: 'Refräng', bars: ['G', 'D', 'Am', 'Am', 'G', 'D', 'C', 'C', 'G', 'D', 'Am', 'Am', 'G', 'D', 'C', 'C'] }] },
+  { id: 'zombie', strumSrc: 'orig', title: 'Zombie', artist: 'The Cranberries', feel: 'acoustic', level: 'Nästa steg', bpm: 84, band: 'rock',
+    pattern: ['D', '-', 'D', '-', 'D', 'U', 'D', 'U'], accents: [0, 4],
+    tip: 'Em, C, G och D/F#, en takt var, genom hela låten. I originalet är versen dämpad och refrängen full distad gitarr, så spela lätt i versen och tungt i refrängen. D/F# betyder att tummen tar band 2 på tjockaste strängen.',
+    form: [{ part: 'Intro', bars: ['Em', 'C', 'G', 'D/F#', 'Em', 'C', 'G', 'D/F#'] },
+      { part: 'Vers', bars: ['Em', 'C', 'G', 'D/F#', 'Em', 'C', 'G', 'D/F#', 'Em', 'C', 'G', 'D/F#', 'Em', 'C', 'G', 'D/F#'] },
+      { part: 'Refräng', bars: ['Em', 'C', 'G', 'D/F#', 'Em', 'C', 'G', 'D/F#', 'Em', 'C', 'G', 'D/F#', 'Em', 'C', 'G', 'D/F#'] }] },
+  { id: 'stand-by-me', strumSrc: 'orig', title: 'Stand By Me', artist: 'Ben E. King', feel: 'acoustic', level: 'Nästa steg', bpm: 118, band: 'soul', capo: 'Capo 2 för originaltonarten',
+    pattern: ['D', '-', '-', 'U', '-', 'U', 'D', 'U'], accents: [0, 6],
+    tip: 'Fyra ackord, två takter var på G och Em, en var på C och D: samma följd i intro, vers och refräng. Originalet bygger på basgången och en guiro, så håll kompet luftigt: ner på ettan och sedan lätta uppslag.',
+    form: [{ part: 'Intro', bars: ['G', 'G', 'Em', 'Em', 'C', 'D', 'G', 'G'] },
+      { part: 'Vers', bars: ['G', 'G', 'Em', 'Em', 'C', 'D', 'G', 'G', 'G', 'G', 'Em', 'Em', 'C', 'D', 'G', 'G'] },
+      { part: 'Refräng', bars: ['G', 'G', 'Em', 'Em', 'C', 'D', 'G', 'G', 'G', 'G', 'Em', 'Em', 'C', 'D', 'G', 'G'] }] },
   { id: 'mot-toppen', strumSrc: 'unk', title: 'Mot toppen', artist: 'Wahlberg', feel: 'acoustic', level: 'Nästa steg', bpm: 120, band: 'pop',
     pattern: ['D', 'U', '-', 'U', 'D', 'U', '-', 'U', 'D', 'U', '-', 'U', 'D', 'U', '-', 'U'], accents: [0, 8],
     tip: 'Am, F, C, G, ett ackord per takt. Kompet går i sextondelar, räkna 1-e-&-a: ner på slaget, upp på e, luft på & och upp igen på a. Handen pendlar hela tiden men träffar mest på vägen upp, det är det studsiga drivet i originalet. Börja på 70–80 BPM, 120 är snabbt i sextondelar. Använd Fmaj7 om F-barrén bromsar dig.',
@@ -2571,19 +2630,27 @@ const INITIAL_SONGS = [
     form: [{ part: 'Vers', bars: ['Em7', 'G_rock', 'Dsus4', 'A7sus4', 'Em7', 'G_rock', 'Dsus4', 'A7sus4'] },
       { part: 'Brygga', bars: ['Cadd9', 'Dsus4', 'Em7', 'Em7', 'Cadd9', 'Dsus4', 'Em7', 'Em7', 'Cadd9', 'Dsus4', 'A7sus4', 'A7sus4'] },
       { part: 'Refräng', bars: ['Cadd9', 'Em7', 'G_rock', 'Em7', 'Cadd9', 'Em7', 'G_rock', 'Em7'] }] },
-  { id: 'wish-you-were-here', strumSrc: 'simple', title: 'Wish You Were Here', artist: 'Pink Floyd', feel: 'acoustic', level: 'Utmaning', bpm: 60, band: 'solo',
-    pattern: P_FOLK, accents: [0, 6],
-    tip: 'Introt använder samma ankargrepp som Wonderwall. I versen skiftar du mellan öppna grepp, och bytet G till D till C kräver att du förbereder nästa grepp redan på 4&.',
+  { id: 'wish-you-were-here', strumSrc: 'orig', title: 'Wish You Were Here', artist: 'Pink Floyd', feel: 'acoustic', level: 'Utmaning', bpm: 60, band: 'solo',
+    pattern: ['D', '-', 'D', 'U', 'D', 'U', 'D', 'U'], accents: [0],
+    tip: 'Introt använder samma ankargrepp som Wonderwall: Em7, G, Em7, G, Em7, A7sus4 och tillbaka till G. Versen går C, D/F#, Am, G, D/F#, C, Am, G. Kompet är ner, ner-upp, ner-upp-ner-upp.',
     form: [{ part: 'Intro', bars: ['Em7', 'G_rock', 'Em7', 'G_rock', 'Em7', 'A7sus4', 'Em7', 'A7sus4', 'G_rock'] },
-      { part: 'Vers', bars: ['C', 'D', 'Am', 'G', 'D', 'C', 'Am', 'G'] }] },
-  { id: 'hotel-california', strumSrc: 'simple', title: 'Hotel California', artist: 'Eagles', feel: 'acoustic', level: 'Utmaning', bpm: 74, band: 'ballad', capo: 'Capo 7 för originaltonarten',
+      { part: 'Vers', bars: ['C', 'D/F#', 'Am', 'G', 'D/F#', 'C', 'Am', 'G', 'C', 'D/F#', 'Am', 'G', 'D/F#', 'C', 'Am', 'G'] },
+      { part: 'Mellanspel', bars: ['Em7', 'G_rock', 'Em7', 'G_rock', 'Em7', 'A7sus4', 'Em7', 'A7sus4', 'G_rock'] },
+      { part: 'Vers', bars: ['C', 'D/F#', 'Am', 'G', 'D/F#', 'C', 'Am', 'G', 'C', 'D/F#', 'Am', 'G', 'D/F#', 'C', 'Am', 'G'] }] },
+  { id: 'hotel-california', strumSrc: 'orig', title: 'Hotel California', artist: 'Eagles', feel: 'acoustic', level: 'Utmaning', bpm: 74, band: 'ballad', capo: 'Capo 7 för originaltonarten',
     pattern: P_FOLK, accents: [0, 6],
-    tip: 'Åtta olika ackord i varje varv, inklusive F och Dm. Det här är provet på att du kan hela ackordtabellens första två rader. Använd Fmaj7 om F-barrén bromsar dig.',
-    form: [{ part: 'Vers', bars: ['Am', 'E7', 'G', 'D', 'F', 'C', 'Dm', 'E'] }, { part: 'Refräng', bars: ['F', 'C', 'E', 'Am', 'F', 'C', 'Dm', 'E'] }] },
-  { id: 'hey-jude', strumSrc: 'simple', title: "Hey Jude", artist: "The Beatles", feel: 'acoustic', level: 'Utmaning', bpm: 74, band: 'piano',
-    pattern: P_BALLAD, accents: [0, 4],
-    tip: 'F, C, C7 och Bb. Barrégrepp är utmaningen. Använd Fmaj7 tills F sitter.',
-    form: [{ part: 'Vers', bars: ['F', 'C', 'C7', 'F', 'Bb', 'F', 'C', 'F'] }] },
+    tip: 'Med capo 7 är greppen Am, E7, G, D, F, C, Dm, E, en takt var. Refrängen går F, C, E, Am, F, C, Dm, E. Originalet är en tolvsträngad gitarr som plockar ackorden, så spela gärna lätt och låt ackorden klinga.',
+    form: [{ part: 'Intro', bars: ['Am', 'E7', 'G', 'D', 'F', 'C', 'Dm', 'E'] },
+      { part: 'Vers', bars: ['Am', 'E7', 'G', 'D', 'F', 'C', 'Dm', 'E', 'Am', 'E7', 'G', 'D', 'F', 'C', 'Dm', 'E'] },
+      { part: 'Refräng', bars: ['F', 'C', 'E', 'Am', 'F', 'C', 'Dm', 'E', 'F', 'C', 'E', 'Am', 'F', 'C', 'Dm', 'E'] }] },
+  { id: 'hey-jude', strumSrc: 'orig', title: "Hey Jude", artist: "The Beatles", feel: 'acoustic', level: 'Utmaning', bpm: 74, band: 'piano',
+    pattern: P_FOLK, accents: [0, 6],
+    tip: 'Versen: F, C, C7, F och sedan Bb, F, C, F. Bryggan går ner i basen: Bb, Bb/A, Gm, och vidare Bb/F, C/E, C till F. Slutet är F, Eb, Bb, F om och om igen. Använd Förenklade ackord om barrégreppen bromsar.',
+    form: [{ part: 'Vers', bars: ['F', 'C', 'C7', 'F', 'Bb', 'F', 'C', 'F'] },
+      { part: 'Vers', bars: ['F', 'C', 'C7', 'F', 'Bb', 'F', 'C', ['F', 'F7']] },
+      { part: 'Brygga', bars: [['Bb', 'Bb/A'], 'Gm', ['Bb/F', 'C/E'], ['C', 'F'], ['Bb', 'Bb/A'], 'Gm', ['Bb/F', 'C/E'], ['C', 'F'], ['F', 'F7'], ['C', 'C7']] },
+      { part: 'Vers', bars: ['F', 'C', 'C7', 'F', 'Bb', 'F', 'C', 'F'] },
+      { part: 'Avslut', bars: ['F', 'Eb', 'Bb', 'F', 'F', 'Eb', 'Bb', 'F', 'F', 'Eb', 'Bb', 'F', 'F', 'Eb', 'Bb', 'F'] }] },
   { id: 'the-scientist', strumSrc: 'simple', title: "The Scientist", artist: "Coldplay", feel: 'acoustic', level: 'Utmaning', bpm: 74, band: 'piano',
     pattern: P_BALLAD, accents: [0, 4],
     tip: 'Dm, Bb och F. Bb är ett barrégrepp, och det är därför den ligger bland utmaningarna.',
@@ -6113,11 +6180,12 @@ function clockNow() {
   return { step: cur.step, bar: cur.bar, frac: Math.max(0, Math.min(0.999, (now - cur.t) / cur.sd)) };
 }
 // En takt kan ha två ackord (två slag var): { chord, chord2 }. Segmenten räknas i halvtakter.
-const chordAt = (b, step) => (b.chord2 && step >= 4 ? b.chord2 : b.chord);
-const barChords = (b) => (b.chord2 ? [b.chord, b.chord2] : [b.chord]);
+// Fyra ackord i en takt (ett slag var) ligger i q: ['C', 'Cmaj7', 'E', 'E7']. step räknas i åttondelar (0–7).
+const chordAt = (b, step) => (b.q ? b.q[Math.min(3, Math.max(0, step) >> 1)] : b.chord2 && step >= 4 ? b.chord2 : b.chord);
+const barChords = (b) => (b.q ? b.q.filter((c, i) => i === 0 || c !== b.q[i - 1]) : b.chord2 ? [b.chord, b.chord2] : [b.chord]);
 // hur starkt bandet och gitarren spelar i olika delar av låten
 const partEnergy = (part) => (!part ? 1 : /refr|chorus|ref\b/i.test(part) ? 1.1 : /intro|outro|slut|avslut/i.test(part) ? 0.85 : /vers|verse/i.test(part) ? 0.9 : 1);
-const mkBar = (c, part) => (Array.isArray(c) ? { chord: c[0], chord2: c[1], part } : { chord: c, part });
+const mkBar = (c, part) => (Array.isArray(c) ? (c.length === 4 ? { chord: c[0], chord2: c[2], q: [...c], part } : { chord: c[0], chord2: c[1], part }) : { chord: c, part });
 function compressBars(bars) {
   const out = [];
   bars.forEach((b, i) => [b.chord, b.chord2 || b.chord].forEach((ch, h) => {
@@ -6464,10 +6532,12 @@ function ghEvents(song, bars, easy) {
     const prev = bi > 0 ? chordAt(bars[bi - 1], 7) : null;
     if (bi === 0 || prev !== b.chord || bars[bi - 1].part !== b.part)
       marks.push({ pos: bi * 8, chord: b.chord, part: bi === 0 || bars[bi - 1].part !== b.part ? b.part : null });
-    if (b.chord2 && b.chord2 !== b.chord) marks.push({ pos: bi * 8 + 4, chord: b.chord2, part: null });
+    if (b.q) { for (let j = 1; j < 4; j++) if (b.q[j] !== b.q[j - 1]) marks.push({ pos: bi * 8 + j * 2, chord: b.q[j], part: null }); }
+    else if (b.chord2 && b.chord2 !== b.chord) marks.push({ pos: bi * 8 + 4, chord: b.chord2, part: null });
+    const pl = (b.pat || song.pattern).length;
     (b.pat || song.pattern).forEach((dir, s) => {
       if (dir === '-') return;
-      const ch = chordAt(b, s), fr = voicing(ch, easy).frets;
+      const ch = chordAt(b, Math.floor(s * 8 / pl)), fr = voicing(ch, easy).frets;
       let lanes = [0, 1, 2, 3, 4, 5].filter((i) => fr[i] >= 0);
       if (song.feel === 'reggae') lanes = lanes.filter((i) => i >= 3);
       else if (dir === 'U') lanes = lanes.filter((i) => i >= 2);
@@ -8199,7 +8269,7 @@ function App() {
   const [capoOn, setCapoOn] = useState(() => { try { return localStorage.getItem('ng-capo') === '1'; } catch (e) { return false; } });
   const toggleCapo = () => { const v = !capoOn; setCapoOn(v); try { localStorage.setItem('ng-capo', v ? '1' : '0'); } catch (e) {} if (playing === 'song') engine.transpose = v && capoN ? capoN : 0; };
   const allBars = useMemo(() => song.form.flatMap((p) => p.bars.map((c, i) => {
-    const b = mkBar(c, p.part); if (easy) { b.chord = simpler(b.chord); if (b.chord2) b.chord2 = simpler(b.chord2); }
+    const b = mkBar(c, p.part); if (easy) { b.chord = simpler(b.chord); if (b.chord2) b.chord2 = simpler(b.chord2); if (b.q) b.q = b.q.map(simpler); }
     return song.barPats ? { ...b, pat: song.barPats[i % song.barPats.length] } : b;
   })), [song, easy]);
   const [loop, setLoop] = useState(null); // { pi, from, to, part } – loopa en del av låten (pi -1 = egna takter)
@@ -8832,13 +8902,14 @@ function App() {
           <div className="bars">${p.bars.map((c) => { const i = n++, inL = !loop || (i >= loop.from && i <= loop.to), rel = loop ? i - loop.from : i;
             const cur = playing === 'song' && pos.bar >= 0 && inL && rel === barIdx;
             return html`<button key=${i} className=${'bar' + (cur ? ' cur' : '') + (!playing && inL && rel === startBar ? ' start' : '') + (loop && loop.pi < 0 && !inL ? ' out' : '') + (pickLoop && pickLoop.a === i ? ' pick' : '')}
-              onClick=${() => { const c0 = [].concat(c)[0]; setSelChord(c0);
+              onClick=${() => { const c0 = easy ? simpler([].concat(c)[0]) : [].concat(c)[0]; setSelChord(c0);
                 if (pickLoop) { if (pickLoop.a == null) { setPickLoop({ a: i }); hear(c0); return; }
                   const f = Math.min(pickLoop.a, i), t2 = Math.max(pickLoop.a, i); setPickLoop(null); setStartBar(0);
                   setLoop({ pi: -1, from: f, to: t2, part: f === t2 ? 'takt ' + (f + 1) : 'takt ' + (f + 1) + '–' + (t2 + 1) }); return; }
                 if (!inL) { if (playing) stopAll(); setLoop(null); setStartBar(i); hear(c0); return; }
                 setStartBar(rel); if (playing === 'song') { engine.stop(); startSong(rel); } else hear(c0); }}>
-              <small>${i + 1}</small>${Array.isArray(c) ? html`<b className="split">${CHORD_DB[c[0]].name}<i>${CHORD_DB[c[1]].name}</i></b>` : html`<b>${CHORD_DB[c].name}</b>`}
+              <small>${i + 1}</small>${(() => { const cc = [].concat(c).map((k) => (easy ? simpler(k) : k)).filter((k, j, a) => j === 0 || k !== a[j - 1]);
+                return cc.length > 1 ? html`<b className=${'split' + (cc.length > 2 ? ' q' : '')}>${CHORD_DB[cc[0]].name}${cc.slice(1).map((k, j) => html`<i key=${j}>${CHORD_DB[k].name}</i>`)}</b>` : html`<b>${CHORD_DB[cc[0]].name}</b>`; })()}
               ${cur ? html`<span className="prog" style=${{ width: ((pos.step + 1) / 8 * 100) + '%' }}></span>` : null}
             </button>`; })}</div>
         </div>`; }); })()}
