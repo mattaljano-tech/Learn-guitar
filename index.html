@@ -1048,6 +1048,11 @@ html.jam-stage .jam-mode{display:none}
 .bs-del{width:32px;height:32px;border-radius:50%;color:var(--muted);font-size:18px}
 @media (prefers-reduced-motion:reduce){.bs-glow{animation:none}}
 .jam-run{display:grid;gap:12px}
+.jam-risk{display:grid;gap:6px;padding:12px 14px;border-radius:14px;background:color-mix(in oklab,#f5a623 16%,var(--surface-2));border:1px solid color-mix(in oklab,#f5a623 55%,transparent)}
+.jam-risk span{font-size:13px;color:var(--muted)}
+.jam-risk .btn{justify-self:start}
+.rec-ok{font-style:normal;color:#3fbf7f}
+.rec-unsaved{font-style:normal;color:#f5a623}
 .jam-rot{height:34px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font:600 13px/1 inherit;white-space:nowrap}
 /* liggande telefon: ringen med kameran till vänster, kontrollerna till höger */
 @media (orientation:landscape) and (max-height:560px){
@@ -5481,6 +5486,15 @@ function Jam({ easy, onSave, onDone }) {
     I.style.setProperty('--ds', String(r.width / S));
   }, [intro]);
   useEffect(() => { if (phase !== 'run' && intro) setIntro(0); }, [phase]);
+  // filmen/inspelningen som försvinner när du spelar in nästa, om den inte är sparad i telefonen än
+  const atRisk = useMemo(() => { const v = vidOn ? recVictims(recs.filter((x) => x.kind === 'video'), JAM_MAX_VID, 1) : [];
+    const a = recVictims(recs, JAM_MAX_ALL, 1); return [...new Map([...v, ...a].filter((x) => !x.saved).map((x) => [x.id, x])).values()]; }, [recs, vidOn]);
+  const [savingRisk, setSavingRisk] = useState(false);
+  const riskBox = atRisk.length ? html`<div className="jam-risk" role="alert">
+      <b>⚠ ${atRisk.length === 1 ? (atRisk[0].kind === 'video' ? 'En film' : 'En inspelning') + ' försvinner' : atRisk.length + ' inspelningar försvinner'} när du jammar nästa gång</b>
+      <span>${atRisk.map((x) => (x.kind === 'video' ? 'Filmen ' : 'Ljudet ') + 'från ' + recWhen(x) + ' (' + fmtDur(x.dur) + ')').join(', ')} är inte sparad i telefonen. Appen får bara plats med de ${JAM_MAX_VID} senaste filmerna och ${JAM_MAX_ALL} inspelningarna.</span>
+      <button className="btn primary" disabled=${savingRisk} onClick=${async () => { setSavingRisk(true); try { for (const x of atRisk) await saveRec(x); } catch (e) {} setSavingRisk(false); loadRecs(); }}>${savingRisk ? 'Sparar …' : atRisk.length === 1 ? 'Spara den i telefonen' : 'Spara dem i telefonen'}</button>
+    </div>` : null;
   const loadRecs = () => RecDB.list('jam').then((l) => setRecs((l || []).sort((a, b) => b.at - a.at))).catch(() => setRecs([]));
   useEffect(() => { const h = () => loadRecs(); window.addEventListener('ng-jams-imported', h); return () => window.removeEventListener('ng-jams-imported', h); }, []);
   const halt = () => {
@@ -5631,8 +5645,8 @@ function Jam({ easy, onSave, onDone }) {
           const vt = (t) => { let x = t - st.recT0; for (const [a, b] of st.pauses || []) if (t > a) x -= Math.min(t, b) - a; return Math.round(Math.max(0, x) * 1000) / 1000; };
           const ev = { on: st.onsets.map((o) => [vt(o.t), o.d || '']), segs: st.segs.map((g) => [vt(g.t0), vt(g.t1), g.k]) };
           await RecDB.put({ id: String(at), song: 'jam', title: isVid ? 'Jam-video' : 'Jam', kind: isVid ? 'video' : 'audio', ev, at, dur, bpm: meta.bpm, pattern: meta.pattern, loop: meta.loop, style: meta.style, chords: meta.chords, parts: meta.parts, blob: new Blob(chunks, { type: mr.mimeType || (isVid ? 'video/webm' : 'audio/webm') }) });
-          if (isVid) { const vids = ((await RecDB.list('jam')) || []).filter((x) => x.kind === 'video').sort((a, b) => b.at - a.at); for (const old of vids.slice(6)) await RecDB.del(old.id); }
-          const all = ((await RecDB.list('jam')) || []).sort((a, b) => b.at - a.at); for (const old of all.slice(20)) await RecDB.del(old.id);
+          if (isVid) { const vids = ((await RecDB.list('jam')) || []).filter((x) => x.kind === 'video'); for (const old of recVictims(vids, JAM_MAX_VID)) await RecDB.del(old.id); }
+          const all = (await RecDB.list('jam')) || []; for (const old of recVictims(all, JAM_MAX_ALL)) await RecDB.del(old.id);
           try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
         } catch (e) {}
         loadRecs();
@@ -5765,6 +5779,7 @@ function Jam({ easy, onSave, onDone }) {
     <section className="card jam">
       ${calOpen ? html`<${StrumCal} easy=${easy} onClose=${() => { setCalOpen(false); setCalInfo(strumCal()); }} />` : null}
       ${phase === 'idle' && !calOpen ? html`<div className="chal">
+        ${riskBox}
         <p className="lead">Lägg telefonen nära gitarren och spela minst 8 takter.</p>
         <div className="jam-comp">
           <label className="label" htmlFor="jam-comp">Komp i bakgrunden</label>
@@ -5865,11 +5880,12 @@ function Jam({ easy, onSave, onDone }) {
             <button className="btn primary" onClick=${save}>Spara som låt</button>` : null}
         </div>
         ${res.meter === 3 ? html`<small className="muted">Kompbandet kan bara spela fyrtakt än, så valstakter kan inte sparas som låt.</small>` : null}` : null}
+        ${riskBox}
         <button className="play" style=${{ justifySelf: 'center' }} onClick=${start}>${I.play}Jamma igen</button>
       </div>` : null}
     </section>
     ${recs.length ? html`<section className="card recs" aria-label="Dina jam-inspelningar">
-      <div className="section-head" style=${{ margin: 0 }}><h3>Dina jam-inspelningar</h3><p>De senaste 20 sparas på den här enheten.</p></div>
+      <div className="section-head" style=${{ margin: 0 }}><h3>Dina jam-inspelningar</h3><p>Appen sparar de ${JAM_MAX_VID} senaste filmerna och ${JAM_MAX_ALL} inspelningarna. Det som är sparat i telefonen rensas bort först.</p></div>
       <ul className="rec-list">${recs.map((r) => html`<${RecItem} key=${r.id} r=${r} onDel=${(id) => RecDB.del(id).then(loadRecs)} />`)}</ul>
     </section>` : null}
   </div>`;
@@ -7924,6 +7940,17 @@ const RecDB = (() => {
   }));
   return { put: (r) => run('readwrite', (st) => st.put(r)), del: (id) => run('readwrite', (st) => st.delete(id)), list: (song) => run('readonly', (st) => st.index('song').getAll(song)), all: () => run('readonly', (st) => st.getAll()) };
 })();
+// Vilka inspelningar som får ge plats när listan är full: de äldsta som redan sparats i telefonen först, och aldrig den nyaste.
+const JAM_MAX_VID = 6, JAM_MAX_ALL = 20;
+const recVictims = (list, max, extra = 0) => {
+  const n = list.length + extra - max; if (n <= 0) return [];
+  const newest = list.reduce((m, r) => (r.at > m ? r.at : m), 0), old = list.filter((r) => extra || r.at !== newest).sort((a, b) => a.at - b.at);
+  const saved = old.filter((r) => r.saved), uns = old.filter((r) => !r.saved);
+  return [...saved, ...uns].slice(0, n);
+};
+const recWhen = (r) => { const d = new Date(r.at); return d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }); };
+const recFileName = (r) => r.title + ' ' + recWhen(r).replace(/[: ]/g, '-') + '.' + (r.kind === 'video' ? (/mp4/.test(r.blob.type) ? 'mp4' : 'webm') : /mp4/.test(r.blob.type) ? 'm4a' : 'webm');
+async function saveRec(r) { const ok = await saveFile(r.blob, recFileName(r), 'Inspelning'); if (ok) { const n = { ...r, saved: true }; await RecDB.put(n); window.dispatchEvent(new Event('ng-jams-imported')); return n; } return null; }
 const fmtDur = (s) => Math.floor(s / 60) + ':' + String(Math.round(s % 60)).padStart(2, '0');
 // Du själv under jammet: hela kamerabilden i ett fönster som går att dra runt och byta storlek på (sparas)
 function SelfiePip({ vref }) {
@@ -8089,6 +8116,7 @@ function JamSheet({ r, aRef }) {
 }
 function RecItem({ r: r0, onDel }) {
   const [r, setR] = useState(r0), [open, setOpen] = useState(false), [busy, setBusy] = useState(0), [err, setErr] = useState('');
+  useEffect(() => { if (r0.saved && !r.saved) setR((x) => ({ ...x, saved: true })); }, [r0.saved]);
   const aRef = useRef(null), isJam = r.song === 'jam';
   const url = useMemo(() => URL.createObjectURL(r.blob), [r.id]);
   useEffect(() => () => URL.revokeObjectURL(url), [url]);
@@ -8105,10 +8133,10 @@ function RecItem({ r: r0, onDel }) {
   const d = new Date(r.at), when = d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
   const ext = r.kind === 'video' ? (/mp4/.test(r.blob.type) ? 'mp4' : 'webm') : /mp4/.test(r.blob.type) ? 'm4a' : 'webm';
   return html`<li className="rec-item">
-    <div className="rec-meta"><b>${when}</b><span>${fmtDur(r.dur)}${r.bpm ? ' · ' + r.bpm + ' BPM' : ''}</span></div>
+    <div className="rec-meta"><b>${when}</b><span>${fmtDur(r.dur)}${r.bpm ? ' · ' + r.bpm + ' BPM' : ''}${isJam ? (r.saved ? html` · <em className="rec-ok">✓ sparad i telefonen</em>` : html` · <em className="rec-unsaved">bara i appen</em>`) : null}</span></div>
     ${!isJam && r.pattern && r.pattern.some((d) => d !== '-') ? html`<div className="rec-strum">${r.loop && r.loop.length ? html`<div className="ns-bars">${r.loop.slice(0, 8).map((b, i) => html`<span key=${i}>${[].concat(b).map((k) => (CHORD_DB[k] ? CHORD_DB[k].name : k)).join(' · ')}</span>`)}</div>` : null}<${BeatStrip} pattern=${r.pattern} accents=${[0]} cur=${-1} /></div>` : null}
     ${r.kind === 'video' ? html`<${JamVideo} r=${r} url=${url} vRef=${aRef} />` : html`<audio ref=${aRef} controls preload="metadata" src=${url}></audio>`}
-    <a className="rec-x" href=${url} download=${r.title + ' ' + when.replace(/[: ]/g, '-') + '.' + ext} onClick=${NATIVE ? (e) => { e.preventDefault(); saveFile(r.blob, r.title + ' ' + when.replace(/[: ]/g, '-') + '.' + ext, 'Inspelning').catch(() => {}); } : undefined} title="Ladda ner" aria-label="Ladda ner inspelningen">↓</a>
+    <a className="rec-x" href=${url} download=${recFileName(r)} onClick=${NATIVE ? (e) => { e.preventDefault(); saveRec(r).then((n) => n && setR(n)).catch(() => {}); } : () => { const n = { ...r, saved: true }; RecDB.put(n).then(() => setR(n)).catch(() => {}); }} title="Spara i telefonen" aria-label="Spara inspelningen i telefonen">↓</a>
     <button className="rec-x" onClick=${() => onDel(r.id)} title="Ta bort" aria-label="Ta bort inspelningen">×</button>
     ${isJam ? html`<div className="rec-sheet">
       ${busy ? html`<div className="js-busy"><span>Lyssnar igenom inspelningen … ${Math.round(busy * 100)} %</span><div className="bar"><i style=${{ width: Math.round(busy * 100) + '%' }}></i></div></div>`
@@ -8693,7 +8721,7 @@ function App() {
         const dur = (Date.now() - t0) / 1000; if (dur < 2 || !chunks.length) return;
         try {
           await RecDB.put({ id: String(t0), song: sid, title: stitle, at: t0, dur, bpm: b0, blob: new Blob(chunks, { type: mr.mimeType || 'audio/webm' }) });
-          const all = ((await RecDB.list(sid)) || []).sort((a, b) => b.at - a.at); for (const old of all.slice(20)) await RecDB.del(old.id);
+          const all = (await RecDB.list(sid)) || []; for (const old of recVictims(all, 20)) await RecDB.del(old.id);
           try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
           toast({ x: '●', t: 'Inspelningen sparad', s: stitle + ' · ' + fmtDur(dur) + '. Lyssna under låten.' });
         } catch (e) { toast({ x: '!', t: 'Kunde inte spara inspelningen', s: '' }); }
