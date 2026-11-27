@@ -598,6 +598,7 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 .ls-chords b{font-size:20px}
 .ls-easy{display:grid;gap:6px;font-size:14px;color:var(--muted)}
 .ls-easy .ls-link{justify-self:start}
+.pair-chips{display:flex;flex-wrap:wrap;gap:8px}
 
 @media (max-width:760px){.ls-back{bottom:calc(150px + var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px)))}}
 .gd-six{grid-template-columns:repeat(3,minmax(0,1fr))}
@@ -2303,6 +2304,8 @@ const TABLE = [
   { id: 'barre', title: 'Barréackord', sub: 'Flyttbara grepp där pekfingret trycker ner flera strängar', chords: ['F_barre', 'Fm', 'Bm', 'B_barre', 'Gm', 'Cm'] },
   { id: 'mer', title: 'Fler öppna ackord', sub: 'Vanliga i låtar: sus-, 7- och maj7-ackord utan barré', chords: ['Am7', 'Dm7', 'Gmaj7', 'Asus2', 'Asus4', 'Dsus2', 'Esus4', 'Bm7'] },
   { id: 'barre2', title: 'Fler barréackord', sub: 'Samma former som ovan, flyttade till andra band', chords: ['F#m', 'C#m', 'Bb'] },
+  { id: 'bas', title: 'Ackord med annan bas', sub: 'Snedstrecksackord: ackordet före strecket, basen efter. G/B är ett G med B längst ner. Basen går ofta ett steg i taget mellan två ackord.', chords: ['G/B', 'D/F#', 'C/E', 'C/G', 'C/B', 'Am/G', 'Am/E', 'A/G#', 'F/C', 'F/G', 'Bb/A', 'Bb/F', 'D6add9/F#'] },
+  { id: 'farg', title: 'Fler färger', sub: 'Ackord som dyker upp i enstaka låtar, till exempel Eleanor Rigby, Redemption Song och Hey Jude.', chords: ['Em6', 'Am6', 'F7', 'Fsus2', 'Eb'] },
   { id: 'rock', title: 'Rockgrepp', sub: 'Ring- och lillfinger ligger kvar på band 3 i alla fem. Används i Wonderwall och Wish You Were Here.', chords: ['Em7', 'G_rock', 'Dsus4', 'A7sus4', 'Cadd9'] },
 ];
 
@@ -9356,7 +9359,13 @@ function App() {
         <div className="section-head"><h3>Greppen i låten</h3><p>Klicka för att lyssna och se greppet på greppbrädan.</p></div>
         <div className="diagrams">${[...new Set(bars.flatMap(barChords))].map((k) => html`<${Diagram} key=${k} k=${k} easy=${easy} selected=${shownChord === k}
           onClick=${() => { setSelChord(k); hear(k); }} />`)}</div>
-      </section></div>`)}
+      </section>
+      ${(() => { const seq = bars.flatMap(barChords).map((k) => (easy ? simpler(k) : k)), pr = new Map();
+        for (let i = 1; i < seq.length; i++) if (seq[i] !== seq[i - 1]) { const key = [seq[i - 1], seq[i]].sort().join('|'); if (!pr.has(key)) pr.set(key, [seq[i - 1], seq[i]]); }
+        return pr.size ? html`<section className="song-chords">
+          <div className="section-head"><h3>Öva bytena i låten</h3><p>Tryck på ett byte så öppnas Ackordbyten med just de två ackorden.</p></div>
+          <div className="pair-chips">${[...pr.values()].map(([a, b2]) => html`<button key=${a + b2} className="vb-chip" onClick=${() => { if (playing) stopAll(); setFrom(a); setTo(b2); setTab('byten'); window.scrollTo({ top: 0 }); }}>${CHORD_DB[a].name} ⇄ ${CHORD_DB[b2].name}</button>`)}</div>
+        </section>` : null; })()}</div>`)}
     </div>
   </div>`;
 
