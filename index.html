@@ -623,7 +623,9 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 
 .pair-chips{display:flex;flex-wrap:wrap;gap:8px}
 .chal-rec{margin:0;font-size:15px;color:var(--muted)}.chal-rec b{color:var(--brass);font-size:22px;margin-left:4px}
-.chal-own select{min-width:0;max-width:120px}
+.chal-own select{min-width:0;max-width:160px}
+.chal-lvl{flex-wrap:wrap}.chal-lvl-tip{margin:-6px 0 0;font-size:13px}
+.chal .pair.seq{flex-wrap:wrap;justify-content:center;gap:4px}
 
 @media (max-width:760px){.ls-back{bottom:calc(150px + var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px)))}}
 .gd-six{grid-template-columns:repeat(3,minmax(0,1fr))}
@@ -4453,8 +4455,28 @@ function Quiz({ easy, onAnswer, record }) {
   </section>`;
 }
 
+// Nivå 2 och 3 i Ackordbyte: tre ackord i följd, och hela följden i en låtdel
+const SEQ3 = [['G', 'D', 'Am'], ['G', 'D', 'C'], ['Em', 'C', 'G'], ['C', 'G', 'Am'], ['Am', 'F', 'C'], ['G', 'Em', 'C'], ['A', 'D', 'E'], ['D', 'A', 'Bm']];
+const SEQ4 = [['G', 'D', 'Em', 'C'], ['C', 'G', 'Am', 'F'], ['Em', 'C', 'G', 'D'], ['Am', 'F', 'C', 'G'], ['G', 'Em', 'C', 'D'], ['G', 'D', 'Am', 'G', 'D', 'C']];
+function songSeq(id) {
+  const so = INITIAL_SONGS.find((x) => x.id === id); if (!so) return { three: [], full: [] };
+  const coll = (l) => l.filter((k, i) => i === 0 || k !== l[i - 1]);
+  const full = [], three = [], seen = new Set();
+  so.form.forEach((p) => { let q = coll(p.bars.flatMap((b) => [].concat(b).filter((k, i, a) => i === 0 || k !== a[i - 1])));
+    // en del som upprepar sig (G D Am G D Am …) kortas till ett varv
+    for (let L = 2; L <= q.length / 2; L++) { if (q.length % L === 0 && q.every((k, i) => k === q[i % L])) { q = q.slice(0, L); break; } }
+    if (q.length > 1 && q[q.length - 1] === q[0]) q = q.slice(0, -1);
+    const k = q.join('-'); if (q.length >= 3 && q.length <= 8 && !seen.has(k)) { seen.add(k); full.push(q); }
+    for (let i = 0; i + 3 <= q.length; i++) { const t = q.slice(i, i + 3), tk = [0, 1, 2].map((r) => [...t.slice(r), ...t.slice(0, r)].join('-')).sort()[0]; if (new Set(t).size === 3 && !seen.has('3:' + tk)) { seen.add('3:' + tk); three.push(t); } } });
+  return { three: three.slice(0, 6), full: full.slice(0, 4) };
+}
 const PAIRS = [['Am', 'Em'], ['Em', 'C'], ['Em', 'G'], ['Am', 'C'], ['C', 'G'], ['G', 'D'], ['D', 'A'], ['Am', 'E'], ['C', 'Fmaj7'], ['Em7', 'Cadd9'], ['Dsus4', 'A7sus4'], ['F', 'C'], ['Dm', 'E']];
 function Challenge({ easy, pair, setPair, best, onFinish, fixed = false }) {
+  const N = pair.length, nextK = (i) => pair[(i + 1) % N], keyOf = pair.join('-');
+  const [chLvl, setLvlS] = useState(() => (pair.length > 3 ? 3 : pair.length === 3 ? 2 : 1));
+  const [songPick, setSongPick] = useState('knockin');
+  useEffect(() => { setLvlS((v) => (N === 2 ? 1 : N > 3 ? 3 : v === 3 ? 3 : 2)); }, [N]);
+  const setLvl = (v) => { setLvlS(v); const l = v === 1 ? PAIRS[0] : v === 2 ? SEQ3[0] : SEQ4[0]; setPair(l); };
   const [phase, setPhase] = useState('idle');
   const [cd, setCd] = useState(3);
   const [left, setLeft] = useState(60);
@@ -4477,7 +4499,7 @@ function Challenge({ easy, pair, setPair, best, onFinish, fixed = false }) {
       if (t - chk < 70) return; chk = t;
       if (r < cal.gate * 2) { streak = 0; return; }
       const { ch, tot } = m.chroma(); if (tot <= 0) return;
-      const want = pair[(cRef.current + 1) % 2], other = pair[cRef.current % 2];
+      const want = pair[(cRef.current + 1) % N], other = pair[cRef.current % N];
       const share = (k) => { const ps = chordPcs(k, easy); let v = 0; ch.forEach((x, pc) => { if (ps.has(pc)) v += x; }); return v / tot; };
       const a = share(want), b = share(other), need = 0.25 + chordPcs(want, easy).size * 0.07;
       // nästa ackord måste dominera två mätningar i rad
@@ -4486,7 +4508,7 @@ function Challenge({ easy, pair, setPair, best, onFinish, fixed = false }) {
     };
     rafR.current = requestAnimationFrame(loop);
   };
-  const prevBest = best[pair[0] + '-' + pair[1]] || best[pair[1] + '-' + pair[0]] || 0;
+  const prevBest = best[keyOf] || (N === 2 ? best[pair[1] + '-' + pair[0]] : 0) || 0;
   const start = async () => {
     setMicErr(false);
     if (input === 'mic') { try { await listen(); } catch (e) { setMicErr(true); return; } }
@@ -4504,21 +4526,28 @@ function Challenge({ easy, pair, setPair, best, onFinish, fixed = false }) {
   const tap = () => {
     if (phase !== 'run' || input === 'mic') return;
     cRef.current++; setCount(cRef.current);
-    engine.strum(voicing(pair[cRef.current % 2], easy).frets, engine.now(), 'D', { vel: 0.75, stagger: 0.012 });
+    engine.strum(voicing(pair[cRef.current % N], easy).frets, engine.now(), 'D', { vel: 0.75, stagger: 0.012 });
   };
   useEffect(() => {
     const h = (e) => { if ((e.code === 'Space' || e.code === 'Enter') && phase === 'run') { e.preventDefault(); tap(); } };
     window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
   });
-  const curIdx = count % 2;
+  const curIdx = count % N;
+  const songSeqs = useMemo(() => songSeq(songPick), [songPick]);
   return html`<section className="card" style=${{ display: 'grid', gap: 18 }}>
-    ${!fixed && (phase === 'idle' || phase === 'done') ? html`<div className="row" style=${{ gap: 6 }}>
-      ${PAIRS.map((p) => html`<button key=${p.join()} className=${'chip' + (p[0] === pair[0] && p[1] === pair[1] ? ' on' : '')} onClick=${() => setPair(p)}>${p[0]} ↔ ${p[1]}</button>`)}
+    ${!fixed && (phase === 'idle' || phase === 'done') ? html`<div className="seg chal-lvl" role="group" aria-label="Nivå">
+      ${[[1, '1 · Två ackord'], [2, '2 · Tre i följd'], [3, '3 · Hela följden']].map(([v, l]) => html`<button key=${v} aria-pressed=${chLvl === v} onClick=${() => setLvl(v)}>${l}</button>`)}</div>
+    <p className="muted chal-lvl-tip">${chLvl === 1 ? 'Byt fram och tillbaka mellan två ackord.' : chLvl === 2 ? 'Tre ackord i rad, som de kommer i låten. Efter det sista börjar du om.' : 'Hela ackordföljden i en låtdel, i ordning, om och om igen.'}</p>
+    <div className="row" style=${{ gap: 6 }}>
+      ${(chLvl === 1 ? PAIRS : chLvl === 2 ? SEQ3 : SEQ4).map((p) => html`<button key=${p.join()} className=${'chip' + (p.join('-') === keyOf ? ' on' : '')} onClick=${() => setPair(p)}>${p.map((k) => CHORD_DB[k].name).join(chLvl === 1 ? ' ↔ ' : ' → ')}</button>`)}
     </div>
-    <div className="row chal-own" style=${{ gap: 8, alignItems: 'center' }}><span className="label">Eget byte</span>
+    ${chLvl === 1 ? html`<div className="row chal-own" style=${{ gap: 8, alignItems: 'center' }}><span className="label">Eget byte</span>
       <select aria-label="Första ackordet" value=${pair[0]} onChange=${(e) => setPair([e.target.value, pair[1] === e.target.value ? pair[0] : pair[1]])}>${CHORD_KEYS.map((k) => html`<option key=${k} value=${k}>${CHORD_DB[k].name}</option>`)}</select>
       <span>↔</span>
-      <select aria-label="Andra ackordet" value=${pair[1]} onChange=${(e) => setPair([pair[0] === e.target.value ? pair[1] : pair[0], e.target.value])}>${CHORD_KEYS.map((k) => html`<option key=${k} value=${k}>${CHORD_DB[k].name}</option>`)}</select></div>` : null}
+      <select aria-label="Andra ackordet" value=${pair[1]} onChange=${(e) => setPair([pair[0] === e.target.value ? pair[1] : pair[0], e.target.value])}>${CHORD_KEYS.map((k) => html`<option key=${k} value=${k}>${CHORD_DB[k].name}</option>`)}</select></div>`
+    : html`<div className="row chal-own" style=${{ gap: 8, alignItems: 'center', flexWrap: 'wrap' }}><span className="label">Från en låt</span>
+      <select aria-label="Låt" value=${songPick} onChange=${(e) => { setSongPick(e.target.value); const q = songSeq(e.target.value); const l = chLvl === 2 ? q.three[0] : q.full[0]; if (l) setPair(l); }}>${INITIAL_SONGS.map((x) => html`<option key=${x.id} value=${x.id}>${x.title}</option>`)}</select>
+      ${(chLvl === 2 ? songSeqs.three : songSeqs.full).map((p) => html`<button key=${p.join()} className=${'chip' + (p.join('-') === keyOf ? ' on' : '')} onClick=${() => setPair(p)}>${p.map((k) => CHORD_DB[k].name).join(' → ')}</button>`)}</div>`}` : null}
     ${phase === 'idle' || phase === 'done' ? html`<div className="row between"><span className="label">Räkna bytena</span>
       <div className="seg" role="group" aria-label="Räkna bytena">
         <button aria-pressed=${input === 'tap'} onClick=${() => setInput('tap')}>Jag trycker</button>
@@ -4526,20 +4555,20 @@ function Challenge({ easy, pair, setPair, best, onFinish, fixed = false }) {
       </div></div>` : null}
     ${micErr ? MIC_BLOCKED : null}
     <div className="chal">
-      <div className="pair"><span className=${phase === 'run' && curIdx === 0 ? 'on' : ''}>${CHORD_DB[pair[0]].name}</span><span style=${{ padding: 0 }}>↔</span><span className=${phase === 'run' && curIdx === 1 ? 'on' : ''}>${CHORD_DB[pair[1]].name}</span></div>
-      ${phase === 'idle' ? html`<p className="lead">Byt fram och tillbaka mellan greppen i en minut. Slå an ackordet och tryck på knappen (eller mellanslag) varje gång du har bytt. Ditt rekord: <strong>${prevBest}</strong> byten.</p>
+      <div className=${'pair' + (N > 2 ? ' seq' : '')}>${pair.map((k, i) => html`${i ? html`<span key=${'a' + i} style=${{ padding: 0 }}>${N === 2 ? '↔' : '→'}</span>` : null}<span key=${'c' + i} className=${phase === 'run' && curIdx === i ? 'on' : ''}>${CHORD_DB[k].name}</span>`)}</div>
+      ${phase === 'idle' ? html`<p className="lead">${N === 2 ? 'Byt fram och tillbaka mellan greppen i en minut.' : 'Spela ackorden i ordning i en minut och börja om efter det sista.'} Slå an ackordet och tryck på knappen (eller mellanslag) varje gång du har bytt. Ditt rekord: <strong>${prevBest}</strong> byten.</p>
         <button className="play" onClick=${start}>${I.play}Starta minuten</button>` : null}
       ${phase === 'count' ? html`<div className="count" style=${{ color: 'var(--brass)' }}>${cd}</div><p className="muted">Lägg fingrarna på ${CHORD_DB[pair[0]].name}</p>` : null}
       ${phase === 'run' ? html`<div className="timer"><div className="xpbar"><i style=${{ width: (left / 60 * 100) + '%' }}></i></div><p className="mono muted" style=${{ marginTop: 6 }}>${Math.ceil(left)} s kvar</p></div>
         <div className="count">${count}</div>
-        ${input === 'mic' ? html`<div className="chal-mic"><b>Byt till ${CHORD_DB[pair[(count + 1) % 2]].name} och slå an</b><div className="gh-lvl cc-lvl" style=${{ width: '100%' }}><i ref=${lvl}></i></div><small className="muted">Appen räknar bytet när den hör rätt ackord</small></div>`
-          : html`<button className="tapbtn" onClick=${tap}>Bytt! → ${CHORD_DB[pair[(count + 1) % 2]].name}</button>`}` : null}
+        ${input === 'mic' ? html`<div className="chal-mic"><b>Byt till ${CHORD_DB[nextK(count)].name} och slå an</b><div className="gh-lvl cc-lvl" style=${{ width: '100%' }}><i ref=${lvl}></i></div><small className="muted">Appen räknar bytet när den hör rätt ackord</small></div>`
+          : html`<button className="tapbtn" onClick=${tap}>Bytt! → ${CHORD_DB[nextK(count)].name}</button>`}` : null}
       ${phase === 'done' && result ? html`<div className="count">${result.n}</div>
-        <p className="chal-rec">Rekord ${CHORD_DB[pair[0]].name} ↔ ${CHORD_DB[pair[1]].name}: <b>${Math.max(result.n, result.prev)}</b></p>
+        <p className="chal-rec">Rekord ${pair.map((k) => CHORD_DB[k].name).join(N === 2 ? ' ↔ ' : ' → ')}: <b>${Math.max(result.n, result.prev)}</b></p>
         <p className="lead">${result.rec ? (result.prev ? 'Nytt rekord! Förra bästa var ' + result.prev + '.' : 'Första gången med det här bytet, så det här är ditt rekord nu.') : 'Fortsätt nöta, så kommer det.'} Gör utmaningen en gång om dagen för samma par och se siffran växa.</p>
         <button className="play" onClick=${start}>${I.play}En gång till</button>` : null}
     </div>
-    <div className="diagrams" style=${{ maxWidth: 320, margin: '0 auto', width: '100%', gridTemplateColumns: '1fr 1fr' }}>
+    <div className="diagrams" style=${{ maxWidth: 320, margin: '0 auto', width: '100%', gridTemplateColumns: 'repeat(' + Math.min(N, 4) + ', minmax(0,1fr))', maxWidth: N > 2 ? 520 : 320 }}>
       ${pair.map((k, i) => html`<${Diagram} key=${k + i} k=${k} easy=${easy} selected=${phase === 'run' && curIdx === i} onClick=${() => engine.playChord(voicing(k, easy).frets)} />`)}
     </div>
   </section>`;
@@ -9391,7 +9420,8 @@ function App() {
       ${(() => { const seq = bars.flatMap(barChords).map((k) => (easy ? simpler(k) : k)), pr = new Map();
         for (let i = 1; i < seq.length; i++) if (seq[i] !== seq[i - 1]) { const key = [seq[i - 1], seq[i]].sort().join('|'); if (!pr.has(key)) pr.set(key, [seq[i - 1], seq[i]]); }
         return pr.size ? html`<section className="song-chords">
-          <div className="section-head"><h3>Öva bytena i låten</h3><p>Tryck på ett byte så öppnas Ackordbyten med just de två ackorden.</p></div>
+          <div className="section-head"><h3>Öva bytena i låten</h3><p>Tryck på ett byte så öppnas Ackordbyten med just de två ackorden. Följderna övar du i Ackordbyte på tid.</p></div>
+          <div className="pair-chips">${(() => { const q = songSeq(song.id); return [...q.three.slice(0, 3), ...q.full.slice(0, 2)].map((sq) => html`<button key=${'s' + sq.join()} className="vb-chip on" onClick=${() => { if (playing) stopAll(); setChPair(sq); setGame('chal'); setTab('spel'); window.scrollTo({ top: 0 }); }}>${sq.map((k) => CHORD_DB[k].name).join(' → ')}</button>`); })()}</div>
           <div className="pair-chips">${[...pr.values()].map(([a, b2]) => html`<button key=${a + b2} className="vb-chip" onClick=${() => { if (playing) stopAll(); setFrom(a); setTo(b2); setTab('byten'); window.scrollTo({ top: 0 }); }}>${CHORD_DB[a].name} ⇄ ${CHORD_DB[b2].name}</button>`)}</div>
         </section>` : null; })()}</div>`)}
     </div>
@@ -9992,7 +10022,7 @@ function App() {
       : game === 'coach' ? html`<${PracticeCoach} easy=${easy} pair=${chPair} setPair=${setChPair}
         onFinish=${(s, pair) => award(Math.min(30, s.changes + s.clean), s.changes + ' byten i lyssnande träning', (n) => addTag(n, 'coach:' + pair.join('-')))} />`
       : html`<${Challenge} easy=${easy} pair=${chPair} setPair=${setChPair} best=${prog.best}
-        onFinish=${(cnt, pair) => { const k = pair[0] + '-' + pair[1], rec = cnt > (P.current.best[k] || 0) && cnt > 0;
+        onFinish=${(cnt, pair) => { const k = pair.join('-'), rec = cnt > (P.current.best[k] || 0) && cnt > 0;
           award(cnt * 2 + (rec ? 20 : 0), rec ? 'Nytt rekord: ' + cnt + ' byten!' : cnt + ' byten på en minut', (n) => { n.best[k] = Math.max(n.best[k] || 0, cnt); addTag(n, 'chal:' + k + ':' + cnt); }); }} />`}
   </div>`;
 
