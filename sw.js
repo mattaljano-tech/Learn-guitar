@@ -1,8 +1,8 @@
 /* NylonGitarr Studio – service worker
    Höj VERSION när appen uppdateras, så hämtar telefonen den nya versionen. */
-const VERSION = 'v170';
+const VERSION = 'v171';
 const CACHE = 'nylongitarr-' + VERSION;
-const SHELL = ['./', 'index.html', 'video/scene.jpg', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png', 'icons/apple-touch-icon.png', 'icons/logo-orig.jpg',
+const SHELL = ['./', 'index.html', 'video/scene.jpg', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png', 'icons/apple-touch-icon.png', 'icons/logo.png', 'icons/logo-dark.png',
   ...['clap','cowbell','crash','hat-semi','hat','kick-deep','kick-tight','kick','ohat','ride-bell','ride','rim','shaker','snare-brush','snare-tight','snare','tamb','tom-hi','tom-lo','wood-hi','wood-lo'].map((n) => 'audio/drums/' + n + '.mp3'),
   ...['A2','A3','A4','A5','As5','B1','B2','B3','B4','Cs3','Cs4','Cs5','D2','D3','D5','Ds4','E2','E3','E4','E5','Fs2','Fs3','Fs4','Fs5','G3','G5','Gs2','Gs4','Gs5'].map((n) => 'audio/nylon/' + n + '.mp3'),
   ...['As1','As2','As3','Cs2','Cs3','E1','E2','E3','G1','G2','G3'].map((n) => 'audio/bass/' + n + '.mp3'),
