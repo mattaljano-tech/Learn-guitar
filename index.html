@@ -607,6 +607,15 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 .ls-chords b{font-size:20px}
 .ls-easy{display:grid;gap:6px;font-size:14px;color:var(--muted)}
 .ls-easy .ls-link{justify-self:start}
+/* logotypen: gitarren med "Nylon gitarr", ljus och mörk version */
+.brand h1.brand-logo{margin:0;line-height:0;font-size:0!important}
+.brand-logo img{height:58px;width:auto;display:block}
+.brand-logo .logo-d{display:none}
+:root:is([data-skin="valnot"],[data-skin="sol"]) .brand-logo .logo-l{display:none}
+:root:is([data-skin="valnot"],[data-skin="sol"]) .brand-logo .logo-d{display:block}
+@media (max-width:760px){.brand-logo img{height:44px}}
+@media (max-width:400px){.brand-logo img{height:38px}}
+
 .spot-link.ico{padding:3px;margin-left:6px;width:30px;height:30px;justify-content:center;box-sizing:border-box}
 .spot-link.ico svg{width:22px;height:22px}
 .song-facts{margin:6px 0 2px;font-size:13px;color:var(--muted);line-height:1.5}
@@ -10008,7 +10017,7 @@ function App() {
 
   return html`<div className=${'app' + (tab === 'spela' ? ' on-spela' : '') + (focusOn && tab === 'spela' ? ' focus' : '')}>
     <header className="top"><div className="wrap top-in">
-      <div className="brand">${Rosette}<div><h1 aria-label="NylonGitarr Studio">Nylon Gitarr</h1><small>Grepp, komp och reggae-skank för klassisk gitarr</small></div></div>
+      <div className="brand"><h1 className="brand-logo"><img className="logo-l" src="icons/logo.png" alt="Nylon Gitarr" width="856" height="240" /><img className="logo-d" src="icons/logo-dark.png" alt="" aria-hidden="true" width="856" height="240" /></h1></div>
       <nav className="tabs" role="tablist">
         ${NAV.map(([id, l]) => html`<button key=${id} role="tab" aria-selected=${navOn(id)} onClick=${() => goTab(id)}>
           <svg className="tab-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d=${TabIcon[id]} /></svg>${l}</button>`)}
