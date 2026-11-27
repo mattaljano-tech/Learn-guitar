@@ -1145,7 +1145,7 @@ html.jam-stage .jam-mode{display:none}
 .sp-bar i{display:block;height:100%;border-radius:3px;background:var(--brass);transition:width .3s linear}
 .mbar{flex-wrap:wrap}
 .mbar .song-prog{flex-basis:100%;order:-1}
-@media (max-width:760px){.now .song-prog{display:none}}
+.song-prog-wrap{padding:2px 4px 4px}
 
 @media (max-width:760px){
   .tabs{display:none}
@@ -9226,7 +9226,6 @@ function App() {
           <button className="focus-btn" onClick=${enterFocus} title="Helskärm med bara ackord, slag och hand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>${narrowM ? 'Övning' : 'Övningsläge'}</button>
         </div>
         </div>
-        ${songProg}
         <div className="tp-main now-ctl">
           ${playBtn(origOn ? 'Spela med inspelningen' : 'Starta kompet')}
           ${origOn ? rateCtl : html`<${Bpm} value=${bpm} set=${setBpm} />`}
@@ -9252,6 +9251,7 @@ function App() {
       <div className=${'practice' + (views.hand && (views.pa || views.beat) ? ' split' : '')}>
       <div className="pr-main">
       ${views.pa ? html`<${PlayAlong} bars=${bars} startBar=${startBar} playing=${playing === 'song'} easy=${easy} noBall=${marker !== 'top' && views.hand} />` : null}
+      ${songProg ? html`<div className="song-prog-wrap">${songProg}</div>` : null}
 
       ${gameOpen && !origOn ? html`<${RhythmGame} song=${song} bars=${bars} bpm=${bpm} style=${style} easy=${easy} onBefore=${stopAll} onClose=${() => setGameOpen(false)} award=${award} />` : null}
       ${views.beat && !(gameOpen && !origOn) ? html`<section className="card beatcard" aria-label="Slagkomp">
@@ -9996,7 +9996,6 @@ function App() {
       ${['spela', 'skank', 'byten'].includes(tab) ? html`<p className="muted desk-only" style=${{ fontSize: 12 }}>Tryck <span className="kbd">mellanslag</span> för att starta och stoppa.</p>` : null}
     </main>
     ${['spela', 'skank', 'byten'].includes(tab) ? html`<div className="mbar">
-      ${tab === 'spela' ? songProg : null}
       <button className=${'play' + (playing ? ' stop' : '')} onClick=${toggle}>${playing ? I.stop : I.play}${playing ? 'Stoppa' : tab === 'spela' ? 'Spela låten' : tab === 'skank' ? (skMode === 'tjack' ? 'Starta tjack' : 'Starta skank') : 'Öva bytet'}</button>
       ${tab === 'spela' ? (origOn ? rateCtl : html`<${Bpm} value=${bpm} set=${setBpm} />`) : tab === 'skank' ? (skMode === 'tjack' ? html`<${Bpm} value=${tjBpm} set=${setTjBpm} min=${40} max=${110} />` : html`<${Bpm} value=${skBpm} set=${setSkBpm} min=${40} max=${110} />`) : html`<${Bpm} value=${btBpm} set=${setBtBpm} min=${40} max=${120} />`}
     </div>` : null}
