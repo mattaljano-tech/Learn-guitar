@@ -607,14 +607,16 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 .ls-chords b{font-size:20px}
 .ls-easy{display:grid;gap:6px;font-size:14px;color:var(--muted)}
 .ls-easy .ls-link{justify-self:start}
-/* logotypen: gitarren med "Nylon gitarr", ljus och mörk version */
-.brand h1.brand-logo{margin:0;line-height:0;font-size:0!important}
-.brand-logo img{height:58px;width:auto;display:block}
-.brand-logo .logo-d{display:none}
-:root:is([data-skin="valnot"],[data-skin="sol"]) .brand-logo .logo-l{display:none}
-:root:is([data-skin="valnot"],[data-skin="sol"]) .brand-logo .logo-d{display:block}
-@media (max-width:760px){.brand-logo img{height:44px}}
-@media (max-width:400px){.brand-logo img{height:38px}}
+/* logotypen: originalbilden med gitarren, och headern fortsätter i bildens färg */
+header.top{background:linear-gradient(180deg,#c2b29b 0%,#c4b6a1 62%,#e2d1b6 100%)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;border-bottom:0!important;
+  --bg:#efe6d8; --surface:#f7f1e7; --surface-2:#e9dfcf; --surface-3:#ddd0bb; --line:rgba(59,42,30,.22); --text:#3b2a1e; --muted:#5a4636; --faint:#7a6656;
+  --brass:#8a4b22; --brass-2:#8a4b22; --brass-ink:#fff8ef; --ember:#9a5426; --ember-ink:#fff8ef; color:#3b2a1e}
+header.top>.wrap.top-in{padding-block:0}
+.brand h1.brand-logo{margin:0;line-height:0;font-size:0!important;align-self:stretch;display:flex!important}
+.brand-logo img{height:96px;width:auto;display:block;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 3%,#000 94%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 3%,#000 94%,transparent 100%)}
+@media (max-width:760px){.brand-logo img{height:76px}}
+@media (max-width:400px){.brand-logo img{height:68px}}
+@media (min-width:1400px){header.top{background:linear-gradient(90deg,#c2b29b,#c8bca5)!important}.brand-logo img{height:auto;width:100%}}
 
 .spot-link.ico{padding:3px;margin-left:6px;width:30px;height:30px;justify-content:center;box-sizing:border-box}
 .spot-link.ico svg{width:22px;height:22px}
@@ -10017,7 +10019,7 @@ function App() {
 
   return html`<div className=${'app' + (tab === 'spela' ? ' on-spela' : '') + (focusOn && tab === 'spela' ? ' focus' : '')}>
     <header className="top"><div className="wrap top-in">
-      <div className="brand"><h1 className="brand-logo"><img className="logo-l" src="icons/logo.png" alt="Nylon Gitarr" width="856" height="240" /><img className="logo-d" src="icons/logo-dark.png" alt="" aria-hidden="true" width="856" height="240" /></h1></div>
+      <div className="brand"><h1 className="brand-logo"><img src="icons/logo-orig.jpg" alt="Nylon Gitarr" width="544" height="240" /></h1></div>
       <nav className="tabs" role="tablist">
         ${NAV.map(([id, l]) => html`<button key=${id} role="tab" aria-selected=${navOn(id)} onClick=${() => goTab(id)}>
           <svg className="tab-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d=${TabIcon[id]} /></svg>${l}</button>`)}
