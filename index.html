@@ -613,6 +613,8 @@ select{background:var(--surface-2);border:1px solid var(--line);border-radius:10
 .viewbar.song-more{display:grid;gap:12px;justify-items:start}
 
 .pair-chips{display:flex;flex-wrap:wrap;gap:8px}
+.chal-rec{margin:0;font-size:15px;color:var(--muted)}.chal-rec b{color:var(--brass);font-size:22px;margin-left:4px}
+.chal-own select{min-width:0;max-width:120px}
 
 @media (max-width:760px){.ls-back{bottom:calc(150px + var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px)))}}
 .gd-six{grid-template-columns:repeat(3,minmax(0,1fr))}
@@ -4503,7 +4505,11 @@ function Challenge({ easy, pair, setPair, best, onFinish, fixed = false }) {
   return html`<section className="card" style=${{ display: 'grid', gap: 18 }}>
     ${!fixed && (phase === 'idle' || phase === 'done') ? html`<div className="row" style=${{ gap: 6 }}>
       ${PAIRS.map((p) => html`<button key=${p.join()} className=${'chip' + (p[0] === pair[0] && p[1] === pair[1] ? ' on' : '')} onClick=${() => setPair(p)}>${p[0]} ↔ ${p[1]}</button>`)}
-    </div>` : null}
+    </div>
+    <div className="row chal-own" style=${{ gap: 8, alignItems: 'center' }}><span className="label">Eget byte</span>
+      <select aria-label="Första ackordet" value=${pair[0]} onChange=${(e) => setPair([e.target.value, pair[1] === e.target.value ? pair[0] : pair[1]])}>${CHORD_KEYS.map((k) => html`<option key=${k} value=${k}>${CHORD_DB[k].name}</option>`)}</select>
+      <span>↔</span>
+      <select aria-label="Andra ackordet" value=${pair[1]} onChange=${(e) => setPair([pair[0] === e.target.value ? pair[1] : pair[0], e.target.value])}>${CHORD_KEYS.map((k) => html`<option key=${k} value=${k}>${CHORD_DB[k].name}</option>`)}</select></div>` : null}
     ${phase === 'idle' || phase === 'done' ? html`<div className="row between"><span className="label">Räkna bytena</span>
       <div className="seg" role="group" aria-label="Räkna bytena">
         <button aria-pressed=${input === 'tap'} onClick=${() => setInput('tap')}>Jag trycker</button>
@@ -4520,7 +4526,8 @@ function Challenge({ easy, pair, setPair, best, onFinish, fixed = false }) {
         ${input === 'mic' ? html`<div className="chal-mic"><b>Byt till ${CHORD_DB[pair[(count + 1) % 2]].name} och slå an</b><div className="gh-lvl cc-lvl" style=${{ width: '100%' }}><i ref=${lvl}></i></div><small className="muted">Appen räknar bytet när den hör rätt ackord</small></div>`
           : html`<button className="tapbtn" onClick=${tap}>Bytt! → ${CHORD_DB[pair[(count + 1) % 2]].name}</button>`}` : null}
       ${phase === 'done' && result ? html`<div className="count">${result.n}</div>
-        <p className="lead">${result.rec ? 'Nytt rekord! Förra bästa var ' + result.prev + '.' : 'Ditt rekord är ' + result.prev + '. Fortsätt nöta, så kommer det.'} Gör utmaningen en gång om dagen för samma par och se siffran växa.</p>
+        <p className="chal-rec">Rekord ${CHORD_DB[pair[0]].name} ↔ ${CHORD_DB[pair[1]].name}: <b>${Math.max(result.n, result.prev)}</b></p>
+        <p className="lead">${result.rec ? (result.prev ? 'Nytt rekord! Förra bästa var ' + result.prev + '.' : 'Första gången med det här bytet, så det här är ditt rekord nu.') : 'Fortsätt nöta, så kommer det.'} Gör utmaningen en gång om dagen för samma par och se siffran växa.</p>
         <button className="play" onClick=${start}>${I.play}En gång till</button>` : null}
     </div>
     <div className="diagrams" style=${{ maxWidth: 320, margin: '0 auto', width: '100%', gridTemplateColumns: '1fr 1fr' }}>
@@ -9810,7 +9817,7 @@ function App() {
     </details>
   </div>`;
 
-  const BIB = [['spela', 'Låtar', 'Alla låtar och dina egna', 'var(--ember)', 'Spela'], ['skank', 'Rytm', 'Skank och tjack med vågen', 'var(--leaf)', 'Spela'], ['spel', 'Spel', 'Quiz och 1‑minutsutmaningen', 'var(--ember)', 'Spela'],
+  const BIB = [['ackordbyte', 'Ackordbyte', 'En minut, valfria ackord. Slå ditt rekord', 'var(--brass)', 'Spela'], ['spela', 'Låtar', 'Alla låtar och dina egna', 'var(--ember)', 'Spela'], ['skank', 'Rytm', 'Skank och tjack med vågen', 'var(--leaf)', 'Spela'], ['spel', 'Spel', 'Quiz och 1‑minutsutmaningen', 'var(--ember)', 'Spela'],
     ['ackord', 'Ackord', 'Alla grepp med ljud', 'var(--sky)', 'Lär dig'], ['byten', 'Ackordbyten', 'Öva två ackord', 'var(--leaf)', 'Lär dig'], ['riff', 'Riffskolan', 'Lär dig riff ton för ton', 'var(--brass)', 'Lär dig'], ['guide', 'Följder och riff', 'Ackord som passar ihop', 'var(--sky)', 'Lär dig'],
     ['stat', 'Framsteg', 'Grafer, veckans utmaning och dagbok', 'var(--ember)', 'Verktyg'], ['stam', 'Stämmare', 'Lyssnar på gitarren', 'var(--brass)', 'Verktyg']];
   const chordCard = (k, i) => CHORD_DB[k] ? html`<${Diagram} key=${k + i} k=${k} easy=${easy} onClick=${() => engine.playChord(voicing(k, easy).frets)} />`
@@ -9891,8 +9898,8 @@ function App() {
   const BibTab = () => html`<div className="ds-page">
     <div><h2 className="page">Bibliotek</h2><p className="lead">Allt i appen på ett ställe. Spela, lär dig nya grepp eller stäm gitarren.</p></div>
     ${['Spela', 'Lär dig', 'Verktyg'].map((g) => html`<section key=${g} className="bib-group"><h3 className="ds-eyebrow">${g}</h3>
-      <div className="bib">${BIB.filter((x) => x[4] === g).map(([id, t, d, c]) => html`<button key=${id} className="bib-c" style=${{ '--c': c }} onClick=${() => goTab(id)}>
-        <span className="bib-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d=${TabIcon[id]} /></svg></span>
+      <div className="bib">${BIB.filter((x) => x[4] === g).map(([id, t, d, c]) => html`<button key=${id} className="bib-c" style=${{ '--c': c }} onClick=${() => { if (id === 'ackordbyte') { setGame('chal'); goTab('spel'); } else goTab(id); }}>
+        <span className="bib-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d=${id === 'ackordbyte' ? 'M12 7v5l3 2M12 3a9 9 0 1 0 .01 0' : TabIcon[id]} /></svg></span>
         <span className="bib-tx"><b>${t}</b><span>${d}</span></span>
         <svg className="bib-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg></button>`)}</div></section>`)}
   </div>`;
@@ -9965,7 +9972,7 @@ function App() {
     <div><h2 className="page">Spel</h2><p className="lead">Korta utmaningar som tränar öra, grepp och byten. Välj ett spel.</p></div>
     <div className="games" role="group" aria-label="Välj spel">
       <button className="game" aria-pressed=${game === 'quiz'} onClick=${() => setGame('quiz')}><b>Ackordquiz</b><span>Känn igen greppet på bild eller ljud. Rätt i rad ger combo-bonus.</span></button>
-      <button className="game" aria-pressed=${game === 'chal'} onClick=${() => setGame('chal')}><b>1‑minutsutmaningen</b><span>Hur många byten hinner du på 60 sekunder? Slå ditt eget rekord varje dag.</span></button>
+      <button className="game" aria-pressed=${game === 'chal'} onClick=${() => setGame('chal')}><b>Ackordbyte</b><span>Hur många byten hinner du på en minut? Välj vilka två ackord som helst och slå ditt rekord.</span></button>
       <button className="game" aria-pressed=${game === 'coach'} onClick=${() => setGame('coach')}><b>Lyssnande träning</b><span>Byt i din egen takt. Appen lyssnar och säger vad du ska öva på.</span></button>
       <button className="game" aria-pressed=${game === 'free'} onClick=${() => setGame('free')}><b>Fritt spel</b><span>Spela vad du vill. Appen hör ackord och rytm och ger feedback efteråt.</span></button>
     </div>
